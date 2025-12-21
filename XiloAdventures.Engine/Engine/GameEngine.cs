@@ -2240,23 +2240,15 @@ public class GameEngine
     private bool HasDistinctRoomMusic(Room room)
     {
         var roomMusicId = room.MusicId;
-        var roomMusicBase64 = room.MusicBase64;
         var worldMusicId = _state.WorldMusicId;
-        var worldMusicBase64 = _world.Game?.WorldMusicBase64;
 
-        var roomHasMusic = !string.IsNullOrWhiteSpace(roomMusicId) || !string.IsNullOrWhiteSpace(roomMusicBase64);
-        if (!roomHasMusic)
+        // La sala tiene música propia si tiene un MusicId definido
+        if (string.IsNullOrWhiteSpace(roomMusicId))
             return false;
 
-        var idsEqual = !string.IsNullOrWhiteSpace(roomMusicId) &&
-                       !string.IsNullOrWhiteSpace(worldMusicId) &&
-                       roomMusicId.Equals(worldMusicId, StringComparison.OrdinalIgnoreCase);
-
-        var base64Equal = !string.IsNullOrWhiteSpace(roomMusicBase64) &&
-                          !string.IsNullOrWhiteSpace(worldMusicBase64) &&
-                          string.Equals(roomMusicBase64, worldMusicBase64, StringComparison.Ordinal);
-
-        if (idsEqual || base64Equal)
+        // Si es la misma que la del mundo, no es "distinta"
+        if (!string.IsNullOrWhiteSpace(worldMusicId) &&
+            roomMusicId.Equals(worldMusicId, StringComparison.OrdinalIgnoreCase))
             return false;
 
         return true;

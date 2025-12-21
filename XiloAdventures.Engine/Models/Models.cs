@@ -113,13 +113,6 @@ public class GameInfo
     public string? WorldMusicId { get; set; }
 
     /// <summary>
-    /// Música por defecto del mundo en Base64 (se guarda dentro del JSON del mundo).
-    /// Si es null o vacío, no sonará música global.
-    /// </summary>
-    [Browsable(false)]
-    public string? WorldMusicBase64 { get; set; }
-
-    /// <summary>
     /// Clave de cifrado para las partidas guardadas de los jugadores.
     /// Debe tener 8 caracteres.
     /// </summary>
@@ -148,10 +141,6 @@ public class GameInfo
 
     /// <summary>ID de la música que suena al finalizar la aventura.</summary>
     public string? EndingMusicId { get; set; }
-
-    /// <summary>Música de finalización en Base64 (se guarda dentro del JSON del mundo).</summary>
-    [Browsable(false)]
-    public string? EndingMusicBase64 { get; set; }
 }
 
 public class Room
@@ -171,12 +160,6 @@ public class Room
 
     public string? MusicId { get; set; }
 
-    /// <summary>
-    /// Música específica de la sala en Base64 (se guarda dentro del JSON del mundo).
-    /// Si es null o vacío, se usará la música global del mundo (si la hay).
-    /// </summary>
-    [Browsable(false)]
-    public string? MusicBase64 { get; set; }
     public bool IsInterior { get; set; } = false;
     public bool IsIlluminated { get; set; } = true;
 

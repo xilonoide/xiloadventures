@@ -251,10 +251,7 @@ public static class WorldLoader
         if (world.Game is not null)
         {
             if (string.IsNullOrWhiteSpace(world.Game.WorldMusicId))
-            {
                 world.Game.WorldMusicId = null;
-                world.Game.WorldMusicBase64 = null;
-            }
         }
 
         if (world.Rooms != null)
@@ -263,16 +260,9 @@ public static class WorldLoader
             {
                 if (room is null) continue;
 
-                // Si el usuario ha borrado el MusicId de la sala en el editor,
-                // descartamos también el MusicId y MusicBase64.
                 if (string.IsNullOrWhiteSpace(room.MusicId))
-                {
                     room.MusicId = null;
-                    room.MusicBase64 = null;
-                }
 
-                // Si el usuario ha borrado el ImageId de la sala en el editor,
-                // descartamos también la imagen embebida en Base64.
                 if (string.IsNullOrWhiteSpace(room.ImageId))
                 {
                     room.ImageId = null;

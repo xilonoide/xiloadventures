@@ -749,9 +749,7 @@ public partial class PropertyEditor : UserControl
             "ImageId" => 0,
             "ImageBase64" => 1,
             "MusicId" => 2,
-            "MusicBase64" => 3,
-            "WorldMusicId" => 4,
-            "WorldMusicBase64" => 5,
+            "WorldMusicId" => 3,
             // Propiedades de sala al final de Identificación
             "StartRoomId" => 100,
             "RoomId" => 101,
@@ -1723,11 +1721,47 @@ public partial class PropertyEditor : UserControl
                         if (combo.SelectedValue is not string selectedId) return;
 
                         game.WorldMusicId = selectedId;
-                        // Ya no guardamos Base64 en GameInfo, solo el nombre
-                        game.WorldMusicBase64 = null;
-
                         PropertyEdited?.Invoke(game, nameof(GameInfo.WorldMusicId));
-                        PropertyEdited?.Invoke(game, nameof(GameInfo.WorldMusicBase64));
+                    }
+                    catch
+                    {
+                        // Ignorar errores
+                    }
+                };
+
+                editor = combo;
+            }
+
+
+            else if (prop.Name == "EndingMusicId" && prop.PropertyType == typeof(string))
+            {
+                var valueObj = prop.GetValue(obj);
+                var currentMusicId = Convert.ToString(valueObj) ?? string.Empty;
+
+                var musics = GetMusics?.Invoke()?.ToList() ?? new List<MusicAsset>();
+
+                var combo = new ComboBox
+                {
+                    Margin = new Thickness(0, 2, 0, 0),
+                    ItemsSource = new[] { "" }.Concat(musics.Select(m => m.Id)).ToList(),
+                    SelectedValue = currentMusicId,
+                    DisplayMemberPath = null
+                };
+
+                if (!string.IsNullOrEmpty(currentMusicId) && !musics.Any(m => m.Id == currentMusicId))
+                {
+                    combo.SelectedIndex = 0;
+                }
+
+                combo.SelectionChanged += (_, _) =>
+                {
+                    try
+                    {
+                        if (_currentObject is not GameInfo game) return;
+                        if (combo.SelectedValue is not string selectedId) return;
+
+                        game.EndingMusicId = selectedId;
+                        PropertyEdited?.Invoke(game, nameof(GameInfo.EndingMusicId));
                     }
                     catch
                     {
@@ -1923,11 +1957,7 @@ public partial class PropertyEditor : UserControl
                         if (combo.SelectedValue is not string selectedId) return;
 
                         room.MusicId = selectedId;
-                        // Ya no guardamos Base64 en la sala, solo el nombre
-                        room.MusicBase64 = null;
-
                         PropertyEdited?.Invoke(room, nameof(Room.MusicId));
-                        PropertyEdited?.Invoke(room, nameof(Room.MusicBase64));
                     }
                     catch
                     {
@@ -2201,9 +2231,7 @@ public partial class PropertyEditor : UserControl
         ["Title"] = "Título",
         ["Theme"] = "Tema/Ambientación",
         ["MusicId"] = "Música",
-        ["MusicBase64"] = "Música (Base64)",
-        ["WorldMusicId"] = "Música global (id)",
-        ["WorldMusicBase64"] = "Música global (Base64)",
+        ["WorldMusicId"] = "Música global",
         ["EncryptionKey"] = "Clave de cifrado",
         ["ImageBase64"] = "Imagen (Base64)",
         ["ImageId"] = "Imagen (id)",
@@ -2261,7 +2289,6 @@ public partial class PropertyEditor : UserControl
         ["GameInfo.StartHour"] = "Hora inicial",
         ["GameInfo.StartWeather"] = "Clima inicial",
         ["GameInfo.WorldMusicId"] = "Música global",
-        ["GameInfo.WorldMusicBase64"] = "Música global (Base64)",
         ["GameInfo.EncryptionKey"] = "Clave de cifrado",
         ["GameInfo.EndingText"] = "Texto de finalización",
         ["GameInfo.EndingMusicId"] = "Música de finalización",
@@ -2271,7 +2298,6 @@ public partial class PropertyEditor : UserControl
         ["Room.Description"] = "Descripción",
         ["Room.ImageBase64"] = "Imagen (Base64)",
         ["Room.MusicId"] = "Música",
-        ["Room.MusicBase64"] = "Música (Base64)",
         ["Room.ImageId"] = "Imagen (id)",
         ["Room.RequiredQuestId"] = "Misión requerida",
         ["Room.RequiredQuestStatus"] = "Estado de misión requerido",

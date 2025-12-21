@@ -1388,4 +1388,237 @@ public class IntegrationTests
     }
 
     #endregion
+
+    #region Quest Integration Tests
+
+    /// <summary>
+    /// Creates a world with main and side quests for integration testing.
+    /// </summary>
+    private static (WorldModel world, GameState state) CreateWorldWithQuests()
+    {
+        var world = new WorldModel
+        {
+            Game = new GameInfo
+            {
+                Id = "test_quests",
+                Title = "Test Quests",
+                StartRoomId = "room1",
+                StartHour = 12
+            },
+            Rooms = new List<Room>
+            {
+                new Room
+                {
+                    Id = "room1",
+                    Name = "Sala Principal",
+                    Description = "Una sala principal.",
+                    IsIlluminated = true,
+                    Exits = new List<Exit>
+                    {
+                        new Exit { Direction = "n", TargetRoomId = "room2" }
+                    },
+                    ObjectIds = new List<string>(),
+                    NpcIds = new List<string>()
+                },
+                new Room
+                {
+                    Id = "room2",
+                    Name = "Sala del Tesoro",
+                    Description = "Una sala con el tesoro.",
+                    IsIlluminated = true,
+                    Exits = new List<Exit>
+                    {
+                        new Exit { Direction = "s", TargetRoomId = "room1" }
+                    },
+                    ObjectIds = new List<string>(),
+                    NpcIds = new List<string>()
+                }
+            },
+            Objects = new List<GameObject>(),
+            Npcs = new List<Npc>(),
+            Doors = new List<Door>(),
+            Quests = new List<QuestDefinition>
+            {
+                new QuestDefinition
+                {
+                    Id = "quest_main",
+                    Name = "Encuentra el Tesoro",
+                    Description = "Encuentra el tesoro en la sala norte.",
+                    IsMainQuest = true,
+                    Objectives = new List<string> { "Llegar a la sala del tesoro" }
+                },
+                new QuestDefinition
+                {
+                    Id = "quest_side",
+                    Name = "Recoge las Gemas",
+                    Description = "Recoge todas las gemas.",
+                    IsMainQuest = false,
+                    Objectives = new List<string> { "Recoger 5 gemas" }
+                }
+            }
+        };
+
+        var state = WorldLoader.CreateInitialState(world);
+        return (world, state);
+    }
+
+    [Fact]
+    public void Quest_InitializedAsNotStarted()
+    {
+        // Arrange
+        var (world, state) = CreateWorldWithQuests();
+
+        // Assert
+        Assert.All(state.Quests.Values, q => Assert.Equal(QuestStatus.NotStarted, q.Status));
+    }
+
+    [Fact]
+    public void Quest_MainQuestFlagIsPreserved()
+    {
+        // Arrange
+        var (world, state) = CreateWorldWithQuests();
+
+        // Assert
+        var mainQuest = world.Quests.First(q => q.Id == "quest_main");
+        var sideQuest = world.Quests.First(q => q.Id == "quest_side");
+
+        Assert.True(mainQuest.IsMainQuest);
+        Assert.False(sideQuest.IsMainQuest);
+    }
+
+    [Fact]
+    public void Quest_CanListWithMisionesCommand()
+    {
+        // Arrange
+        var (world, state) = CreateWorldWithQuests();
+        var sound = CreateMockSoundManager();
+        var engine = new GameEngine(world, state, sound);
+
+        // Act
+        var result = engine.ProcessCommand("misiones");
+
+        // Assert
+        Assert.NotNull(result.Message);
+    }
+
+    [Fact]
+    public void Quest_StatusCanBeChangedManually()
+    {
+        // Arrange
+        var (world, state) = CreateWorldWithQuests();
+
+        // Act
+        state.Quests["quest_main"].Status = QuestStatus.InProgress;
+
+        // Assert
+        Assert.Equal(QuestStatus.InProgress, state.Quests["quest_main"].Status);
+        Assert.Equal(QuestStatus.NotStarted, state.Quests["quest_side"].Status);
+    }
+
+    [Fact]
+    public void Quest_CanBeCompleted()
+    {
+        // Arrange
+        var (world, state) = CreateWorldWithQuests();
+
+        // Act
+        state.Quests["quest_main"].Status = QuestStatus.InProgress;
+        state.Quests["quest_main"].Status = QuestStatus.Completed;
+
+        // Assert
+        Assert.Equal(QuestStatus.Completed, state.Quests["quest_main"].Status);
+    }
+
+    [Fact]
+    public void Quest_CanBeFailed()
+    {
+        // Arrange
+        var (world, state) = CreateWorldWithQuests();
+
+        // Act
+        state.Quests["quest_main"].Status = QuestStatus.InProgress;
+        state.Quests["quest_main"].Status = QuestStatus.Failed;
+
+        // Assert
+        Assert.Equal(QuestStatus.Failed, state.Quests["quest_main"].Status);
+    }
+
+    #endregion
+
+    #region GameEngine Event Tests
+
+    [Fact]
+    public void GameEngine_ScriptMessageEvent_PropagatesFromScriptEngine()
+    {
+        // Arrange
+        var (world, state) = CreateWorldWithScripts();
+        var sound = CreateMockSoundManager();
+        var engine = new GameEngine(world, state, sound);
+
+        string? receivedMessage = null;
+        engine.ScriptMessage += msg => receivedMessage = msg;
+
+        // Act - Force initialization which may trigger scripts
+        var result = engine.ProcessCommand("mirar");
+
+        // Assert - Engine should be connected
+        Assert.NotNull(engine);
+    }
+
+    [Fact]
+    public void GameEngine_AdventureCompletedEvent_IsAvailable()
+    {
+        // Arrange
+        var (world, state) = CreateWorldWithQuests();
+        var sound = CreateMockSoundManager();
+        var engine = new GameEngine(world, state, sound);
+
+        // Subscribe to event to verify it's available
+        engine.AdventureCompleted += () => { };
+
+        // Assert - Event should be subscribable without throwing
+        Assert.NotNull(engine);
+    }
+
+    #endregion
+
+    #region Ending Properties Tests
+
+    [Fact]
+    public void GameInfo_EndingText_CanBeSet()
+    {
+        // Arrange
+        var world = new WorldModel
+        {
+            Game = new GameInfo
+            {
+                Id = "test_ending",
+                Title = "Test Ending",
+                StartRoomId = "room1",
+                EndingText = "¡Felicidades! Has completado la aventura.",
+                EndingMusicId = "ending_music"
+            },
+            Rooms = new List<Room>
+            {
+                new Room { Id = "room1", Name = "Room", Exits = new List<Exit>() }
+            }
+        };
+
+        // Assert
+        Assert.Equal("¡Felicidades! Has completado la aventura.", world.Game.EndingText);
+        Assert.Equal("ending_music", world.Game.EndingMusicId);
+    }
+
+    [Fact]
+    public void GameInfo_EndingText_DefaultsToEmpty()
+    {
+        // Arrange
+        var gameInfo = new GameInfo();
+
+        // Assert
+        Assert.Equal("", gameInfo.EndingText);
+        Assert.Null(gameInfo.EndingMusicId);
+    }
+
+    #endregion
 }

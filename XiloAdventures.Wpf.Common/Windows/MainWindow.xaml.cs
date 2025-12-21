@@ -755,11 +755,20 @@ public partial class MainWindow : Window
     {
         Dispatcher.Invoke(() =>
         {
+            // Buscar la música de finalización en la biblioteca
+            string? endingMusicBase64 = null;
+            if (!string.IsNullOrEmpty(_world.Game.EndingMusicId))
+            {
+                var musicAsset = _world.Musics.FirstOrDefault(m =>
+                    m.Id.Equals(_world.Game.EndingMusicId, StringComparison.OrdinalIgnoreCase));
+                endingMusicBase64 = musicAsset?.Base64;
+            }
+
             var endingWindow = new EndingWindow
             {
                 EndingText = _world.Game.EndingText,
                 LogoBase64 = null,
-                MusicBase64 = _world.Game.EndingMusicBase64
+                MusicBase64 = endingMusicBase64
             };
 
             _sound.StopMusic();
@@ -931,29 +940,29 @@ public partial class MainWindow : Window
             var room = _engine.CurrentRoom;
             if (room != null)
             {
-                var hasRoomMusic =
-                    !string.IsNullOrWhiteSpace(room.MusicId) ||
-                    !string.IsNullOrWhiteSpace(room.MusicBase64);
+                var hasRoomMusic = !string.IsNullOrWhiteSpace(room.MusicId);
 
                 if (hasRoomMusic)
                 {
-                    // Sala con música especial: reproducimos la de la sala.
-                    _sound.PlayRoomMusic(
-                        room.MusicId,
-                        room.MusicBase64,
-                        null,
-                        null);
+                    // Sala con música especial: buscamos en la biblioteca
+                    var musicAsset = _world.Musics.FirstOrDefault(m =>
+                        m.Id.Equals(room.MusicId, StringComparison.OrdinalIgnoreCase));
+                    _sound.PlayRoomMusic(room.MusicId, musicAsset?.Base64, null, null);
                 }
-                else if (_world.Game != null)
+                else if (_world.Game != null && !string.IsNullOrWhiteSpace(_world.Game.WorldMusicId))
                 {
-                    // Sala sin música especial: reproducimos la música del mundo.
-                    _sound.PlayWorldMusic(_engine.WorldMusicId, _world.Game.WorldMusicBase64);
+                    // Sala sin música especial: reproducimos la música del mundo desde la biblioteca
+                    var worldMusicAsset = _world.Musics.FirstOrDefault(m =>
+                        m.Id.Equals(_world.Game.WorldMusicId, StringComparison.OrdinalIgnoreCase));
+                    _sound.PlayWorldMusic(_engine.WorldMusicId, worldMusicAsset?.Base64);
                 }
             }
-            else if (_world.Game != null)
+            else if (_world.Game != null && !string.IsNullOrWhiteSpace(_world.Game.WorldMusicId))
             {
-                // Si por lo que sea no hay sala actual, intentamos al menos arrancar la música de mundo.
-                _sound.PlayWorldMusic(_engine.WorldMusicId, _world.Game.WorldMusicBase64);
+                // Si por lo que sea no hay sala actual, intentamos arrancar la música de mundo
+                var worldMusicAsset = _world.Musics.FirstOrDefault(m =>
+                    m.Id.Equals(_world.Game.WorldMusicId, StringComparison.OrdinalIgnoreCase));
+                _sound.PlayWorldMusic(_engine.WorldMusicId, worldMusicAsset?.Base64);
             }
         }
     }

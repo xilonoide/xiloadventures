@@ -1631,11 +1631,20 @@ public partial class WorldEditorWindow : Window
     {
         if (_testWorld?.Game == null) return;
 
+        // Buscar la música de finalización en la biblioteca
+        string? endingMusicBase64 = null;
+        if (!string.IsNullOrEmpty(_testWorld.Game.EndingMusicId))
+        {
+            var musicAsset = _testWorld.Musics.FirstOrDefault(m =>
+                m.Id.Equals(_testWorld.Game.EndingMusicId, StringComparison.OrdinalIgnoreCase));
+            endingMusicBase64 = musicAsset?.Base64;
+        }
+
         var endingWindow = new EndingWindow
         {
             EndingText = _testWorld.Game.EndingText,
             LogoBase64 = null, // TODO: obtener logo del juego si existe
-            MusicBase64 = _testWorld.Game.EndingMusicBase64,
+            MusicBase64 = endingMusicBase64,
             CloseApplicationOnExit = false // En modo pruebas no cerrar el editor
         };
 

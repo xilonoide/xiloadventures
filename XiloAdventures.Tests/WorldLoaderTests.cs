@@ -43,8 +43,7 @@ public class WorldLoaderTests
             Name = "Sala",
             ImageId = string.Empty,
             ImageBase64 = "willBeCleared",
-            MusicId = string.Empty,
-            MusicBase64 = "musicClear"
+            MusicId = string.Empty
         };
 
         var world = new WorldModel
@@ -54,8 +53,7 @@ public class WorldLoaderTests
                 Id = "world-id",
                 Title = "Titulo",
                 StartRoomId = room.Id,
-                WorldMusicId = " ",
-                WorldMusicBase64 = "music"
+                WorldMusicId = " "
             },
             Rooms = new List<Room> { room },
             RoomPositions = new Dictionary<string, MapPosition>
@@ -73,13 +71,11 @@ public class WorldLoaderTests
 
             Assert.Equal(world.Game.Title, loaded.Game.Title);
             Assert.Null(loaded.Game.WorldMusicId);
-            Assert.Null(loaded.Game.WorldMusicBase64);
 
             var loadedRoom = loaded.Rooms.Single(r => r.Id == room.Id);
             Assert.Null(loadedRoom.ImageId);
             Assert.Null(loadedRoom.ImageBase64);
             Assert.Null(loadedRoom.MusicId);
-            Assert.Null(loadedRoom.MusicBase64);
 
             Assert.True(loaded.RoomPositions.ContainsKey(room.Id));
             Assert.Equal(10, loaded.RoomPositions[room.Id].X);
