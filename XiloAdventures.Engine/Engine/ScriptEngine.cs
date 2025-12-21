@@ -672,17 +672,38 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
+            ["Action_SetPatrolMode"] = async (node, ctx) =>
+            {
+                var npcId = GetPropertyValue<string>(node, "NpcId", "");
+                var modeStr = GetPropertyValue<string>(node, "Mode", "Turns");
+                var turnSpeed = GetPropertyValue<int>(node, "TurnSpeed", 1);
+                var timeInterval = GetPropertyValue<float>(node, "TimeInterval", 5.0f);
+
+                var npc = ctx.GameState.Npcs.FirstOrDefault(n =>
+                    string.Equals(n.Id, npcId, StringComparison.OrdinalIgnoreCase));
+                if (npc != null)
+                {
+                    npc.PatrolMovementMode = modeStr == "Time" ? MovementMode.Time : MovementMode.Turns;
+                    npc.PatrolSpeed = Math.Max(1, turnSpeed);
+                    npc.PatrolTimeInterval = Math.Clamp(timeInterval, 0f, 60f);
+                    // Resetear contadores
+                    npc.PatrolTurnCounter = 0;
+                    npc.PatrolLastMoveTime = DateTime.UtcNow;
+                }
+                await Task.CompletedTask;
+            },
+
             // === NPC FOLLOW HANDLERS ===
             ["Action_FollowPlayer"] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
-                var speed = GetPropertyValue<int>(node, "Speed", 100);
+                var speed = GetPropertyValue<int>(node, "Speed", 1);
                 var npc = ctx.GameState.Npcs.FirstOrDefault(n =>
                     string.Equals(n.Id, npcId, StringComparison.OrdinalIgnoreCase));
                 if (npc != null)
                 {
                     npc.IsFollowingPlayer = true;
-                    npc.FollowSpeed = Math.Clamp(speed, 10, 100);
+                    npc.FollowSpeed = Math.Clamp(speed, 1, 3);
                     npc.FollowMoveCounter = 0;
                 }
                 await Task.CompletedTask;
@@ -696,6 +717,27 @@ public class ScriptEngine
                 if (npc != null)
                 {
                     npc.IsFollowingPlayer = false;
+                }
+                await Task.CompletedTask;
+            },
+
+            ["Action_SetFollowMode"] = async (node, ctx) =>
+            {
+                var npcId = GetPropertyValue<string>(node, "NpcId", "");
+                var modeStr = GetPropertyValue<string>(node, "Mode", "Turns");
+                var turnSpeed = GetPropertyValue<int>(node, "TurnSpeed", 1);
+                var timeInterval = GetPropertyValue<float>(node, "TimeInterval", 3.0f);
+
+                var npc = ctx.GameState.Npcs.FirstOrDefault(n =>
+                    string.Equals(n.Id, npcId, StringComparison.OrdinalIgnoreCase));
+                if (npc != null)
+                {
+                    npc.FollowMovementMode = modeStr == "Time" ? MovementMode.Time : MovementMode.Turns;
+                    npc.FollowSpeed = Math.Clamp(turnSpeed, 1, 3);
+                    npc.FollowTimeInterval = Math.Clamp(timeInterval, 0f, 60f);
+                    // Resetear contadores
+                    npc.FollowMoveCounter = 0;
+                    npc.FollowLastMoveTime = DateTime.UtcNow;
                 }
                 await Task.CompletedTask;
             },

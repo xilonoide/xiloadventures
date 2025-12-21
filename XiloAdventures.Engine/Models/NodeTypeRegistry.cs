@@ -1095,6 +1095,30 @@ public static class NodeTypeRegistry
             }
         });
 
+        Register(new NodeTypeDefinition
+        {
+            TypeId = "Action_SetPatrolMode",
+            DisplayName = "NPC: Modo de Patrulla",
+            Description = "Configura el modo de movimiento de patrulla (por turnos o por tiempo)",
+            Category = NodeCategory.Action,
+            OwnerTypes = new[] { "*" },
+            InputPorts = new[]
+            {
+                new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
+            },
+            OutputPorts = new[]
+            {
+                new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
+            },
+            Properties = new[]
+            {
+                new NodePropertyDefinition { Name = "NpcId", DisplayName = "NPC", DataType = "string", EntityType = "Npc" },
+                new NodePropertyDefinition { Name = "Mode", DisplayName = "Modo", DataType = "enum:Turns=Turnos,Time=Tiempo", DefaultValue = "Turns" },
+                new NodePropertyDefinition { Name = "TurnSpeed", DisplayName = "Velocidad (turnos)", DataType = "int", DefaultValue = 1 },
+                new NodePropertyDefinition { Name = "TimeInterval", DisplayName = "Intervalo (segundos)", DataType = "float", DefaultValue = 3.0f }
+            }
+        });
+
         // === NPC: SEGUIR JUGADOR ===
         Register(new NodeTypeDefinition
         {
@@ -1114,7 +1138,7 @@ public static class NodeTypeRegistry
             Properties = new[]
             {
                 new NodePropertyDefinition { Name = "NpcId", DisplayName = "NPC", DataType = "string", EntityType = "Npc" },
-                new NodePropertyDefinition { Name = "Speed", DisplayName = "Velocidad (%)", DataType = "int", DefaultValue = 100 }
+                new NodePropertyDefinition { Name = "Speed", DisplayName = "Velocidad (turnos)", DataType = "int", DefaultValue = 1 }
             }
         });
 
@@ -1136,6 +1160,30 @@ public static class NodeTypeRegistry
             Properties = new[]
             {
                 new NodePropertyDefinition { Name = "NpcId", DisplayName = "NPC", DataType = "string", EntityType = "Npc" }
+            }
+        });
+
+        Register(new NodeTypeDefinition
+        {
+            TypeId = "Action_SetFollowMode",
+            DisplayName = "NPC: Modo de Seguimiento",
+            Description = "Configura el modo de movimiento de seguimiento (por turnos o por tiempo)",
+            Category = NodeCategory.Action,
+            OwnerTypes = new[] { "*" },
+            InputPorts = new[]
+            {
+                new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
+            },
+            OutputPorts = new[]
+            {
+                new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
+            },
+            Properties = new[]
+            {
+                new NodePropertyDefinition { Name = "NpcId", DisplayName = "NPC", DataType = "string", EntityType = "Npc" },
+                new NodePropertyDefinition { Name = "Mode", DisplayName = "Modo", DataType = "enum:Turns=Turnos,Time=Tiempo", DefaultValue = "Turns" },
+                new NodePropertyDefinition { Name = "TurnSpeed", DisplayName = "Velocidad (turnos)", DataType = "int", DefaultValue = 1 },
+                new NodePropertyDefinition { Name = "TimeInterval", DisplayName = "Intervalo (segundos)", DataType = "float", DefaultValue = 3.0f }
             }
         });
     }

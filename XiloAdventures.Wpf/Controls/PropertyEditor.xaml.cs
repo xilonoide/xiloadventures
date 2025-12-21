@@ -171,7 +171,7 @@ public partial class PropertyEditor : UserControl
             }
 
             // Crear acordeón
-            AddAccordionSection(headerContent, contentPanel);
+            AddAccordionSection(headerContent, contentPanel, obj, group.Name);
         }
 
         // Añadir sección de estadísticas de combate para NPCs
@@ -185,7 +185,7 @@ public partial class PropertyEditor : UserControl
             {
                 AddPropertyControlToPanel(obj, prop, contentPanel);
             }
-            AddAccordionSection(otrosGroup.Name.ToUpper(), contentPanel);
+            AddAccordionSection(otrosGroup.Name.ToUpper(), contentPanel, obj, otrosGroup.Name);
         }
 
         // Añadir botón de sinónimos para objetos, NPCs y puertas
@@ -194,9 +194,9 @@ public partial class PropertyEditor : UserControl
 
     /// <summary>
     /// Crea una sección de acordeón (Expander) con el estilo del editor.
-    /// La primera sección estará expandida, las demás colapsadas.
+    /// La expansión por defecto depende del tipo de objeto y la sección.
     /// </summary>
-    private void AddAccordionSection(object headerContent, UIElement content)
+    private void AddAccordionSection(object headerContent, UIElement content, object? obj = null, string? sectionName = null)
     {
         // Crear el header con el estilo azul
         var headerElement = headerContent is string headerText
@@ -209,11 +209,14 @@ public partial class PropertyEditor : UserControl
             }
             : (UIElement)headerContent;
 
+        // Determinar si la sección debe estar expandida
+        bool isExpanded = ShouldSectionBeExpanded(obj, sectionName, _sectionIndex);
+
         var expander = new Expander
         {
             Header = headerElement,
             Content = content,
-            IsExpanded = _sectionIndex == 0, // Primera sección expandida, resto colapsadas
+            IsExpanded = isExpanded,
             Margin = new Thickness(0, _sectionIndex == 0 ? 0 : 4, 0, 0),
             Background = Brushes.Transparent,
             BorderBrush = Brushes.Transparent,
@@ -230,6 +233,35 @@ public partial class PropertyEditor : UserControl
         RegisterSearchableElements(content, expander);
 
         _sectionIndex++;
+    }
+
+    /// <summary>
+    /// Determina si una sección debe estar expandida por defecto según el tipo de objeto.
+    /// </summary>
+    private bool ShouldSectionBeExpanded(object? obj, string? sectionName, int sectionIndex)
+    {
+        // Si no hay información del objeto, usar el comportamiento por defecto (primera sección expandida)
+        if (obj == null || sectionName == null)
+            return sectionIndex == 0;
+
+        // Player: todos los apartados expandidos
+        if (obj is PlayerDefinition)
+            return true;
+
+        // NPC: Comportamiento expandido, además de la primera sección (Identificación)
+        if (obj is Npc)
+            return sectionIndex == 0 || sectionName.Contains("Comportamiento");
+
+        // Room: Descripción y Comportamiento expandidos, además de la primera sección
+        if (obj is Room)
+            return sectionIndex == 0 || sectionName.Contains("Descripción") || sectionName.Contains("Comportamiento");
+
+        // GameObject: Comportamiento y Estadísticas expandidos, además de la primera sección
+        if (obj is GameObject)
+            return sectionIndex == 0 || sectionName.Contains("Comportamiento") || sectionName.Contains("Estadísticas");
+
+        // Por defecto: solo la primera sección expandida
+        return sectionIndex == 0;
     }
 
     /// <summary>
@@ -584,7 +616,6 @@ public partial class PropertyEditor : UserControl
             ["🔖 Identificación"] = new(),
             ["📝 Descripción"] = new(),
             ["🎵 Multimedia"] = new(),
-            ["🔗 Conexiones"] = new(),
             ["⚙️ Comportamiento"] = new(),
             ["📊 Estadísticas"] = new(),
             ["⚔️ Características"] = new(),
@@ -617,7 +648,6 @@ public partial class PropertyEditor : UserControl
             "🔖 Identificación",
             "📝 Descripción",
             "🎵 Multimedia",
-            "🔗 Conexiones",
             "⚙️ Comportamiento",
             "📊 Estadísticas",
             "⚔️ Características",
@@ -647,9 +677,9 @@ public partial class PropertyEditor : UserControl
         if (name.Contains("Image") || name.Contains("Music"))
             return "🎵 Multimedia";
 
-        // Conexiones (salas, puertas, etc.)
+        // Salas (al final de Identificación)
         if (name is "RoomId" or "RoomIdA" or "RoomIdB" or "StartRoomId" or "TargetRoomId" or "Direction")
-            return "🔗 Conexiones";
+            return "🔖 Identificación";
 
         // Comportamiento (incluyendo propiedades de contenedor de GameObject que irán con sangría)
         if (name is "Visible" or "CanTake" or "Type" or "Gender" or "IsPlural" or "IsContainer" or "IsOpenable" or "IsOpen"
@@ -664,8 +694,8 @@ public partial class PropertyEditor : UserControl
 
         // Propiedades de conversación, comercio, patrulla y seguimiento de NPC
         if (obj is Npc && name is "ConversationId" or "IsShopkeeper" or "ShopInventory" or "BuyPriceMultiplier" or "SellPriceMultiplier"
-            or "IsPatrolling" or "PatrolSpeed"
-            or "IsFollowingPlayer" or "FollowSpeed")
+            or "IsPatrolling" or "PatrolMovementMode" or "PatrolSpeed" or "PatrolTimeInterval"
+            or "IsFollowingPlayer" or "FollowMovementMode" or "FollowSpeed" or "FollowTimeInterval")
             return "⚙️ Comportamiento";
 
         // Propiedades de contenedor de GameObject (se mostrarán con sangría dentro de Comportamiento)
@@ -722,12 +752,13 @@ public partial class PropertyEditor : UserControl
             "MusicBase64" => 3,
             "WorldMusicId" => 4,
             "WorldMusicBase64" => 5,
-            "StartRoomId" => 0,
-            "RoomId" => 1,
-            "RoomIdA" => 2,
-            "RoomIdB" => 3,
-            "Direction" => 4,
-            "TargetRoomId" => 5,
+            // Propiedades de sala al final de Identificación
+            "StartRoomId" => 100,
+            "RoomId" => 101,
+            "RoomIdA" => 102,
+            "RoomIdB" => 103,
+            "Direction" => 104,
+            "TargetRoomId" => 105,
 
             // Orden para propiedades de contenedor (GameObject)
             "Type" => 10,
@@ -746,9 +777,13 @@ public partial class PropertyEditor : UserControl
 
             // Orden para propiedades de patrulla/seguimiento de NPC
             "IsPatrolling" => 30,
-            "PatrolSpeed" => 31,
+            "PatrolMovementMode" => 31,
+            "PatrolSpeed" => 32,
+            "PatrolTimeInterval" => 33,
             "IsFollowingPlayer" => 35,
-            "FollowSpeed" => 36,
+            "FollowMovementMode" => 36,
+            "FollowSpeed" => 37,
+            "FollowTimeInterval" => 38,
 
             // Estadísticas
             "Volume" => 40,
@@ -1103,7 +1138,7 @@ public partial class PropertyEditor : UserControl
 
                 editor = combo;
             }
-            else if (prop.PropertyType.IsEnum)
+            else if (prop.PropertyType.IsEnum && prop.Name != "PatrolMovementMode" && prop.Name != "FollowMovementMode")
             {
                 // Caso especial para OpenFromSide de Door: mostrar nombres de salas
                 if (obj is Door door && prop.Name == "OpenFromSide" && GetRooms != null)
@@ -1514,7 +1549,7 @@ public partial class PropertyEditor : UserControl
                 if (currentValue > 3) currentValue = 3;
 
                 var panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 0) };
-                var options = new[] { (1, "Camina"), (2, "Lento"), (3, "Muy lento") };
+                var options = new[] { (1, "Camina (1)"), (2, "Lento (2)"), (3, "Muy lento (3)") };
 
                 foreach (var (val, text) in options)
                 {
@@ -1538,10 +1573,60 @@ public partial class PropertyEditor : UserControl
                 }
                 editor = panel;
             }
-            // NPC: Velocidad de seguimiento (10-100%)
+            // NPC: Velocidad de seguimiento (1-3) con RadioButtons igual que patrulla
             else if (obj is Npc npcForFollowSpeed && prop.Name == "FollowSpeed" && prop.PropertyType == typeof(int))
             {
-                editor = CreateNpcSpeedSlider(npcForFollowSpeed, prop, minValue: 10, maxValue: 100, suffix: "%");
+                // Convertir valor porcentual antiguo a nuevo sistema 1-3
+                var currentValue = prop.GetValue(npcForFollowSpeed) is int v ? v : 1;
+                // Si viene del sistema antiguo (10-100), convertir a 1-3
+                if (currentValue >= 10) currentValue = currentValue >= 80 ? 1 : (currentValue >= 40 ? 2 : 3);
+                if (currentValue < 1) currentValue = 1;
+                if (currentValue > 3) currentValue = 3;
+
+                var panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 0) };
+                var options = new[] { (1, "Camina (1)"), (2, "Lento (2)"), (3, "Muy lento (3)") };
+
+                foreach (var (val, text) in options)
+                {
+                    var rb = new RadioButton
+                    {
+                        Content = text,
+                        IsChecked = currentValue == val,
+                        Tag = val,
+                        Margin = new Thickness(0, 0, 12, 0),
+                        Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0xA5, 0x00))
+                    };
+                    rb.Checked += (_, _) =>
+                    {
+                        if (_currentObject is Npc target && rb.Tag is int newVal)
+                        {
+                            prop.SetValue(target, newVal);
+                            PropertyEdited?.Invoke(target, prop.Name);
+                        }
+                    };
+                    panel.Children.Add(rb);
+                }
+                editor = panel;
+            }
+            // NPC: Modo de movimiento de patrulla (Turns/Time)
+            else if (obj is Npc npcForPatrolMode && prop.Name == "PatrolMovementMode")
+            {
+                editor = CreateMovementModeComboBox(npcForPatrolMode, prop, isPatrol: true);
+            }
+            // NPC: Intervalo de tiempo de patrulla con RadioButtons
+            else if (obj is Npc npcForPatrolTime && prop.Name == "PatrolTimeInterval" && prop.PropertyType == typeof(float))
+            {
+                editor = CreateTimeIntervalRadioButtons(npcForPatrolTime, prop);
+            }
+            // NPC: Modo de movimiento de seguimiento (Turns/Time)
+            else if (obj is Npc npcForFollowMode && prop.Name == "FollowMovementMode")
+            {
+                editor = CreateMovementModeComboBox(npcForFollowMode, prop, isPatrol: false);
+            }
+            // NPC: Intervalo de tiempo de seguimiento con RadioButtons
+            else if (obj is Npc npcForFollowTime && prop.Name == "FollowTimeInterval" && prop.PropertyType == typeof(float))
+            {
+                editor = CreateTimeIntervalRadioButtons(npcForFollowTime, prop);
             }
             else if (obj is GameInfo gameInfoForParser && prop.Name == "ParserDictionaryJson" && prop.PropertyType == typeof(string))
             {
@@ -2230,9 +2315,13 @@ public partial class PropertyEditor : UserControl
         ["BuyPriceMultiplier"] = "Multiplicador compra",
         ["SellPriceMultiplier"] = "Multiplicador venta",
         ["IsPatrolling"] = "Está patrullando",
-        ["PatrolSpeed"] = "Velocidad patrulla (turnos)",
+        ["PatrolMovementMode"] = "Modo de movimiento",
+        ["PatrolSpeed"] = "Velocidad",
+        ["PatrolTimeInterval"] = "Intervalo",
         ["IsFollowingPlayer"] = "Sigue al jugador",
-        ["FollowSpeed"] = "Velocidad seguimiento (%)",
+        ["FollowMovementMode"] = "Modo de movimiento",
+        ["FollowSpeed"] = "Velocidad",
+        ["FollowTimeInterval"] = "Intervalo",
 
         // Puerta
         ["Door.RoomIdA"] = "Sala A",
@@ -2246,7 +2335,6 @@ public partial class PropertyEditor : UserControl
         // Quest
         ["QuestDefinition.Name"] = "Nombre",
         ["QuestDefinition.Description"] = "Descripción",
-        ["QuestDefinition.StartRoomId"] = "Sala inicial",
         ["QuestDefinition.Objectives"] = "Objetivos",
 
         // Llave
@@ -2471,14 +2559,26 @@ public partial class PropertyEditor : UserControl
                 // IsPatrolling solo visible si NO está siguiendo al jugador
                 "IsPatrolling" => () => !npc.IsFollowingPlayer,
 
-                // PatrolSpeed solo visible si está patrullando Y NO siguiendo
-                "PatrolSpeed" => () => npc.IsPatrolling && !npc.IsFollowingPlayer,
+                // PatrolMovementMode solo visible si está patrullando Y NO siguiendo
+                "PatrolMovementMode" => () => npc.IsPatrolling && !npc.IsFollowingPlayer,
+
+                // PatrolSpeed solo visible si está patrullando Y NO siguiendo Y modo Turns
+                "PatrolSpeed" => () => npc.IsPatrolling && !npc.IsFollowingPlayer && npc.PatrolMovementMode == MovementMode.Turns,
+
+                // PatrolTimeInterval solo visible si está patrullando Y NO siguiendo Y modo Time
+                "PatrolTimeInterval" => () => npc.IsPatrolling && !npc.IsFollowingPlayer && npc.PatrolMovementMode == MovementMode.Time,
 
                 // IsFollowingPlayer solo visible si NO está patrullando
                 "IsFollowingPlayer" => () => !npc.IsPatrolling,
 
-                // FollowSpeed solo visible si está siguiendo Y NO patrullando
-                "FollowSpeed" => () => npc.IsFollowingPlayer && !npc.IsPatrolling,
+                // FollowMovementMode solo visible si está siguiendo Y NO patrullando
+                "FollowMovementMode" => () => npc.IsFollowingPlayer && !npc.IsPatrolling,
+
+                // FollowSpeed solo visible si está siguiendo Y NO patrullando Y modo Turns
+                "FollowSpeed" => () => npc.IsFollowingPlayer && !npc.IsPatrolling && npc.FollowMovementMode == MovementMode.Turns,
+
+                // FollowTimeInterval solo visible si está siguiendo Y NO patrullando Y modo Time
+                "FollowTimeInterval" => () => npc.IsFollowingPlayer && !npc.IsPatrolling && npc.FollowMovementMode == MovementMode.Time,
 
                 // Propiedades de tienda solo visibles si IsShopkeeper = true
                 "ShopInventory" or "BuyPriceMultiplier" or "SellPriceMultiplier"
@@ -2679,6 +2779,151 @@ public partial class PropertyEditor : UserControl
 
         panel.Children.Add(slider);
         panel.Children.Add(valueLabel);
+
+        return panel;
+    }
+
+    /// <summary>
+    /// Crea un ComboBox para seleccionar el modo de movimiento (Turns/Time).
+    /// </summary>
+    private FrameworkElement CreateMovementModeComboBox(Npc npc, PropertyInfo prop, bool isPatrol)
+    {
+        var currentValue = prop.GetValue(npc) is MovementMode m ? m : MovementMode.Turns;
+
+        var options = new List<MovementModeComboItem>
+        {
+            new MovementModeComboItem { Value = MovementMode.Turns, DisplayName = "Turnos" },
+            new MovementModeComboItem { Value = MovementMode.Time, DisplayName = "Tiempo" }
+        };
+
+        var combo = new ComboBox
+        {
+            Margin = new Thickness(0, 2, 0, 0),
+            DisplayMemberPath = nameof(MovementModeComboItem.DisplayName),
+            SelectedValuePath = nameof(MovementModeComboItem.Value),
+            ItemsSource = options
+        };
+
+        combo.SelectedValue = currentValue;
+
+        combo.SelectionChanged += (_, _) =>
+        {
+            if (_currentObject is not Npc target) return;
+            if (combo.SelectedValue is not MovementMode newMode) return;
+
+            prop.SetValue(target, newMode);
+            PropertyEdited?.Invoke(target, prop.Name);
+
+            // Actualizar visibilidad de controles dependientes
+            UpdatePropertyVisibility();
+        };
+
+        return combo;
+    }
+
+    /// <summary>
+    /// Crea un slider para intervalo de tiempo (en segundos).
+    /// </summary>
+    private FrameworkElement CreateTimeIntervalSlider(Npc npc, PropertyInfo prop, int minValue, int maxValue)
+    {
+        var panel = new Grid
+        {
+            Margin = new Thickness(0, 2, 0, 0)
+        };
+        panel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        panel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var currentValue = prop.GetValue(npc) is float v ? v : minValue;
+        if (currentValue < minValue) currentValue = minValue;
+        if (currentValue > maxValue) currentValue = maxValue;
+
+        var slider = new Slider
+        {
+            Minimum = minValue,
+            Maximum = maxValue,
+            Value = currentValue,
+            IsSnapToTickEnabled = true,
+            TickFrequency = 1,
+            SmallChange = 1,
+            LargeChange = 5,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(slider, 0);
+
+        var valueLabel = new TextBlock
+        {
+            Text = $"{(int)currentValue} seg",
+            Width = 80,
+            TextAlignment = TextAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(8, 0, 0, 0),
+            FontWeight = FontWeights.SemiBold,
+            Foreground = new SolidColorBrush(Color.FromRgb(0x00, 0xBF, 0xFF)) // Azul para tiempo
+        };
+        Grid.SetColumn(valueLabel, 1);
+
+        slider.ValueChanged += (_, args) =>
+        {
+            try
+            {
+                if (_currentObject is not Npc target) return;
+
+                var newValue = (float)args.NewValue;
+                if (newValue < minValue) newValue = minValue;
+                if (newValue > maxValue) newValue = maxValue;
+
+                prop.SetValue(target, newValue);
+                valueLabel.Text = $"{(int)newValue} seg";
+                PropertyEdited?.Invoke(target, prop.Name);
+            }
+            catch
+            {
+                // Ignorar errores
+            }
+        };
+
+        panel.Children.Add(slider);
+        panel.Children.Add(valueLabel);
+
+        return panel;
+    }
+
+    /// <summary>
+    /// Crea radio buttons para intervalo de tiempo (Camina=3", Lento=6", Muy lento=10").
+    /// </summary>
+    private FrameworkElement CreateTimeIntervalRadioButtons(Npc npc, PropertyInfo prop)
+    {
+        var currentValue = prop.GetValue(npc) is float v ? v : 3f;
+
+        // Mapear valor actual al más cercano
+        int selectedOption;
+        if (currentValue <= 4.5f) selectedOption = 3;
+        else if (currentValue <= 8f) selectedOption = 6;
+        else selectedOption = 10;
+
+        var panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 0) };
+        var options = new[] { (3f, "Camina (3\")"), (6f, "Lento (6\")"), (10f, "Muy lento (10\")") };
+
+        foreach (var (val, text) in options)
+        {
+            var rb = new RadioButton
+            {
+                Content = text,
+                IsChecked = (int)val == selectedOption,
+                Tag = val,
+                Margin = new Thickness(0, 0, 12, 0),
+                Foreground = new SolidColorBrush(Color.FromRgb(0x00, 0xBF, 0xFF)) // Azul para tiempo
+            };
+            rb.Checked += (_, _) =>
+            {
+                if (_currentObject is Npc target && rb.Tag is float newVal)
+                {
+                    prop.SetValue(target, newVal);
+                    PropertyEdited?.Invoke(target, prop.Name);
+                }
+            };
+            panel.Children.Add(rb);
+        }
 
         return panel;
     }
@@ -2910,6 +3155,15 @@ internal class OpenFromSideComboItem
 internal class GenderComboItem
 {
     public GrammaticalGender Value { get; set; }
+    public string DisplayName { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Item para el ComboBox de selección de modo de movimiento.
+/// </summary>
+internal class MovementModeComboItem
+{
+    public MovementMode Value { get; set; }
     public string DisplayName { get; set; } = string.Empty;
 }
 

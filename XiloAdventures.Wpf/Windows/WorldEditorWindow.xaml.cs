@@ -41,6 +41,7 @@ public partial class WorldEditorWindow : Window
 
     private bool _isPlayRunning;
     private System.Windows.Threading.DispatcherTimer? _autoSyncTimer;
+    private System.Windows.Threading.DispatcherTimer? _testNpcMovementTimer;
 
     // Panel de prueba integrado
     private GameEngine? _testEngine;
@@ -1465,10 +1466,29 @@ public partial class WorldEditorWindow : Window
         TestPanelColumn.Width = new GridLength(520);
         TestPanel.Visibility = Visibility.Visible;
         TestOutputTextBox.Document.Blocks.Clear();
+
+        // Iniciar timer para movimiento de NPCs basado en tiempo
+        _testNpcMovementTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(1)
+        };
+        _testNpcMovementTimer.Tick += (_, _) =>
+        {
+            if (_testEngine != null)
+            {
+                _testEngine.UpdateNpcTimedMovement();
+                UpdateTestDisplay();
+            }
+        };
+        _testNpcMovementTimer.Start();
     }
 
     private void HideTestPanel()
     {
+        // Detener timer de movimiento de NPCs
+        _testNpcMovementTimer?.Stop();
+        _testNpcMovementTimer = null;
+
         TestPanel.Visibility = Visibility.Collapsed;
         TestPanelColumn.Width = new GridLength(0);
         _testSoundManager?.StopMusic();

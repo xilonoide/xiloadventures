@@ -89,6 +89,15 @@ public enum GrammaticalGender
     Feminine    // la, las, una, unas
 }
 
+/// <summary>Modo de movimiento para NPCs.</summary>
+public enum MovementMode
+{
+    /// <summary>Movimiento basado en turnos del jugador.</summary>
+    Turns,
+    /// <summary>Movimiento basado en tiempo real (segundos).</summary>
+    Time
+}
+
 public class GameInfo
 {
     public string Id { get; set; } = string.Empty;
@@ -301,8 +310,14 @@ public class Npc
     /// <summary>Lista ordenada de IDs de salas que forman la ruta de patrulla (modo ping-pong).</summary>
     public List<string> PatrolRoute { get; set; } = new();
 
-    /// <summary>Cada cuántos turnos del jugador se mueve el NPC (1 = cada turno, 3 = cada 3 turnos).</summary>
+    /// <summary>Modo de movimiento de patrulla: Turns = por turnos, Time = por tiempo real.</summary>
+    public MovementMode PatrolMovementMode { get; set; } = MovementMode.Turns;
+
+    /// <summary>Cada cuántos turnos del jugador se mueve el NPC (1 = cada turno, 3 = cada 3 turnos). Solo aplica en modo Turns.</summary>
     public int PatrolSpeed { get; set; } = 1;
+
+    /// <summary>Intervalo en segundos entre movimientos de patrulla (3=Camina, 6=Lento, 10=Muy lento). Solo aplica en modo Time.</summary>
+    public float PatrolTimeInterval { get; set; } = 3.0f;
 
     /// <summary>Si el NPC está patrullando activamente.</summary>
     public bool IsPatrolling { get; set; } = false;
@@ -316,16 +331,28 @@ public class Npc
     /// <summary>Contador de turnos para determinar cuándo mover (estado runtime).</summary>
     [JsonIgnore] public int PatrolTurnCounter { get; set; } = 0;
 
+    /// <summary>Tiempo del último movimiento de patrulla (estado runtime).</summary>
+    [JsonIgnore] public DateTime PatrolLastMoveTime { get; set; } = DateTime.MinValue;
+
     // === SEGUIMIENTO ===
 
     /// <summary>Si el NPC está siguiendo al jugador.</summary>
     public bool IsFollowingPlayer { get; set; } = false;
 
-    /// <summary>Velocidad de seguimiento: 100 = igual que jugador, 10 = 10 veces más lento.</summary>
-    public int FollowSpeed { get; set; } = 100;
+    /// <summary>Modo de movimiento de seguimiento: Turns = por turnos, Time = por tiempo real.</summary>
+    public MovementMode FollowMovementMode { get; set; } = MovementMode.Turns;
+
+    /// <summary>Velocidad de seguimiento: 1 = cada turno, 2 = cada 2 turnos, 3 = cada 3 turnos. Solo aplica en modo Turns.</summary>
+    public int FollowSpeed { get; set; } = 1;
+
+    /// <summary>Intervalo en segundos entre movimientos de seguimiento (3=Camina, 6=Lento, 10=Muy lento). Solo aplica en modo Time.</summary>
+    public float FollowTimeInterval { get; set; } = 3.0f;
 
     /// <summary>Contador de movimientos del jugador para calcular seguimiento (estado runtime).</summary>
     [JsonIgnore] public int FollowMoveCounter { get; set; } = 0;
+
+    /// <summary>Tiempo del último movimiento de seguimiento (estado runtime).</summary>
+    [JsonIgnore] public DateTime FollowLastMoveTime { get; set; } = DateTime.MinValue;
 }
 
 public class CombatStats
@@ -346,7 +373,6 @@ public class QuestDefinition
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = "Misión sin nombre";
     public string Description { get; set; } = string.Empty;
-    public string? StartRoomId { get; set; }
     public List<string> Objectives { get; set; } = new();
 }
 

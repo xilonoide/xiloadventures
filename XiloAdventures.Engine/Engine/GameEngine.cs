@@ -2430,16 +2430,40 @@ public class GameEngine
     }
 
     /// <summary>
-    /// Actualiza las patrullas de todos los NPCs. Llamar después de cada comando del jugador.
+    /// Actualiza las patrullas de todos los NPCs en modo turnos. Llamar después de cada comando del jugador.
     /// </summary>
     private void UpdateNpcPatrols()
     {
-        foreach (var npc in _state.Npcs.Where(n => n.IsPatrolling && !n.IsFollowingPlayer && n.PatrolRoute.Count > 1))
+        foreach (var npc in _state.Npcs.Where(n => n.IsPatrolling && !n.IsFollowingPlayer && n.PatrolRoute.Count > 1 && n.PatrolMovementMode == MovementMode.Turns))
         {
             npc.PatrolTurnCounter++;
             if (npc.PatrolTurnCounter >= npc.PatrolSpeed)
             {
                 npc.PatrolTurnCounter = 0;
+                MoveNpcToNextPatrolPoint(npc);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Actualiza las patrullas de todos los NPCs en modo tiempo. Llamar periódicamente desde el cliente.
+    /// </summary>
+    private void UpdateNpcPatrolsByTime()
+    {
+        var now = DateTime.UtcNow;
+        foreach (var npc in _state.Npcs.Where(n => n.IsPatrolling && !n.IsFollowingPlayer && n.PatrolRoute.Count > 1 && n.PatrolMovementMode == MovementMode.Time))
+        {
+            // Inicializar tiempo si es la primera vez
+            if (npc.PatrolLastMoveTime == DateTime.MinValue)
+            {
+                npc.PatrolLastMoveTime = now;
+                continue;
+            }
+
+            var elapsed = (now - npc.PatrolLastMoveTime).TotalSeconds;
+            if (elapsed >= npc.PatrolTimeInterval)
+            {
+                npc.PatrolLastMoveTime = now;
                 MoveNpcToNextPatrolPoint(npc);
             }
         }
@@ -2477,16 +2501,15 @@ public class GameEngine
     }
 
     /// <summary>
-    /// Actualiza los NPCs que siguen al jugador. Llamar cuando el jugador cambia de sala.
+    /// Actualiza los NPCs en modo turnos que siguen al jugador. Llamar cuando el jugador cambia de sala.
     /// </summary>
     private void UpdateFollowingNpcs(string newRoomId)
     {
-        foreach (var npc in _state.Npcs.Where(n => n.IsFollowingPlayer))
+        foreach (var npc in _state.Npcs.Where(n => n.IsFollowingPlayer && n.FollowMovementMode == MovementMode.Turns))
         {
-            // FollowSpeed: 100 = siempre sigue, 50 = 1 de cada 2, 10 = 1 de cada 10
-            npc.FollowMoveCounter += npc.FollowSpeed;
-
-            if (npc.FollowMoveCounter >= 100)
+            // FollowSpeed: 1 = cada turno, 2 = cada 2 turnos, 3 = cada 3 turnos (igual que patrulla)
+            npc.FollowMoveCounter++;
+            if (npc.FollowMoveCounter >= npc.FollowSpeed)
             {
                 npc.FollowMoveCounter = 0;
                 MoveNpcToRoom(npc, newRoomId);
@@ -2495,17 +2518,17 @@ public class GameEngine
     }
 
     /// <summary>
-    /// Actualiza los NPCs que siguen al jugador cuando el jugador espera.
+    /// Actualiza los NPCs en modo turnos que siguen al jugador cuando el jugador espera.
     /// Los NPCs que no están en la misma sala pueden alcanzar al jugador.
     /// </summary>
     private void UpdateFollowingNpcsOnWait()
     {
         var playerRoomId = _state.CurrentRoomId;
-        foreach (var npc in _state.Npcs.Where(n => n.IsFollowingPlayer))
+        foreach (var npc in _state.Npcs.Where(n => n.IsFollowingPlayer && n.FollowMovementMode == MovementMode.Turns))
         {
-            npc.FollowMoveCounter += npc.FollowSpeed;
-
-            if (npc.FollowMoveCounter >= 100)
+            // FollowSpeed: 1 = cada turno, 2 = cada 2 turnos, 3 = cada 3 turnos
+            npc.FollowMoveCounter++;
+            if (npc.FollowMoveCounter >= npc.FollowSpeed)
             {
                 npc.FollowMoveCounter = 0;
                 // Solo mover si el NPC no está ya en la sala del jugador
@@ -2515,6 +2538,46 @@ public class GameEngine
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Actualiza los NPCs en modo tiempo que siguen al jugador. Llamar periódicamente desde el cliente.
+    /// </summary>
+    private void UpdateFollowingNpcsByTime()
+    {
+        var now = DateTime.UtcNow;
+        var playerRoomId = _state.CurrentRoomId;
+        foreach (var npc in _state.Npcs.Where(n => n.IsFollowingPlayer && n.FollowMovementMode == MovementMode.Time))
+        {
+            // Inicializar tiempo si es la primera vez
+            if (npc.FollowLastMoveTime == DateTime.MinValue)
+            {
+                npc.FollowLastMoveTime = now;
+                continue;
+            }
+
+            // Solo mover si no está en la misma sala que el jugador
+            if (string.Equals(npc.RoomId, playerRoomId, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var elapsed = (now - npc.FollowLastMoveTime).TotalSeconds;
+            if (elapsed >= npc.FollowTimeInterval)
+            {
+                npc.FollowLastMoveTime = now;
+                MoveNpcToRoom(npc, playerRoomId);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Actualiza el movimiento de NPCs basado en tiempo. Llamar periódicamente desde el cliente (cada segundo aprox).
+    /// </summary>
+    public void UpdateNpcTimedMovement()
+    {
+        UpdateNpcPatrolsByTime();
+        UpdateFollowingNpcsByTime();
     }
 
     /// <summary>

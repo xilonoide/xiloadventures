@@ -130,6 +130,7 @@ public partial class MainWindow : Window
     }
 
     private System.Windows.Threading.DispatcherTimer? _systemMessageTimer;
+    private System.Windows.Threading.DispatcherTimer? _npcMovementTimer;
     private Paragraph? _currentSystemMessage;
 
     private void AppendSystemMessage(string text)
@@ -178,6 +179,19 @@ public partial class MainWindow : Window
         _isInitializingCheckbox = true;
         UseLlmCheckBox.IsChecked = _uiSettings.UseLlmForUnknownCommands;
         _isInitializingCheckbox = false;
+
+        // Inicializar timer para movimiento de NPCs basado en tiempo
+        _npcMovementTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(1)
+        };
+        _npcMovementTimer.Tick += (_, _) =>
+        {
+            _engine.UpdateNpcTimedMovement();
+            // Actualizar UI si hay cambios relevantes en la sala actual
+            UpdateRoomVisuals();
+        };
+        _npcMovementTimer.Start();
     }
 
     private void ApplyUiSettings()
@@ -966,6 +980,9 @@ public partial class MainWindow : Window
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
+        // Detener timer de movimiento de NPCs
+        _npcMovementTimer?.Stop();
+
         // Si es un reinicio, no preguntar ni detener música
         if (_skipClosingConfirmation)
         {
