@@ -104,7 +104,12 @@ public class BasicNeedsTests
         var initialThirst = state.Player.DynamicStats.Thirst;
         var initialSleep = state.Player.DynamicStats.Sleep;
 
-        engine.ProcessCommand("mirar");
+        // Con acumuladores fraccionarios:
+        // Hambre: 1.3 por turno -> 1 en primer turno
+        // Sed: 1.0 por turno -> 1 en primer turno
+        // Sueño: 0.7 por turno -> 0 en primer turno, 1 en segundo turno
+        engine.ProcessCommand("esperar");
+        engine.ProcessCommand("esperar"); // Segundo turno para que sueño incremente
 
         Assert.True(state.Player.DynamicStats.Hunger > initialHunger);
         Assert.True(state.Player.DynamicStats.Thirst > initialThirst);
@@ -121,7 +126,7 @@ public class BasicNeedsTests
         var initialThirst = state.Player.DynamicStats.Thirst;
         var initialSleep = state.Player.DynamicStats.Sleep;
 
-        engine.ProcessCommand("mirar");
+        engine.ProcessCommand("esperar");
 
         Assert.Equal(initialHunger, state.Player.DynamicStats.Hunger);
         Assert.Equal(initialThirst, state.Player.DynamicStats.Thirst);
@@ -136,10 +141,14 @@ public class BasicNeedsTests
         var engine = CreateEngine(world, state);
 
         state.Player.DynamicStats.Hunger = 0;
-        engine.ProcessCommand("mirar");
+        // High rate: 1.3 * 1.5 = 1.95 por turno
+        // Turno 1: inc=1, acum=0.95
+        // Turno 2: 0.95+1.95=2.9, inc=2, acum=0.9
+        // Total: 3
+        engine.ProcessCommand("esperar");
+        engine.ProcessCommand("esperar");
 
-        // High rate should increment by ceil(1.5) = 2
-        Assert.Equal(2, state.Player.DynamicStats.Hunger);
+        Assert.Equal(3, state.Player.DynamicStats.Hunger);
     }
 
     [Fact]
@@ -150,9 +159,13 @@ public class BasicNeedsTests
         var engine = CreateEngine(world, state);
 
         state.Player.DynamicStats.Hunger = 0;
-        engine.ProcessCommand("mirar");
+        // Low rate: 1.3 * 0.5 = 0.65 por turno
+        // Turno 1: inc=0, acum=0.65
+        // Turno 2: 0.65+0.65=1.3, inc=1, acum=0.3
+        // Total: 1
+        engine.ProcessCommand("esperar");
+        engine.ProcessCommand("esperar");
 
-        // Low rate should increment by ceil(0.5) = 1
         Assert.Equal(1, state.Player.DynamicStats.Hunger);
     }
 
@@ -166,8 +179,9 @@ public class BasicNeedsTests
         var (world, state) = CreateTestWorld(basicNeedsEnabled: true);
         var engine = CreateEngine(world, state);
 
+        // Hambre: 1.3 por turno, desde 69 cruza 70 en primer turno
         state.Player.DynamicStats.Hunger = 69;
-        var result = engine.ProcessCommand("mirar");
+        var result = engine.ProcessCommand("esperar");
 
         Assert.Contains("hambre", result.Message.ToLower());
     }
@@ -178,8 +192,9 @@ public class BasicNeedsTests
         var (world, state) = CreateTestWorld(basicNeedsEnabled: true);
         var engine = CreateEngine(world, state);
 
+        // Sed: 1.0 por turno, desde 79 cruza 80 en primer turno
         state.Player.DynamicStats.Thirst = 79;
-        var result = engine.ProcessCommand("mirar");
+        var result = engine.ProcessCommand("esperar");
 
         Assert.Contains("sed", result.Message.ToLower());
     }
@@ -190,8 +205,12 @@ public class BasicNeedsTests
         var (world, state) = CreateTestWorld(basicNeedsEnabled: true);
         var engine = CreateEngine(world, state);
 
+        // Sueño: 0.7 por turno, desde 89:
+        // Turno 1: acum=0.7, inc=0, sleep=89
+        // Turno 2: acum=1.4, inc=1, sleep=90 -> cruza umbral
         state.Player.DynamicStats.Sleep = 89;
-        var result = engine.ProcessCommand("mirar");
+        engine.ProcessCommand("esperar"); // Primer turno, no cruza
+        var result = engine.ProcessCommand("esperar"); // Segundo turno, cruza 90
 
         Assert.Contains("sueño", result.Message.ToLower());
         Assert.Contains("crítica", result.Message.ToLower());
@@ -210,8 +229,9 @@ public class BasicNeedsTests
         string? deathType = null;
         engine.PlayerDiedFromNeeds += type => deathType = type;
 
+        // Hambre: 1.3 por turno, desde 99 cruza 100 en primer turno
         state.Player.DynamicStats.Hunger = 99;
-        engine.ProcessCommand("mirar");
+        engine.ProcessCommand("esperar");
 
         Assert.Equal("Hunger", deathType);
     }
@@ -225,8 +245,9 @@ public class BasicNeedsTests
         string? deathType = null;
         engine.PlayerDiedFromNeeds += type => deathType = type;
 
+        // Sed: 1.0 por turno, desde 99 cruza 100 en primer turno
         state.Player.DynamicStats.Thirst = 99;
-        engine.ProcessCommand("mirar");
+        engine.ProcessCommand("esperar");
 
         Assert.Equal("Thirst", deathType);
     }
@@ -240,8 +261,12 @@ public class BasicNeedsTests
         string? deathType = null;
         engine.PlayerDiedFromNeeds += type => deathType = type;
 
+        // Sueño: 0.7 por turno, desde 99:
+        // Turno 1: acum=0.7, inc=0, sleep=99
+        // Turno 2: acum=1.4, inc=1, sleep=100 -> muerte
         state.Player.DynamicStats.Sleep = 99;
-        engine.ProcessCommand("mirar");
+        engine.ProcessCommand("esperar"); // Primer turno
+        engine.ProcessCommand("esperar"); // Segundo turno, muerte
 
         Assert.Equal("Sleep", deathType);
     }
