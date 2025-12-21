@@ -16,6 +16,7 @@ public class ScriptEngine
     private readonly WorldModel _world;
     private readonly Dictionary<string, Func<ScriptNode, ScriptContext, Task>> _nodeHandlers;
     private readonly Random _random = new();
+    private readonly bool _isDebugMode;
 
     /// <summary>
     /// Evento disparado cuando se debe mostrar un mensaje al jugador.
@@ -37,11 +38,18 @@ public class ScriptEngine
     /// </summary>
     public event Action<string>? OnStartConversation;
 
-    public ScriptEngine(WorldModel world, GameState gameState)
+    public ScriptEngine(WorldModel world, GameState gameState, bool isDebugMode = false)
     {
         _world = world;
         _gameState = gameState;
+        _isDebugMode = isDebugMode;
         _nodeHandlers = RegisterNodeHandlers();
+    }
+
+    private void DebugMessage(string message)
+    {
+        if (_isDebugMode)
+            OnMessage?.Invoke(message);
     }
 
     /// <summary>
@@ -52,12 +60,17 @@ public class ScriptEngine
     /// <param name="eventType">Tipo de evento (Event_OnEnter, Event_OnTake, etc.)</param>
     public async Task TriggerEventAsync(string ownerType, string ownerId, string eventType)
     {
+        DebugMessage($"[Debug] Buscando scripts: {ownerType}/{ownerId}/{eventType}");
+
         var scripts = _world.Scripts.Where(s =>
             string.Equals(s.OwnerType, ownerType, StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(s.OwnerId, ownerId, StringComparison.OrdinalIgnoreCase));
+            string.Equals(s.OwnerId, ownerId, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        DebugMessage($"[Debug] Encontrados {scripts.Count} scripts para {ownerType}/{ownerId}");
 
         foreach (var script in scripts)
         {
+            DebugMessage($"[Debug] Ejecutando script: {script.Name} ({script.Id})");
             await ExecuteEventAsync(script, eventType);
         }
     }
@@ -216,6 +229,7 @@ public class ScriptEngine
                 var hasItem = !string.IsNullOrEmpty(objectId) &&
                               ctx.GameState.InventoryObjectIds.Any(id =>
                                   string.Equals(id, objectId, StringComparison.OrdinalIgnoreCase));
+                DebugMessage($"[Debug] Condition_HasItem({objectId}): {hasItem} (inventario: {string.Join(", ", ctx.GameState.InventoryObjectIds)})");
                 ctx.NextOutputPort = hasItem ? "True" : "False";
                 await Task.CompletedTask;
             },

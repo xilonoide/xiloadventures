@@ -41,7 +41,7 @@ public class GameEngine
         _lastRealTime = DateTime.Now;
 
         // Reinicializar el motor de scripts con el nuevo estado
-        _scriptEngine = new ScriptEngine(_world, _state);
+        _scriptEngine = new ScriptEngine(_world, _state, _isDebugMode);
         _scriptEngine.OnMessage += message => ScriptMessage?.Invoke(message);
         _scriptEngine.OnPlaySound += soundId =>
         {
@@ -177,7 +177,7 @@ public class GameEngine
         EnsurePlayerRoom();
 
         // Inicializar el motor de scripts
-        _scriptEngine = new ScriptEngine(_world, _state);
+        _scriptEngine = new ScriptEngine(_world, _state, _isDebugMode);
         _scriptEngine.OnMessage += message => ScriptMessage?.Invoke(message);
         _scriptEngine.OnPlaySound += soundId =>
         {
@@ -1074,12 +1074,8 @@ public class GameEngine
                 obj.IsOpen = true;
                 // Disparar evento de contenedor abierto
                 _ = TriggerEntityScriptAsync("GameObject", obj.Id, "Event_OnContainerOpen");
-                // Solo mostrar mensaje por defecto si no hay script con mensaje personalizado
-                if (HasScriptWithMessage("GameObject", obj.Id, "Event_OnContainerOpen"))
-                    return CommandResult.Empty;
-
-                // Si el contenido estaba oculto y hay objetos, listarlos
-                var openMessage = $"Abres {Low(obj.Name)}.";
+                // Preparar mensaje de contenidos si estaban ocultos
+                string? contentsMessage = null;
                 if (wasContentHidden && obj.ContainedObjectIds.Any())
                 {
                     var contents = obj.ContainedObjectIds
@@ -1091,9 +1087,22 @@ public class GameEngine
 
                     if (contents.Any())
                     {
-                        openMessage += $"\nDentro encuentras: {string.Join(", ", contents)}.";
+                        contentsMessage = $"Dentro encuentras: {string.Join(", ", contents)}.";
                     }
                 }
+
+                // Si hay script con mensaje personalizado, añadir contenidos después
+                if (HasScriptWithMessage("GameObject", obj.Id, "Event_OnContainerOpen"))
+                {
+                    if (contentsMessage != null)
+                        ScriptMessage?.Invoke(contentsMessage);
+                    return CommandResult.Empty;
+                }
+
+                // Sin script: mostrar mensaje por defecto con contenidos
+                var openMessage = $"Abres {Low(obj.Name)}.";
+                if (contentsMessage != null)
+                    openMessage += "\n" + contentsMessage;
                 return CommandResult.Success(openMessage);
             }
             return CommandResult.Error(message);

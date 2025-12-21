@@ -412,11 +412,6 @@ public partial class WorldEditorWindow : Window
             }
         }
 
-        // Seleccionar por defecto el nodo Juego al (re)construir el árbol solo si no hay nodos expandidos
-        if (expandedNodes.Count == 0)
-        {
-            SelectGameTreeNode();
-        }
     }
 
     private void SelectGameTreeNode()
@@ -448,10 +443,21 @@ public partial class WorldEditorWindow : Window
             PropertyEditor.SetObject(null);
             MapPanel.SetSelectedRoom(null);
             MapPanel.SetVisiblePatrolRoutes(null);
+            PropertyScrollViewer.Visibility = Visibility.Collapsed;
             return;
         }
 
-        PropertyEditor.SetObject(item.Tag);
+        // Solo mostrar propiedades si el nodo tiene un objeto asociado
+        if (item.Tag != null)
+        {
+            PropertyScrollViewer.Visibility = Visibility.Visible;
+            PropertyEditor.SetObject(item.Tag);
+        }
+        else
+        {
+            PropertyScrollViewer.Visibility = Visibility.Collapsed;
+            PropertyEditor.SetObject(null);
+        }
 
         if (item.Tag is Room room)
         {
