@@ -96,6 +96,7 @@
                                   Content="Usar IA"
                                   Foreground="White"
                                   VerticalAlignment="Center"
+                                  VerticalContentAlignment="Center"
                                   Checked="UseLlmCheckBox_Changed"
                                   Unchecked="UseLlmCheckBox_Changed"
                                   Margin="0,0,8,0"/>

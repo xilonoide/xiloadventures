@@ -31,5 +31,9 @@
     <Resource Include="..\XiloAdventures.Wpf.Common\appicon.ico" Link="appicon.ico" />
     <!-- Include shared styles directly so single-file EXE can resolve them -->
     <Resource Include="..\XiloAdventures.Wpf.Common\Styles\CommonStyles.xaml" Link="Styles\CommonStyles.xaml" />
+    <!-- Archivo de ejemplo compartido -->
+    <Content Include="..\XiloAdventures.Wpf.Common\ejemplo.xaw" Link="worlds\ejemplo.xaw">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>
