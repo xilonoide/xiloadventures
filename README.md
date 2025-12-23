@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/UI-WPF-0d5a8f?logo=windows&logoColor=white" alt="WPF">
   <img src="https://img.shields.io/badge/Language-C%23-239120?logo=csharp&logoColor=white" alt="C#">
   <img src="https://img.shields.io/badge/Estado-Activo-success" alt="Estado">
-  <img src="https://img.shields.io/badge/Tests-177%20passing-brightgreen" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-705%20passing-brightgreen" alt="Tests">
 </p>
 
 <p align="center">
@@ -55,7 +55,7 @@ El corazón de XiloAdventures es su editor de mapas intuitivo y potente:
 
 Crea lógica compleja para tu aventura **sin programar**, usando un sistema visual de nodos:
 
-**Eventos (25 tipos)**
+**Eventos (35+ tipos)**
 - Eventos de juego: inicio, fin, cada minuto/hora
 - Eventos de sala: entrar, salir
 - Eventos de puerta: abrir, cerrar, bloquear, desbloquear, llamar
@@ -63,19 +63,25 @@ Crea lógica compleja para tu aventura **sin programar**, usando un sistema visu
 - Eventos de objeto: coger, soltar, usar, examinar, abrir/cerrar contenedor
 - Eventos de misión: iniciar, completar, fallar, completar objetivo
 - Eventos de tiempo: cambio de turno, cambio de clima
+- **Eventos de combate**: inicio, victoria, derrota, huida, ataque, daño
+- **Eventos de comercio**: abrir tienda, cerrar tienda, comprar, vender
 
-**Condiciones (12 tipos)**
+**Condiciones (20+ tipos)**
 - Verificar inventario, sala actual, estado de misión
 - Comprobar flags y contadores
 - Verificar hora del día, estado de puertas, visibilidad de NPCs
 - Probabilidad aleatoria
+- **Condiciones de combate**: salud del jugador/NPC, turno, en combate
+- **Condiciones de comercio**: en comercio, oro del jugador/NPC, tiene objeto
 
-**Acciones (22 tipos)**
+**Acciones (35+ tipos)**
 - Mostrar mensajes, dar/quitar objetos, gestionar oro
 - Teletransportar jugador, mover NPCs
 - Abrir/cerrar/bloquear/desbloquear puertas
 - Gestionar misiones, flags y contadores
 - Reproducir sonidos, iniciar conversaciones
+- **Acciones de combate**: curar, dañar, forzar victoria/derrota, huida
+- **Acciones de comercio**: abrir/cerrar tienda, modificar precios, añadir/quitar items
 
 **Control de flujo**
 - Bifurcaciones condicionales (if-else)
@@ -136,6 +142,44 @@ Objetos con propiedades ricas y realistas:
 - **Textos legibles**: Documentos, libros, cartas con contenido
 - **Género gramatical**: Artículos correctos en español (el/la)
 - **Precios**: Para el sistema de comercio
+
+### Sistema de Combate D20
+
+Sistema de combate por turnos inspirado en D&D:
+
+- **Iniciativa**: Tirada D20 + Destreza para determinar quién ataca primero
+- **Ataques físicos**: Tirada D20 + Fuerza vs Defensa enemiga
+- **Ataques mágicos**: Tirada D20 + Inteligencia con habilidades especiales
+- **Defensas mágicas**: Escudos y contraataques con coste de maná
+- **Daño crítico**: 20 natural = daño doble
+- **Fallos críticos**: 1 natural = fallo automático
+- **Huida**: Posibilidad de escapar del combate
+- **Uso de objetos**: Consumibles durante el combate
+- **Eventos de scripting**: Scripts que se disparan en inicio, victoria, derrota
+- **Botín**: Al derrotar un NPC, se convierte en cadáver saqueeable
+
+### Sistema de Comercio
+
+Compra y vende objetos con NPCs comerciantes:
+
+- **Tiendas de NPC**: Cualquier NPC puede ser configurado como comerciante
+- **Inventario de tienda**: Lista personalizable de objetos en venta
+- **Multiplicadores de precio**: Compra al 50% y vende al 100% (configurable)
+- **Oro del NPC**: Limitado o infinito según configuración
+- **Oro del jugador**: Gestión automática del inventario monetario
+- **Eventos de scripting**: Scripts al comprar, vender, abrir o cerrar tienda
+- **Interfaz visual**: Ventana de comercio integrada en el jugador
+
+### Sistema de Necesidades Básicas
+
+Simula necesidades realistas del personaje:
+
+- **Hambre**: Aumenta con el tiempo, se reduce comiendo
+- **Sed**: Aumenta con el tiempo, se reduce bebiendo
+- **Sueño**: Aumenta con el tiempo, se reduce durmiendo
+- **Velocidad configurable**: Baja, Normal o Alta por necesidad
+- **Muerte por necesidad**: El personaje muere si alguna necesidad llega a 100
+- **Eventos de scripting**: Scripts al comer, beber, dormir o morir
 
 ### Sistema de Puertas y Llaves
 
@@ -321,11 +365,54 @@ Distribuye juegos sin el editor:
 | `XiloAdventures.Wpf.Player` | Player standalone para distribución |
 | `XiloAdventures.Tests` | Tests unitarios y de integración (xUnit) |
 
+### Arquitectura del Motor (XiloAdventures.Engine)
+
+```
+XiloAdventures.Engine/
+├── Engine/                    # Componentes principales del motor
+│   ├── GameEngine.cs          # Motor principal del juego
+│   ├── CombatEngine.cs        # Sistema de combate D20
+│   ├── TradeEngine.cs         # Sistema de comercio
+│   ├── ScriptEngine.cs        # Motor de scripts visuales
+│   ├── ConversationEngine.cs  # Sistema de diálogos
+│   ├── Parser.cs              # Análisis de comandos del jugador
+│   ├── DoorService.cs         # Gestión de puertas y llaves
+│   ├── SoundManager.cs        # Gestión de audio
+│   ├── SaveManager.cs         # Guardado/carga de partidas
+│   ├── WorldLoader.cs         # Carga de mundos (.xaw)
+│   └── CryptoUtil.cs          # Cifrado AES-CBC
+│
+├── Interfaces/                # Contratos para componentes principales
+│   ├── ICombatEngine.cs       # Interface del sistema de combate
+│   ├── ITradeEngine.cs        # Interface del sistema de comercio
+│   └── ISoundManager.cs       # Interface del gestor de audio
+│
+└── Models/                    # Modelos de datos del juego
+    ├── Enumerations.cs        # Enums centralizados
+    ├── WorldModel.cs          # Contenedor principal del mundo
+    ├── GameInfo.cs            # Configuración del juego
+    ├── Room.cs                # Salas y salidas
+    ├── GameObject.cs          # Objetos interactivos
+    ├── Npc.cs                 # NPCs y estadísticas de combate
+    ├── Player.cs              # Estadísticas y estado del jugador
+    ├── GameState.cs           # Estado de la partida
+    ├── Quest.cs               # Definiciones de misiones
+    ├── Door.cs                # Puertas y cerraduras
+    ├── CombatState.cs         # Estado del combate activo
+    ├── CombatAbility.cs       # Habilidades de combate
+    ├── DiceRolls.cs           # Resultados de tiradas D20
+    ├── TradeModels.cs         # Modelos de comercio
+    ├── ConversationModels.cs  # Modelos de diálogos
+    ├── ScriptModels.cs        # Modelos de scripts visuales
+    ├── NodeTypeRegistry.cs    # Registro de tipos de nodos
+    └── Assets.cs              # Recursos multimedia
+```
+
 ---
 
 ## Tests
 
-El proyecto incluye **177 tests** que verifican el correcto funcionamiento de todos los componentes:
+El proyecto incluye **705 tests** que verifican el correcto funcionamiento de todos los componentes:
 
 ### Tests Unitarios
 
@@ -336,6 +423,11 @@ El proyecto incluye **177 tests** que verifican el correcto funcionamiento de to
 | DoorService | 12 | Puertas, llaves, estados, restricciones de lado |
 | NodeTypeRegistry | 27 | Tipos de nodos del editor de scripts |
 | ScriptValidator | 10 | Validación de scripts |
+| CombatEngine | 80+ | Sistema de combate D20, ataques, defensa, huida, magia |
+| TradeEngine | 40+ | Compra/venta, precios, inventarios, oro |
+| ScriptEngine (Trade) | 25+ | Nodos de scripting para comercio |
+| ScriptEngine (Combat) | 30+ | Nodos de scripting para combate |
+| BasicNeeds | 45+ | Sistema de hambre, sed, sueño, muerte |
 | WorldLoader | 2 | Carga/guardado de mundos |
 | SaveManager | 2 | Guardado/carga de partidas |
 | CryptoUtil | 2 | Cifrado/descifrado |
@@ -349,6 +441,8 @@ El proyecto incluye **177 tests** que verifican el correcto funcionamiento de to
 | Escenario | Tests |
 |-----------|-------|
 | Flujo de juego completo | 36 |
+| Integración de comercio | 15+ |
+| Integración de combate | 20+ |
 
 ```bash
 # Ejecutar todos los tests

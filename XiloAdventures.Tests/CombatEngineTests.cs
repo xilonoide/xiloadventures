@@ -1517,10 +1517,15 @@ public class CombatEngineTests
         engine.RollNpcInitiative();
         engine.ResolveInitiative();
 
-        // If NPC goes first, execute their turn
-        if (state.ActiveCombat?.Phase == CombatPhase.NpcAction)
+        // Keep executing until we're in PlayerAction phase
+        int safetyCounter = 0;
+        while (state.ActiveCombat?.Phase != CombatPhase.PlayerAction && safetyCounter < 10)
         {
-            engine.ExecuteNpcTurn();
+            if (state.ActiveCombat?.Phase == CombatPhase.NpcAction)
+            {
+                engine.ExecuteNpcTurn();
+            }
+            safetyCounter++;
         }
     }
 
@@ -1551,9 +1556,15 @@ public class CombatEngineTests
         engine.RollNpcInitiative();
         engine.ResolveInitiative();
 
-        if (state.ActiveCombat?.Phase == CombatPhase.NpcAction)
+        // Keep executing until we're in PlayerAction phase
+        int safetyCounter = 0;
+        while (state.ActiveCombat?.Phase != CombatPhase.PlayerAction && safetyCounter < 10)
         {
-            engine.ExecuteNpcTurn();
+            if (state.ActiveCombat?.Phase == CombatPhase.NpcAction)
+            {
+                engine.ExecuteNpcTurn();
+            }
+            safetyCounter++;
         }
     }
 

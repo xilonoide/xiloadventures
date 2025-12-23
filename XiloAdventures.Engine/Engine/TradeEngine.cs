@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using XiloAdventures.Engine.Interfaces;
 using XiloAdventures.Engine.Models;
 
 namespace XiloAdventures.Engine;
@@ -8,7 +9,7 @@ namespace XiloAdventures.Engine;
 /// <summary>
 /// Motor de comercio para gestionar compra/venta entre jugador y NPCs comerciantes.
 /// </summary>
-public class TradeEngine
+public class TradeEngine : ITradeEngine
 {
     private readonly GameState _gameState;
     private Npc? _currentMerchant;

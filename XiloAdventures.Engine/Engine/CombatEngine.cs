@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using XiloAdventures.Engine.Interfaces;
 using XiloAdventures.Engine.Models;
 
 namespace XiloAdventures.Engine;
@@ -7,7 +8,7 @@ namespace XiloAdventures.Engine;
 /// <summary>
 /// Motor de combate por turnos con sistema de dados D20.
 /// </summary>
-public class CombatEngine
+public class CombatEngine : ICombatEngine
 {
     private readonly GameState _state;
     private readonly Random _random = new();
