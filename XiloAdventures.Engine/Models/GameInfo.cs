@@ -130,5 +130,15 @@ public class GameInfo
     /// </summary>
     public string SleepDeathText { get; set; } = "Has muerto de agotamiento. Tu cuerpo colapsó por falta de sueño.";
 
+    /// <summary>
+    /// Texto de muerte por perder toda la salud.
+    /// </summary>
+    public string HealthDeathText { get; set; } = "Has muerto. Tus heridas fueron demasiado graves.";
+
+    /// <summary>
+    /// Texto de muerte por perder toda la cordura.
+    /// </summary>
+    public string SanityDeathText { get; set; } = "Tu mente se ha quebrado. La locura te consume por completo.";
+
     #endregion
 }

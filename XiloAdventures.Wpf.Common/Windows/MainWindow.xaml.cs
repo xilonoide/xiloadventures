@@ -15,6 +15,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Microsoft.Win32;
 using XiloAdventures.Engine;
+using XiloAdventures.Engine.Engine;
 using XiloAdventures.Engine.Models;
 using XiloAdventures.Wpf.Common.Ui;
 using XiloAdventures.Wpf.Common.Services;
@@ -39,6 +40,7 @@ public partial class MainWindow : Window
     private int _commandHistoryIndex = -1;
     private bool _isInitializingCheckbox;
     private bool _skipClosingConfirmation;
+    private bool _gameEnded;
 
     // Mapa de salas visitadas
     private readonly HashSet<string> _visitedRooms = new();
@@ -870,6 +872,10 @@ public partial class MainWindow : Window
     {
         Dispatcher.Invoke(() =>
         {
+            // Evitar mostrar el EndingWindow más de una vez
+            if (_gameEnded) return;
+            _gameEnded = true;
+
             // Buscar la música de finalización en la biblioteca
             string? endingMusicBase64 = null;
             if (!string.IsNullOrEmpty(_world.Game.EndingMusicId))
@@ -896,6 +902,10 @@ public partial class MainWindow : Window
                 _skipClosingConfirmation = true;
                 Close();
             }
+            else
+            {
+                _gameEnded = false; // Permitir otro ciclo de juego en el editor
+            }
         });
     }
 
@@ -903,11 +913,17 @@ public partial class MainWindow : Window
     {
         Dispatcher.Invoke(() =>
         {
+            // Evitar mostrar el EndingWindow más de una vez
+            if (_gameEnded) return;
+            _gameEnded = true;
+
             var deathText = deathType switch
             {
-                "Hunger" => _world.Game.HungerDeathText,
-                "Thirst" => _world.Game.ThirstDeathText,
-                "Sleep" => _world.Game.SleepDeathText,
+                "Hunger" => RandomMessages.HungerDeath,
+                "Thirst" => RandomMessages.ThirstDeath,
+                "Sleep" => RandomMessages.SleepDeath,
+                "Health" => RandomMessages.HealthDeath,
+                "Sanity" => RandomMessages.SanityDeath,
                 _ => "Has muerto."
             };
 
@@ -925,6 +941,7 @@ public partial class MainWindow : Window
             // Si se ejecuta desde el editor, reiniciar el juego
             if (_isRunningFromEditor)
             {
+                _gameEnded = false; // Permitir otro ciclo de juego
                 var newState = WorldLoader.CreateInitialState(_world);
                 _engine.LoadState(newState);
                 UpdateStatusPanel();

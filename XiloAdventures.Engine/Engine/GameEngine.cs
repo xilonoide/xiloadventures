@@ -596,6 +596,9 @@ public class GameEngine
             result = result.AppendMessage(needsMessage);
         }
 
+        // Verificar stats vitales (salud y cordura)
+        CheckVitalStats();
+
         return result;
     }
 
@@ -3322,6 +3325,25 @@ public class GameEngine
         CheckNeedThreshold(oldSleep, stats.Sleep, "sueño", messages);
 
         return messages.Count > 0 ? string.Join("\n", messages) : null;
+    }
+
+    /// <summary>
+    /// Verifica si el jugador ha muerto por perder toda la salud o cordura.
+    /// </summary>
+    private void CheckVitalStats()
+    {
+        var stats = _state.Player.DynamicStats;
+
+        if (stats.Health <= 0)
+        {
+            PlayerDiedFromNeeds?.Invoke("Health");
+            return;
+        }
+
+        if (stats.Sanity <= 0)
+        {
+            PlayerDiedFromNeeds?.Invoke("Sanity");
+        }
     }
 
     private void CheckNeedThreshold(int oldValue, int newValue, string needName, List<string> messages)
