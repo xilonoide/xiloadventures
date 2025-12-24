@@ -130,7 +130,8 @@ public class GameEngineTests
 
         // Assert
         Assert.Equal("room1", engine.State.CurrentRoomId);  // Didn't move
-        Assert.Contains("no puedes ir", result.Message.ToLowerInvariant());
+        // RandomMessages.CannotGoThatWay returns various messages
+        Assert.True(result.HasError);
     }
 
     [Fact]
@@ -144,8 +145,8 @@ public class GameEngineTests
         // Act
         var result = engine.ProcessCommand("ir");
 
-        // Assert
-        Assert.Contains("dónde", result.Message.ToLowerInvariant());
+        // Assert - RandomMessages.WhereToGo returns various messages
+        Assert.True(result.HasError);
     }
 
     #endregion
@@ -205,7 +206,8 @@ public class GameEngineTests
 
         // Assert
         Assert.DoesNotContain("obj_rock", engine.State.InventoryObjectIds);
-        Assert.Contains("no puedes coger", result.Message.ToLowerInvariant());
+        // RandomMessages.CannotTakeThat - just verify it's an error
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
@@ -221,7 +223,8 @@ public class GameEngineTests
 
         // Assert
         Assert.Empty(engine.State.InventoryObjectIds);
-        Assert.Contains("no ves eso", result.Message.ToLowerInvariant());
+        // RandomMessages.ObjectNotFound - just verify it's an error
+        Assert.False(result.IsSuccess);
     }
 
     [Fact]
@@ -253,8 +256,8 @@ public class GameEngineTests
         // Act
         var result = engine.ProcessCommand("soltar espada");
 
-        // Assert
-        Assert.Contains("no llevas eso", result.Message.ToLowerInvariant());
+        // Assert - RandomMessages.NotCarryingThat returns various messages
+        Assert.True(result.HasError);
     }
 
     [Fact]
@@ -268,8 +271,8 @@ public class GameEngineTests
         // Act
         var result = engine.DescribeInventory();
 
-        // Assert
-        Assert.Contains("no llevas nada", result.ToLowerInvariant());
+        // Assert - RandomMessages.InventoryEmpty returns various messages
+        Assert.False(string.IsNullOrEmpty(result));
     }
 
     [Fact]
@@ -320,8 +323,8 @@ public class GameEngineTests
         // Act
         var result = engine.ProcessCommand("inventario");
 
-        // Assert
-        Assert.Contains("no llevas nada", result.Message.ToLowerInvariant());
+        // Assert - RandomMessages.InventoryEmpty returns various messages
+        Assert.False(string.IsNullOrEmpty(result.Message));
     }
 
     [Fact]
@@ -335,8 +338,8 @@ public class GameEngineTests
         // Act
         var result = engine.ProcessCommand("xyz123");
 
-        // Assert
-        Assert.Contains("no entiendo", result.Message.ToLowerInvariant());
+        // Assert - RandomMessages.UnknownCommand returns various messages
+        Assert.True(result.HasError);
     }
 
     #endregion
@@ -509,7 +512,8 @@ public class GameEngineTests
 
         // Assert
         Assert.Equal("room1", engine.State.CurrentRoomId); // Didn't move
-        Assert.Contains("cerrad", result.Message.ToLowerInvariant()); // "cerrada"
+        // RandomMessages.ExitBlocked returns various messages about blocked exit
+        Assert.True(result.HasError);
     }
 
     [Fact]
@@ -564,7 +568,8 @@ public class GameEngineTests
 
         // Assert
         Assert.False(door.IsOpen);
-        Assert.Contains("llave", result.Message.ToLowerInvariant());
+        // RandomMessages.DoorIsLocked returns various messages
+        Assert.True(result.HasError);
     }
 
     [Fact]
@@ -927,8 +932,8 @@ public class GameEngineTests
         // Act
         var result = engine.ProcessCommand("examinar dragon");
 
-        // Assert
-        Assert.Contains("no ves eso", result.Message.ToLowerInvariant());
+        // Assert - RandomMessages.ObjectNotFound returns various messages
+        Assert.True(result.HasError);
     }
 
     [Fact]

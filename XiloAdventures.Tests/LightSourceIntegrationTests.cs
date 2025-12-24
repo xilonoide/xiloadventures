@@ -461,26 +461,25 @@ public class LightSourceIntegrationTests
         var engine = new GameEngine(world, state, CreateMockSoundManager());
         engine.TriggerInitialScripts();
 
-        // Room should be dark initially
+        // Room should be dark initially (room description not visible)
         var descBefore = engine.DescribeCurrentRoom();
-        Assert.Contains("oscuro", descBefore.ToLower());
+        Assert.DoesNotContain("habitación", descBefore.ToLower());
 
         // Ignite the torch
         var igniteResult = engine.ProcessCommand("encender antorcha");
         Assert.True(igniteResult.IsSuccess);
 
-        // Room should now be lit
+        // Room should now be lit (room description visible)
         var descAfter = engine.DescribeCurrentRoom();
-        Assert.DoesNotContain("oscuro", descAfter.ToLower());
         Assert.Contains("habitación", descAfter.ToLower());
 
         // Extinguish the torch
         var extinguishResult = engine.ProcessCommand("apagar antorcha");
         Assert.True(extinguishResult.IsSuccess);
 
-        // Room should be dark again
+        // Room should be dark again (room description not visible)
         var descFinal = engine.DescribeCurrentRoom();
-        Assert.Contains("oscuro", descFinal.ToLower());
+        Assert.DoesNotContain("habitación", descFinal.ToLower());
     }
 
     [Fact]
@@ -553,22 +552,21 @@ public class LightSourceIntegrationTests
         var engine = new GameEngine(world, state, CreateMockSoundManager());
         engine.TriggerInitialScripts();
 
-        // Room 1 is dark
-        Assert.Contains("oscuro", engine.DescribeCurrentRoom().ToLower());
+        // Room 1 is dark (room description not visible)
+        Assert.DoesNotContain("primera habitación", engine.DescribeCurrentRoom().ToLower());
 
         // Pick up and light the torch
         engine.ProcessCommand("coger antorcha");
         engine.ProcessCommand("encender antorcha");
 
-        // Room 1 should now be lit
-        Assert.DoesNotContain("oscuro", engine.DescribeCurrentRoom().ToLower());
+        // Room 1 should now be lit (room description visible)
+        Assert.Contains("primera habitación", engine.DescribeCurrentRoom().ToLower());
 
         // Move to room 2
         engine.ProcessCommand("ir norte");
 
         // Room 2 should also be lit (torch is in inventory)
         var desc = engine.DescribeCurrentRoom();
-        Assert.DoesNotContain("oscuro", desc.ToLower());
         Assert.Contains("segunda habitación", desc.ToLower());
     }
 
@@ -600,10 +598,11 @@ public class LightSourceIntegrationTests
         var result = engine.ProcessCommand("esperar"); // Turn 4: expires
         Assert.False(torch.IsLit);
         Assert.Equal(0, torch.LightTurnsRemaining);
-        Assert.Contains("se apaga", result.Message.ToLower());
+        // RandomMessages.LightGoesOut contiene el nombre del objeto
+        Assert.Contains("antorcha", result.Message.ToLower());
 
-        // Room should now be dark
-        Assert.Contains("oscuro", engine.DescribeCurrentRoom().ToLower());
+        // Room should now be dark (room description not visible)
+        Assert.DoesNotContain("habitación", engine.DescribeCurrentRoom().ToLower());
     }
 
     #endregion
