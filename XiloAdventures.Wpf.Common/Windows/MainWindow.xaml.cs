@@ -135,6 +135,7 @@ public partial class MainWindow : Window
     private System.Windows.Threading.DispatcherTimer? _systemMessageTimer;
     private System.Windows.Threading.DispatcherTimer? _npcMovementTimer;
     private Paragraph? _currentSystemMessage;
+    private bool _lastRoomLitState = true;
 
     private void AppendSystemMessage(string text)
     {
@@ -191,10 +192,14 @@ public partial class MainWindow : Window
         _npcMovementTimer.Tick += (_, _) =>
         {
             _engine.UpdateNpcTimedMovement();
-            // Solo actualizar visuals si la sala está iluminada (evita cambio constante de mensajes de oscuridad)
-            if (_engine.IsCurrentRoomLit)
+
+            var currentLitState = _engine.IsCurrentRoomLit;
+
+            // Actualizar si: sala iluminada, o el estado de iluminación cambió
+            if (currentLitState || currentLitState != _lastRoomLitState)
             {
                 UpdateRoomVisuals();
+                _lastRoomLitState = currentLitState;
             }
         };
         _npcMovementTimer.Start();
@@ -888,6 +893,7 @@ public partial class MainWindow : Window
             // Cerrar MainWindow si no estamos en modo editor
             if (!_isRunningFromEditor)
             {
+                _skipClosingConfirmation = true;
                 Close();
             }
         });
@@ -928,6 +934,7 @@ public partial class MainWindow : Window
             else
             {
                 // Cerrar MainWindow, lo que devolverá control a StartupWindow
+                _skipClosingConfirmation = true;
                 Close();
             }
         });
@@ -942,7 +949,38 @@ public partial class MainWindow : Window
         RoomTitleText.Text = room.Name;
         RoomDescriptionText.Text = _engine.DescribeCurrentRoom();
 
-        RoomImage.Source = TryLoadRoomImage(room.ImageBase64) ?? DefaultRoomImage;
+        // Solo mostrar la imagen si la sala está iluminada
+        if (_engine.IsCurrentRoomLit)
+        {
+            RoomImage.Source = TryLoadRoomImage(room.ImageBase64) ?? DefaultRoomImage;
+        }
+        else
+        {
+            RoomImage.Source = DarkRoomImage ?? DefaultRoomImage;
+        }
+    }
+
+    private static readonly System.Windows.Media.Imaging.BitmapSource? DarkRoomImage = CreateDarkRoomImage();
+
+    private static System.Windows.Media.Imaging.BitmapSource? CreateDarkRoomImage()
+    {
+        try
+        {
+            // Crear una imagen negra de 256x256 píxeles
+            const int width = 256;
+            const int height = 256;
+            var pixels = new byte[width * height * 4]; // BGRA format, all zeros = black
+            var bmp = System.Windows.Media.Imaging.BitmapSource.Create(
+                width, height, 96, 96,
+                System.Windows.Media.PixelFormats.Bgra32, null,
+                pixels, width * 4);
+            bmp.Freeze();
+            return bmp;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static readonly System.Windows.Media.Imaging.BitmapImage? DefaultRoomImage = LoadDefaultRoomImage();

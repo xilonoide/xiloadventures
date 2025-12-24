@@ -899,7 +899,7 @@ public class GameEngine
                 var obj = FindObjectById(id);
                 if (obj != null)
                 {
-                    if (obj.IsLightSource && obj.IsLit)
+                    if (obj.IsLightSource)
                     {
                         var turnsDisplay = obj.LightTurnsRemaining == -1 ? "∞" : obj.LightTurnsRemaining.ToString();
                         sb.AppendLine($" - {Cap(obj.Name)} ({turnsDisplay})");
