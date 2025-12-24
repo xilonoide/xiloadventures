@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Engine;
 

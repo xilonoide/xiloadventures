@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Engine.Models;
 

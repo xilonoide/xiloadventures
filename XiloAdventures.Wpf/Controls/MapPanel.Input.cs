@@ -9,6 +9,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 using XiloAdventures.Wpf.Windows;
 using XiloAdventures.Wpf.Common.Windows;
 

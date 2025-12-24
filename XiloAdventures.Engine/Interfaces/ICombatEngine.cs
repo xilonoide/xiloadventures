@@ -1,5 +1,6 @@
 using System;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Engine.Interfaces;
 

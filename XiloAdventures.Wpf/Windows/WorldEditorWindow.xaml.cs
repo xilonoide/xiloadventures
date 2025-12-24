@@ -17,6 +17,7 @@ using Microsoft.Win32;
 using XiloAdventures.Engine;
 using XiloAdventures.Engine.Models;
 using XiloAdventures.Wpf.Common.Services;
+using XiloAdventures.Engine.Models.Enums;
 using XiloAdventures.Wpf.Common.Ui;
 using XiloAdventures.Wpf.Common.Windows;
 using XiloAdventures.Wpf.Controls;

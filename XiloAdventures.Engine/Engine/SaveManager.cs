@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Engine;
 

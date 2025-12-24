@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 using XiloAdventures.Wpf.Common.Windows;
 
 namespace XiloAdventures.Wpf.Windows;

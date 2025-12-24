@@ -12,6 +12,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.Win32;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 using XiloAdventures.Wpf.Common.Windows;
 using XiloAdventures.Wpf.Windows;
 

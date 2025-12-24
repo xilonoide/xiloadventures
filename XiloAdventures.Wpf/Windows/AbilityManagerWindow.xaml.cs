@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Wpf.Windows;
 

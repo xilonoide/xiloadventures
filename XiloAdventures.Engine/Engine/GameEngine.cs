@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using XiloAdventures.Engine.Engine;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Engine;
 

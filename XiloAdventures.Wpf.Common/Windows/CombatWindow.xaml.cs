@@ -7,6 +7,7 @@ using System.Windows.Documents;
 using System.Windows.Media;
 using XiloAdventures.Engine;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Wpf.Common.Windows;
 

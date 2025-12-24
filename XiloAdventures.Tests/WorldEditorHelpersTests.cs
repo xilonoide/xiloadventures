@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 using XiloAdventures.Wpf.Windows;
 using Xunit;
 

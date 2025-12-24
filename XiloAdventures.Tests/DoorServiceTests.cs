@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 using DoorService = XiloAdventures.Engine.DoorService;
 using Xunit;
 

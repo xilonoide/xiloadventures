@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using XiloAdventures.Engine.Interfaces;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Engine;
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Engine.Models;
 
