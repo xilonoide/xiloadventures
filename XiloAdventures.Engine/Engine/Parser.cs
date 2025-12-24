@@ -168,6 +168,10 @@ public static class Parser
         AddVerbAlias("loot", "saquear", "saquea", "registrar", "registra", "desvalijar");
         AddVerbAlias("equipment", "equipo", "equipamiento");
 
+        // Verbos de iluminación
+        AddVerbAlias("ignite", "encender", "enciende", "prender", "prende");
+        AddVerbAlias("extinguish", "apagar", "apaga");
+
         // Algunos sinónimos globales de nombres
         AddNounAlias("espada", "hoja", "sable", "mandoble");
         AddNounAlias("enano", "enano borracho", "minero", "barbudo");

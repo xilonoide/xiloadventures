@@ -164,4 +164,39 @@ public class GameObject
     /// Controla si el jugador puede ver / interactuar con el objeto en la sala.
     /// </summary>
     public bool Visible { get; set; } = true;
+
+    #region Light Source Properties
+
+    /// <summary>
+    /// Indica si el objeto es una fuente de luz (vela, antorcha, lámpara, etc.).
+    /// </summary>
+    public bool IsLightSource { get; set; }
+
+    /// <summary>
+    /// Indica si el objeto luminoso está actualmente encendido.
+    /// </summary>
+    public bool IsLit { get; set; }
+
+    /// <summary>
+    /// Turnos de luminosidad restantes. -1 = infinito.
+    /// </summary>
+    public int LightTurnsRemaining { get; set; } = -1;
+
+    /// <summary>
+    /// Si el objeto luminoso se puede apagar.
+    /// </summary>
+    public bool CanExtinguish { get; set; }
+
+    /// <summary>
+    /// Si el objeto luminoso se puede encender.
+    /// </summary>
+    public bool CanIgnite { get; set; }
+
+    /// <summary>
+    /// ID del objeto necesario para encender este objeto luminoso.
+    /// Si es null o vacío, se puede encender sin ningún objeto.
+    /// </summary>
+    public string? IgniterObjectId { get; set; }
+
+    #endregion
 }

@@ -344,6 +344,98 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
+            // === CONDICIONES DE ILUMINACIÓN ===
+            ["Condition_IsObjectLit"] = async (node, ctx) =>
+            {
+                var objectId = GetPropertyValue<string>(node, "ObjectId", "");
+                var obj = ctx.GameState.Objects.FirstOrDefault(o =>
+                    string.Equals(o.Id, objectId, StringComparison.OrdinalIgnoreCase));
+                var isLit = obj != null && obj.IsLightSource && obj.IsLit;
+                ctx.NextOutputPort = isLit ? "True" : "False";
+                await Task.CompletedTask;
+            },
+
+            ["Condition_IsRoomLit"] = async (node, ctx) =>
+            {
+                var room = ctx.GameState.Rooms.FirstOrDefault(r =>
+                    string.Equals(r.Id, ctx.GameState.CurrentRoomId, StringComparison.OrdinalIgnoreCase));
+
+                if (room == null)
+                {
+                    ctx.NextOutputPort = "False";
+                    await Task.CompletedTask;
+                    return;
+                }
+
+                var timeOfDay = ctx.GameState.GameTime.TimeOfDay;
+                bool isNight = timeOfDay.Hours >= 20 || timeOfDay.Hours < 7;
+
+                // Iluminación base de la sala
+                bool baseIllumination;
+                if (room.IsInterior)
+                {
+                    baseIllumination = room.IsIlluminated;
+                }
+                else
+                {
+                    baseIllumination = !isNight;
+                }
+
+                if (baseIllumination)
+                {
+                    ctx.NextOutputPort = "True";
+                    await Task.CompletedTask;
+                    return;
+                }
+
+                // Buscar objetos luminosos encendidos en inventario
+                foreach (var objId in ctx.GameState.InventoryObjectIds)
+                {
+                    var obj = ctx.GameState.Objects.FirstOrDefault(o =>
+                        string.Equals(o.Id, objId, StringComparison.OrdinalIgnoreCase));
+                    if (obj != null && obj.IsLightSource && obj.IsLit)
+                    {
+                        ctx.NextOutputPort = "True";
+                        await Task.CompletedTask;
+                        return;
+                    }
+                }
+
+                // Buscar objetos luminosos encendidos en la sala
+                foreach (var objId in room.ObjectIds)
+                {
+                    var obj = ctx.GameState.Objects.FirstOrDefault(o =>
+                        string.Equals(o.Id, objId, StringComparison.OrdinalIgnoreCase));
+                    if (obj == null) continue;
+
+                    if (obj.IsLightSource && obj.IsLit)
+                    {
+                        ctx.NextOutputPort = "True";
+                        await Task.CompletedTask;
+                        return;
+                    }
+
+                    // Revisar contenedores
+                    if (obj.IsContainer && (obj.IsOpen || obj.ContentsVisible))
+                    {
+                        foreach (var containedId in obj.ContainedObjectIds)
+                        {
+                            var containedObj = ctx.GameState.Objects.FirstOrDefault(o =>
+                                string.Equals(o.Id, containedId, StringComparison.OrdinalIgnoreCase));
+                            if (containedObj != null && containedObj.IsLightSource && containedObj.IsLit)
+                            {
+                                ctx.NextOutputPort = "True";
+                                await Task.CompletedTask;
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                ctx.NextOutputPort = "False";
+                await Task.CompletedTask;
+            },
+
             ["Condition_IsPatrolling"] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
@@ -772,6 +864,35 @@ public class ScriptEngine
                 if (obj != null)
                 {
                     obj.Visible = visible;
+                }
+                await Task.CompletedTask;
+            },
+
+            // === LIGHT SOURCE HANDLERS ===
+            ["Action_SetObjectLit"] = async (node, ctx) =>
+            {
+                var objectId = GetPropertyValue<string>(node, "ObjectId", "");
+                var isLit = GetPropertyValue<bool>(node, "IsLit", true);
+
+                var obj = ctx.GameState.Objects.FirstOrDefault(o =>
+                    string.Equals(o.Id, objectId, StringComparison.OrdinalIgnoreCase));
+                if (obj != null && obj.IsLightSource)
+                {
+                    obj.IsLit = isLit;
+                }
+                await Task.CompletedTask;
+            },
+
+            ["Action_SetLightTurns"] = async (node, ctx) =>
+            {
+                var objectId = GetPropertyValue<string>(node, "ObjectId", "");
+                var turns = GetPropertyValue<int>(node, "Turns", -1);
+
+                var obj = ctx.GameState.Objects.FirstOrDefault(o =>
+                    string.Equals(o.Id, objectId, StringComparison.OrdinalIgnoreCase));
+                if (obj != null && obj.IsLightSource)
+                {
+                    obj.LightTurnsRemaining = turns;
                 }
                 await Task.CompletedTask;
             },

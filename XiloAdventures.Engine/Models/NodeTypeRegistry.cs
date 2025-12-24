@@ -1867,6 +1867,93 @@ public static class NodeTypeRegistry
             }
         });
 
+        // === NODOS DE ILUMINACIÓN ===
+
+        Register(new NodeTypeDefinition
+        {
+            TypeId = "Action_SetObjectLit",
+            DisplayName = "Encender/Apagar Objeto",
+            Description = "Enciende o apaga un objeto luminoso",
+            Category = NodeCategory.Action,
+            OwnerTypes = new[] { "*" },
+            InputPorts = new[]
+            {
+                new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
+            },
+            OutputPorts = new[]
+            {
+                new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
+            },
+            Properties = new[]
+            {
+                new NodePropertyDefinition { Name = "ObjectId", DisplayName = "Objeto luminoso", DataType = "string", EntityType = "GameObject" },
+                new NodePropertyDefinition { Name = "IsLit", DisplayName = "Encendido", DataType = "bool", DefaultValue = true }
+            }
+        });
+
+        Register(new NodeTypeDefinition
+        {
+            TypeId = "Action_SetLightTurns",
+            DisplayName = "Turnos de Luz",
+            Description = "Establece los turnos de luz restantes de un objeto luminoso (-1 = infinito)",
+            Category = NodeCategory.Action,
+            OwnerTypes = new[] { "*" },
+            InputPorts = new[]
+            {
+                new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
+            },
+            OutputPorts = new[]
+            {
+                new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
+            },
+            Properties = new[]
+            {
+                new NodePropertyDefinition { Name = "ObjectId", DisplayName = "Objeto luminoso", DataType = "string", EntityType = "GameObject" },
+                new NodePropertyDefinition { Name = "Turns", DisplayName = "Turnos (-1 = infinito)", DataType = "int", DefaultValue = -1 }
+            }
+        });
+
+        Register(new NodeTypeDefinition
+        {
+            TypeId = "Condition_IsObjectLit",
+            DisplayName = "¿Objeto encendido?",
+            Description = "Comprueba si un objeto luminoso está encendido",
+            Category = NodeCategory.Condition,
+            OwnerTypes = new[] { "*" },
+            InputPorts = new[]
+            {
+                new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
+            },
+            OutputPorts = new[]
+            {
+                new NodePort { Name = "True", PortType = PortType.Execution, Label = "Sí" },
+                new NodePort { Name = "False", PortType = PortType.Execution, Label = "No" }
+            },
+            Properties = new[]
+            {
+                new NodePropertyDefinition { Name = "ObjectId", DisplayName = "Objeto luminoso", DataType = "string", EntityType = "GameObject" }
+            }
+        });
+
+        Register(new NodeTypeDefinition
+        {
+            TypeId = "Condition_IsRoomLit",
+            DisplayName = "¿Sala iluminada?",
+            Description = "Comprueba si la sala actual está iluminada (por la sala misma o por fuentes de luz)",
+            Category = NodeCategory.Condition,
+            OwnerTypes = new[] { "*" },
+            InputPorts = new[]
+            {
+                new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
+            },
+            OutputPorts = new[]
+            {
+                new NodePort { Name = "True", PortType = PortType.Execution, Label = "Sí" },
+                new NodePort { Name = "False", PortType = PortType.Execution, Label = "No" }
+            },
+            Properties = Array.Empty<NodePropertyDefinition>()
+        });
+
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_AddGold",

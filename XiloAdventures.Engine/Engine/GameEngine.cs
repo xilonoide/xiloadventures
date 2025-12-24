@@ -581,6 +581,13 @@ public class GameEngine
         // Actualizar patrullas de NPCs después de cada comando del jugador
         UpdateNpcPatrols();
 
+        // Actualizar objetos luminosos encendidos (reducir turnos)
+        var lightMessage = UpdateLightSources();
+        if (!string.IsNullOrEmpty(lightMessage))
+        {
+            result = result.AppendMessage(lightMessage);
+        }
+
         // Procesar necesidades básicas
         var needsMessage = ProcessBasicNeeds();
         if (!string.IsNullOrEmpty(needsMessage))
@@ -589,6 +596,38 @@ public class GameEngine
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Actualiza los objetos luminosos encendidos, reduciendo sus turnos de luz.
+    /// Devuelve un mensaje si algún objeto se apaga.
+    /// </summary>
+    private string UpdateLightSources()
+    {
+        var sb = new StringBuilder();
+
+        foreach (var obj in _state.Objects)
+        {
+            if (!obj.IsLightSource || !obj.IsLit)
+                continue;
+
+            // Si tiene turnos infinitos (-1), no reducir
+            if (obj.LightTurnsRemaining == -1)
+                continue;
+
+            // Reducir turnos
+            obj.LightTurnsRemaining--;
+
+            // Si llegó a 0, apagar el objeto
+            if (obj.LightTurnsRemaining <= 0)
+            {
+                obj.IsLit = false;
+                obj.LightTurnsRemaining = 0;
+                sb.AppendLine($"{Cap(obj.Name)} se apaga.");
+            }
+        }
+
+        return sb.ToString().TrimEnd();
     }
 
     /// <summary>
@@ -657,6 +696,8 @@ public class GameEngine
             "unequip" => HandleUnequip(parsedCmd),
             "loot" => HandleLoot(parsedCmd),
             "equipment" => CommandResult.Success(DescribeEquipment()),
+            "ignite" => HandleIgnite(parsedCmd),
+            "extinguish" => HandleExtinguish(parsedCmd),
             "save" => CommandResult.Success("Usa el menú Archivo -> Guardar partida... para guardar."),
             "load" => CommandResult.Success("Usa el menú Archivo -> Cargar partida... para cargar."),
             "help" or "commands" => CommandResult.Success(GetCommandsText()),
@@ -666,23 +707,78 @@ public class GameEngine
 
     /// <summary>
     /// Determina si la sala tiene iluminación suficiente para que el jugador pueda ver.
-    /// Considera si es de noche (21:00 - 7:00) y si la sala es interior o exterior.
+    /// Considera:
+    /// - Si es interior: el flag IsIlluminated de la sala
+    /// - Si es exterior: la hora del día (oscuro de 20:00 a 7:00)
+    /// - Objetos luminosos encendidos en la sala o en el inventario del jugador
     /// </summary>
     private bool IsRoomLit(Room room)
     {
         var timeOfDay = _state.GameTime.TimeOfDay;
-        bool isNight = timeOfDay.Hours >= 21 || timeOfDay.Hours < 7;
+        bool isNight = timeOfDay.Hours >= 20 || timeOfDay.Hours < 7;
 
+        // Determinar iluminación base de la sala
+        bool baseIllumination;
         if (room.IsInterior)
         {
             // En interiores la iluminación depende del propio flag de la sala.
-            return room.IsIlluminated;
+            baseIllumination = room.IsIlluminated;
         }
         else
         {
-            // En exteriores depende de si es de día o de noche.
-            return !isNight;
+            // En exteriores depende de si es de día o de noche (oscuro de 20:00 a 7:00).
+            baseIllumination = !isNight;
         }
+
+        // Si la sala ya está iluminada, no necesitamos buscar fuentes de luz
+        if (baseIllumination)
+            return true;
+
+        // Buscar objetos luminosos encendidos que iluminen la sala
+        return HasActiveLightSource(room);
+    }
+
+    /// <summary>
+    /// Determina si hay algún objeto luminoso encendido que ilumine la sala.
+    /// Considera objetos en la sala (no en contenedores cerrados sin visibilidad) y en el inventario del jugador.
+    /// </summary>
+    private bool HasActiveLightSource(Room room)
+    {
+        // Verificar objetos luminosos en el inventario del jugador
+        foreach (var objId in _state.InventoryObjectIds)
+        {
+            var obj = FindObjectById(objId);
+            if (obj != null && obj.IsLightSource && obj.IsLit)
+                return true;
+        }
+
+        // Verificar objetos luminosos en la sala
+        foreach (var objId in room.ObjectIds)
+        {
+            var obj = FindObjectById(objId);
+            if (obj == null) continue;
+
+            // Si el objeto es luminoso y está encendido
+            if (obj.IsLightSource && obj.IsLit)
+                return true;
+
+            // Si el objeto es un contenedor, verificar su contenido
+            if (obj.IsContainer)
+            {
+                // El contenido solo ilumina si el contenedor está abierto o tiene contenido visible
+                if (obj.IsOpen || obj.ContentsVisible)
+                {
+                    foreach (var containedId in obj.ContainedObjectIds)
+                    {
+                        var containedObj = FindObjectById(containedId);
+                        if (containedObj != null && containedObj.IsLightSource && containedObj.IsLit)
+                            return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -797,7 +893,15 @@ public class GameEngine
             {
                 var obj = FindObjectById(id);
                 if (obj != null)
-                    sb.AppendLine($" - {Cap(obj.Name)}");
+                {
+                    if (obj.IsLightSource && obj.IsLit)
+                    {
+                        var turnsDisplay = obj.LightTurnsRemaining == -1 ? "∞" : obj.LightTurnsRemaining.ToString();
+                        sb.AppendLine($" - {Cap(obj.Name)} ({turnsDisplay})");
+                    }
+                    else
+                        sb.AppendLine($" - {Cap(obj.Name)}");
+                }
             }
         }
 
@@ -2868,6 +2972,142 @@ public class GameEngine
         }
 
         return CommandResult.Success(sb.ToString().TrimEnd());
+    }
+
+    /// <summary>
+    /// Maneja el comando encender un objeto luminoso.
+    /// Si se usa "encender X con Y", Y es el objeto encendedor.
+    /// Si solo se usa "encender X", se enciende sin objeto (si está permitido).
+    /// </summary>
+    private CommandResult HandleIgnite(ParsedCommand parsed)
+    {
+        if (string.IsNullOrEmpty(parsed.DirectObject))
+            return CommandResult.Error("¿Qué quieres encender?");
+
+        var room = CurrentRoom;
+        if (room == null)
+            return CommandResult.Error("No estás en ningún lugar.");
+
+        // Buscar el objeto a encender en inventario o en la sala
+        var obj = FindAccessibleObject(parsed.DirectObject, parsed.OriginalDirectObject, room);
+        if (obj == null)
+            return CommandResult.Error($"No ves ningún '{parsed.OriginalDirectObject ?? parsed.DirectObject}' aquí.");
+
+        // Verificar que es un objeto luminoso
+        if (!obj.IsLightSource)
+            return CommandResult.Error($"{Cap(obj.Name)} no se puede encender.");
+
+        // Verificar que se puede encender
+        if (!obj.CanIgnite)
+            return CommandResult.Error($"{Cap(obj.Name)} no se puede encender.");
+
+        // Si ya está encendido
+        if (obj.IsLit)
+            return CommandResult.Error($"{Cap(obj.Name)} ya está encendido.");
+
+        // Verificar si necesita un objeto encendedor
+        if (!string.IsNullOrEmpty(obj.IgniterObjectId))
+        {
+            // Necesita un objeto específico para encender
+            if (parsed.Preposition != PrepositionKind.With || string.IsNullOrEmpty(parsed.IndirectObject))
+                return CommandResult.Error($"Necesitas usar algo para encender {WithArticle(obj)}.");
+
+            // Buscar el objeto encendedor en el inventario
+            var igniter = _state.Objects.FirstOrDefault(o =>
+                _state.InventoryObjectIds.Contains(o.Id, StringComparer.OrdinalIgnoreCase) &&
+                MatchesName(o.Name, parsed.IndirectObject, parsed.OriginalIndirectObject));
+
+            if (igniter == null)
+                return CommandResult.Error($"No llevas ningún '{parsed.OriginalIndirectObject ?? parsed.IndirectObject}'.");
+
+            // Verificar que es el objeto encendedor correcto
+            if (!igniter.Id.Equals(obj.IgniterObjectId, StringComparison.OrdinalIgnoreCase))
+            {
+                var requiredIgniter = FindObjectById(obj.IgniterObjectId);
+                var requiredName = requiredIgniter?.Name ?? "otro objeto";
+                return CommandResult.Error($"No puedes encender {WithArticle(obj)} con {WithArticle(igniter)}. Necesitas {requiredName}.");
+            }
+
+            // Encender el objeto
+            obj.IsLit = true;
+            return CommandResult.Success($"Enciendes {WithArticle(obj)} con {WithArticle(igniter)}.");
+        }
+        else
+        {
+            // Se puede encender sin objeto encendedor
+            obj.IsLit = true;
+            return CommandResult.Success($"Enciendes {WithArticle(obj)}.");
+        }
+    }
+
+    /// <summary>
+    /// Maneja el comando apagar un objeto luminoso.
+    /// </summary>
+    private CommandResult HandleExtinguish(ParsedCommand parsed)
+    {
+        if (string.IsNullOrEmpty(parsed.DirectObject))
+            return CommandResult.Error("¿Qué quieres apagar?");
+
+        var room = CurrentRoom;
+        if (room == null)
+            return CommandResult.Error("No estás en ningún lugar.");
+
+        // Buscar el objeto a apagar en inventario o en la sala
+        var obj = FindAccessibleObject(parsed.DirectObject, parsed.OriginalDirectObject, room);
+        if (obj == null)
+            return CommandResult.Error($"No ves ningún '{parsed.OriginalDirectObject ?? parsed.DirectObject}' aquí.");
+
+        // Verificar que es un objeto luminoso
+        if (!obj.IsLightSource)
+            return CommandResult.Error($"{Cap(obj.Name)} no se puede apagar.");
+
+        // Verificar que se puede apagar
+        if (!obj.CanExtinguish)
+            return CommandResult.Error($"{Cap(obj.Name)} no se puede apagar.");
+
+        // Si ya está apagado
+        if (!obj.IsLit)
+            return CommandResult.Error($"{Cap(obj.Name)} ya está apagado.");
+
+        // Apagar el objeto
+        obj.IsLit = false;
+        return CommandResult.Success($"Apagas {WithArticle(obj)}.");
+    }
+
+    /// <summary>
+    /// Busca un objeto accesible por nombre en inventario, sala, o contenedores abiertos/visibles.
+    /// </summary>
+    private GameObject? FindAccessibleObject(string normalizedName, string? originalName, Room room)
+    {
+        // Buscar en inventario
+        var invObj = _state.Objects.FirstOrDefault(o =>
+            _state.InventoryObjectIds.Contains(o.Id, StringComparer.OrdinalIgnoreCase) &&
+            MatchesName(o.Name, normalizedName, originalName));
+        if (invObj != null) return invObj;
+
+        // Buscar en la sala (objetos de nivel superior)
+        var roomObj = _state.Objects.FirstOrDefault(o =>
+            room.ObjectIds.Contains(o.Id, StringComparer.OrdinalIgnoreCase) &&
+            o.Visible &&
+            MatchesName(o.Name, normalizedName, originalName));
+        if (roomObj != null) return roomObj;
+
+        // Buscar en contenedores abiertos o con contenido visible
+        foreach (var containerId in room.ObjectIds)
+        {
+            var container = FindObjectById(containerId);
+            if (container == null || !container.IsContainer) continue;
+            if (!container.IsOpen && !container.ContentsVisible) continue;
+
+            foreach (var containedId in container.ContainedObjectIds)
+            {
+                var contained = FindObjectById(containedId);
+                if (contained != null && contained.Visible && MatchesName(contained.Name, normalizedName, originalName))
+                    return contained;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

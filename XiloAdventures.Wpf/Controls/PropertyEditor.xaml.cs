@@ -789,7 +789,8 @@ public partial class PropertyEditor : UserControl
         if (name is "Visible" or "CanTake" or "Type" or "Gender" or "IsPlural" or "IsContainer" or "IsOpenable" or "IsOpen"
             or "IsLocked" or "ContentsVisible" or "IsIlluminated"
             or "IsInterior" or "StartHour" or "StartWeather" or "MinutesPerGameHour"
-            or "RequiredQuestId" or "RequiredQuestStatus" or "OpenFromSide" or "EndingText")
+            or "RequiredQuestId" or "RequiredQuestStatus" or "OpenFromSide" or "EndingText"
+            or "IsLightSource" or "IsLit" or "LightTurnsRemaining" or "CanExtinguish" or "CanIgnite" or "IgniterObjectId")
             return "⚙️ Comportamiento";
 
         // Propiedades de llave de Door
@@ -898,6 +899,14 @@ public partial class PropertyEditor : UserControl
             "ContentsVisible" => 25,
             "MaxCapacity" => 26,
             "ContainedObjectIds" => 27,
+
+            // Orden para propiedades de iluminación (GameObject)
+            "IsLightSource" => 50,
+            "IsLit" => 51,
+            "LightTurnsRemaining" => 52,
+            "CanExtinguish" => 53,
+            "CanIgnite" => 54,
+            "IgniterObjectId" => 55,
 
             // Orden para propiedades de patrulla/seguimiento de NPC
             "IsPatrolling" => 30,
@@ -2315,7 +2324,51 @@ public partial class PropertyEditor : UserControl
                     (string.Equals(prop.Name, "KeyObjectId", StringComparison.OrdinalIgnoreCase) ||
                      string.Equals(prop.Name, "KeyId", StringComparison.OrdinalIgnoreCase));
 
-                if (isKeyProperty && GetObjects != null)
+                // Si es una propiedad de objeto encendedor (IgniterObjectId), crear un ComboBox con todos los objetos
+                bool isIgniterProperty =
+                    prop.PropertyType == typeof(string) &&
+                    string.Equals(prop.Name, "IgniterObjectId", StringComparison.OrdinalIgnoreCase);
+
+                if (isIgniterProperty && GetObjects != null)
+                {
+                    var allObjects = GetObjects().ToList();
+
+                    // Crear lista de opciones con "Sin objeto" al principio
+                    var igniterOptions = new List<KeyComboItem> { new KeyComboItem { Id = "", DisplayName = "(Sin objeto)" } };
+                    igniterOptions.AddRange(allObjects.Select(o => new KeyComboItem { Id = o.Id, DisplayName = o.Name }));
+
+                    var combo = new ComboBox
+                    {
+                        Margin = new Thickness(0, 2, 0, 0),
+                        DisplayMemberPath = nameof(KeyComboItem.DisplayName),
+                        SelectedValuePath = nameof(KeyComboItem.Id),
+                        ItemsSource = igniterOptions
+                    };
+
+                    var currentIgniterId = Convert.ToString(prop.GetValue(obj)) ?? string.Empty;
+                    combo.SelectedValue = currentIgniterId;
+
+                    combo.SelectionChanged += (_, _) =>
+                    {
+                        try
+                        {
+                            if (_currentObject is not { } target) return;
+                            if (combo.SelectedValue is string igniterId)
+                            {
+                                // Si es cadena vacía, guardar como null
+                                prop.SetValue(target, string.IsNullOrEmpty(igniterId) ? null : igniterId);
+                                PropertyEdited?.Invoke(target, prop.Name);
+                            }
+                        }
+                        catch
+                        {
+                            // Ignorar errores
+                        }
+                    };
+
+                    editor = combo;
+                }
+                else if (isKeyProperty && GetObjects != null)
                 {
                     var keyObjects = GetObjects().Where(o => o.Type == ObjectType.Llave).ToList();
 
@@ -2515,6 +2568,12 @@ public partial class PropertyEditor : UserControl
         ["OpenFromSide"] = "Cerradura desde",
         ["ContentsVisible"] = "Contenido visible",
         ["MaxCapacity"] = "Capacidad máxima (cm³)",
+        ["IsLightSource"] = "Es luminoso",
+        ["IsLit"] = "Está encendido",
+        ["LightTurnsRemaining"] = "Turnos de luz (-1 = infinito)",
+        ["CanExtinguish"] = "Se puede apagar",
+        ["CanIgnite"] = "Se puede encender",
+        ["IgniterObjectId"] = "Objeto encendedor",
         ["Volume"] = "Volumen (cm³)",
         ["Weight"] = "Peso (g)",
         ["Price"] = "Precio",
@@ -2582,6 +2641,12 @@ public partial class PropertyEditor : UserControl
         ["GameObject.KeyId"] = "Llave necesaria",
         ["GameObject.Tags"] = "Etiquetas",
         ["GameObject.Visible"] = "Visible",
+        ["GameObject.IsLightSource"] = "Es luminoso",
+        ["GameObject.IsLit"] = "Está encendido",
+        ["GameObject.LightTurnsRemaining"] = "Turnos de luz (-1 = infinito)",
+        ["GameObject.CanExtinguish"] = "Se puede apagar",
+        ["GameObject.CanIgnite"] = "Se puede encender",
+        ["GameObject.IgniterObjectId"] = "Objeto encendedor",
 
         // NPC
         ["Npc.RoomId"] = "Sala",
@@ -2797,6 +2862,10 @@ public partial class PropertyEditor : UserControl
             if (name is "IsOpenable" or "IsOpen" or "IsLocked" or "ContentsVisible"
                 or "MaxCapacity" or "ContainedObjectIds" or "KeyId")
                 return true;
+
+            // Propiedades de iluminación (subpropiedades de IsLightSource)
+            if (name is "IsLit" or "LightTurnsRemaining" or "CanExtinguish" or "CanIgnite" or "IgniterObjectId")
+                return true;
         }
 
         // Propiedades de patrulla/seguimiento de NPC (subpropiedades)
@@ -2866,6 +2935,34 @@ public partial class PropertyEditor : UserControl
                 // InitiativeBonus visible si Type = Arma o Armadura
                 "InitiativeBonus"
                     => () => gameObject.Type == ObjectType.Arma || gameObject.Type == ObjectType.Armadura,
+
+                // === PROPIEDADES DE ILUMINACIÓN ===
+                // IsLit solo visible si IsLightSource = true
+                "IsLit" => () => gameObject.IsLightSource,
+
+                // LightTurnsRemaining solo visible si IsLightSource = true
+                "LightTurnsRemaining" => () => gameObject.IsLightSource,
+
+                // CanExtinguish solo visible si IsLightSource = true
+                "CanExtinguish" => () => gameObject.IsLightSource,
+
+                // CanIgnite solo visible si IsLightSource = true
+                "CanIgnite" => () => gameObject.IsLightSource,
+
+                // IgniterObjectId solo visible si IsLightSource = true Y CanIgnite = true
+                "IgniterObjectId" => () => gameObject.IsLightSource && gameObject.CanIgnite,
+
+                _ => null
+            };
+        }
+
+        // Condiciones para Room
+        if (obj is Room room)
+        {
+            return name switch
+            {
+                // IsIlluminated solo visible si IsInterior = true
+                "IsIlluminated" => () => room.IsInterior,
 
                 _ => null
             };
