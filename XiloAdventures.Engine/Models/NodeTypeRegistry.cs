@@ -81,7 +81,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnGameStart",
-            DisplayName = "Al Iniciar Juego",
+            DisplayName = "Juego: Al Iniciar",
             Description = "Se ejecuta cuando el jugador inicia una nueva partida",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game" },
@@ -91,7 +91,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnGameEnd",
-            DisplayName = "Al Terminar Juego",
+            DisplayName = "Juego: Al Terminar",
             Description = "Se ejecuta cuando el jugador termina la partida (victoria o derrota)",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game" },
@@ -101,7 +101,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_EveryMinute",
-            DisplayName = "Cada Minuto",
+            DisplayName = "Juego: Cada Minuto",
             Description = "Se ejecuta cada minuto de tiempo de juego",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game" },
@@ -111,7 +111,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_EveryHour",
-            DisplayName = "Cada Hora",
+            DisplayName = "Juego: Cada Hora",
             Description = "Se ejecuta cada hora de tiempo de juego",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game" },
@@ -121,7 +121,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnTurnStart",
-            DisplayName = "Al Inicio del Turno",
+            DisplayName = "Juego: Al Inicio del Turno",
             Description = "Se ejecuta al inicio de cada turno del jugador",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -135,7 +135,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnWeatherChange",
-            DisplayName = "Al Cambiar Clima",
+            DisplayName = "Juego: Al Cambiar Clima",
             Description = "Se ejecuta cuando cambia el clima",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game" },
@@ -150,7 +150,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnEnter",
-            DisplayName = "Al Entrar",
+            DisplayName = "Salas: Al Entrar",
             Description = "Se ejecuta cuando el jugador entra en la sala",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Room" },
@@ -160,7 +160,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnExit",
-            DisplayName = "Al Salir",
+            DisplayName = "Salas: Al Salir",
             Description = "Se ejecuta cuando el jugador sale de la sala",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Room" },
@@ -174,7 +174,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnLook",
-            DisplayName = "Al Mirar Sala",
+            DisplayName = "Salas: Al Mirar",
             Description = "Se ejecuta cuando el jugador mira/examina la sala (comando 'mirar')",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Room" },
@@ -185,7 +185,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnDoorOpen",
-            DisplayName = "Al Abrir Puerta",
+            DisplayName = "Puertas: Al Abrir",
             Description = "Se ejecuta cuando se abre la puerta",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Door" },
@@ -195,7 +195,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnDoorClose",
-            DisplayName = "Al Cerrar Puerta",
+            DisplayName = "Puertas: Al Cerrar",
             Description = "Se ejecuta cuando se cierra la puerta",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Door" },
@@ -205,7 +205,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnDoorLock",
-            DisplayName = "Al Bloquear Puerta",
+            DisplayName = "Puertas: Al Bloquear",
             Description = "Se ejecuta cuando se bloquea la puerta",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Door" },
@@ -215,7 +215,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnDoorUnlock",
-            DisplayName = "Al Desbloquear Puerta",
+            DisplayName = "Puertas: Al Desbloquear",
             Description = "Se ejecuta cuando se desbloquea la puerta",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Door" },
@@ -226,7 +226,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnTalk",
-            DisplayName = "Al Hablar",
+            DisplayName = "NPC: Al Hablar",
             Description = "Se ejecuta cuando el jugador habla con el NPC",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Npc" },
@@ -236,7 +236,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnNpcAttack",
-            DisplayName = "Al Atacar NPC",
+            DisplayName = "Combate: Al Atacar NPC",
             Description = "Se ejecuta cuando el jugador ataca al NPC",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Npc" },
@@ -247,7 +247,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnNpcDeath",
-            DisplayName = "Al Morir NPC",
+            DisplayName = "Combate: Al Morir NPC",
             Description = "Se ejecuta cuando el NPC muere",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Npc" },
@@ -258,7 +258,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnNpcSee",
-            DisplayName = "Al Ver Jugador",
+            DisplayName = "NPC: Al Ver Jugador",
             Description = "Se ejecuta cuando el NPC ve al jugador entrar en su sala",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Npc" },
@@ -269,7 +269,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnCombatStart",
-            DisplayName = "Al Iniciar Combate",
+            DisplayName = "Combate: Al Iniciar",
             Description = "Se ejecuta cuando el jugador inicia combate con este NPC",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Npc" },
@@ -280,7 +280,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnCombatVictory",
-            DisplayName = "Al Ganar Combate",
+            DisplayName = "Combate: Al Ganar",
             Description = "Se ejecuta cuando el jugador vence a este NPC en combate",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Npc" },
@@ -291,7 +291,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnCombatDefeat",
-            DisplayName = "Al Perder Combate",
+            DisplayName = "Combate: Al Perder",
             Description = "Se ejecuta cuando el NPC vence al jugador en combate",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Npc" },
@@ -302,7 +302,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnCombatFlee",
-            DisplayName = "Al Huir del Combate",
+            DisplayName = "Combate: Al Huir",
             Description = "Se ejecuta cuando el jugador huye del combate con este NPC",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Npc" },
@@ -313,7 +313,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnPlayerAttack",
-            DisplayName = "Al Atacar Jugador",
+            DisplayName = "Combate: Al Atacar Jugador",
             Description = "Se ejecuta cuando el jugador realiza un ataque en combate",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Npc", "Game" },
@@ -328,7 +328,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnNpcTurn",
-            DisplayName = "Al Turno del NPC",
+            DisplayName = "Combate: Al Turno del NPC",
             Description = "Se ejecuta cuando es el turno del NPC en combate",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Npc" },
@@ -343,7 +343,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnPlayerDefend",
-            DisplayName = "Al Defender Jugador",
+            DisplayName = "Combate: Al Defender Jugador",
             Description = "Se ejecuta cuando el jugador elige defenderse en combate",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Npc", "Game" },
@@ -354,7 +354,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnCriticalHit",
-            DisplayName = "Al Golpe Crítico",
+            DisplayName = "Combate: Al Golpe Crítico",
             Description = "Se ejecuta cuando ocurre un golpe crítico en combate",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Npc", "Game" },
@@ -370,7 +370,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnMiss",
-            DisplayName = "Al Fallar Ataque",
+            DisplayName = "Combate: Al Fallar Ataque",
             Description = "Se ejecuta cuando un ataque falla en combate",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Npc", "Game" },
@@ -386,7 +386,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnTradeStart",
-            DisplayName = "Al Iniciar Comercio",
+            DisplayName = "Dinero: Al Iniciar Comercio",
             Description = "Se ejecuta cuando el jugador inicia comercio con este NPC",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Npc" },
@@ -396,7 +396,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnTradeEnd",
-            DisplayName = "Al Cerrar Comercio",
+            DisplayName = "Dinero: Al Cerrar Comercio",
             Description = "Se ejecuta cuando el jugador cierra el comercio con este NPC",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Npc" },
@@ -406,7 +406,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnItemBought",
-            DisplayName = "Al Comprar Item",
+            DisplayName = "Dinero: Al Comprar",
             Description = "Se ejecuta cuando el jugador compra un item de este NPC",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Npc" },
@@ -421,7 +421,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnItemSold",
-            DisplayName = "Al Vender Item",
+            DisplayName = "Dinero: Al Vender",
             Description = "Se ejecuta cuando el jugador vende un item a este NPC",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Npc" },
@@ -437,7 +437,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnTake",
-            DisplayName = "Al Coger",
+            DisplayName = "Objetos: Al Coger",
             Description = "Se ejecuta cuando el jugador coge el objeto",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "GameObject" },
@@ -447,7 +447,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnDrop",
-            DisplayName = "Al Soltar",
+            DisplayName = "Objetos: Al Soltar",
             Description = "Se ejecuta cuando el jugador suelta el objeto",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "GameObject" },
@@ -457,7 +457,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnUse",
-            DisplayName = "Al Usar",
+            DisplayName = "Objetos: Al Usar",
             Description = "Se ejecuta cuando el jugador usa el objeto",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "GameObject" },
@@ -467,7 +467,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnGive",
-            DisplayName = "Al Dar",
+            DisplayName = "Objetos: Al Dar",
             Description = "Se ejecuta cuando el jugador da el objeto a un NPC",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "GameObject" },
@@ -477,7 +477,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnExamine",
-            DisplayName = "Al Examinar",
+            DisplayName = "Objetos: Al Examinar",
             Description = "Se ejecuta cuando el jugador examina el objeto",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "GameObject" },
@@ -487,7 +487,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnContainerOpen",
-            DisplayName = "Al Abrir Contenedor",
+            DisplayName = "Objetos: Al Abrir Contenedor",
             Description = "Se ejecuta cuando el jugador abre el contenedor",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "GameObject" },
@@ -497,7 +497,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnContainerClose",
-            DisplayName = "Al Cerrar Contenedor",
+            DisplayName = "Objetos: Al Cerrar Contenedor",
             Description = "Se ejecuta cuando el jugador cierra el contenedor",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "GameObject" },
@@ -508,7 +508,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnEat",
-            DisplayName = "Al Comer",
+            DisplayName = "Necesidades: Al Comer",
             Description = "Se ejecuta cuando el jugador come este objeto",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "GameObject" },
@@ -523,7 +523,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnDrink",
-            DisplayName = "Al Beber",
+            DisplayName = "Necesidades: Al Beber",
             Description = "Se ejecuta cuando el jugador bebe este objeto",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "GameObject" },
@@ -539,7 +539,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnSleep",
-            DisplayName = "Al Dormir",
+            DisplayName = "Necesidades: Al Dormir",
             Description = "Se ejecuta cuando el jugador comienza a dormir",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -554,7 +554,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnWakeUp",
-            DisplayName = "Al Despertar",
+            DisplayName = "Necesidades: Al Despertar",
             Description = "Se ejecuta cuando el jugador despierta normalmente",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -569,7 +569,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnWakeUpStartled",
-            DisplayName = "Al Despertar Sobresaltado",
+            DisplayName = "Necesidades: Al Despertar Sobresaltado",
             Description = "Se ejecuta cuando el jugador despierta abruptamente (NPC entró, necesidad alta)",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -585,7 +585,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnQuestStart",
-            DisplayName = "Al Iniciar Misión",
+            DisplayName = "Juego: Al Iniciar Misión",
             Description = "Se ejecuta cuando se inicia la misión",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Quest", "Game" },
@@ -595,7 +595,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnQuestComplete",
-            DisplayName = "Al Completar Misión",
+            DisplayName = "Juego: Al Completar Misión",
             Description = "Se ejecuta cuando se completa la misión",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Quest", "Game" },
@@ -605,7 +605,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnQuestFail",
-            DisplayName = "Al Fallar Misión",
+            DisplayName = "Juego: Al Fallar Misión",
             Description = "Se ejecuta cuando se falla la misión",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Quest", "Game" },
@@ -615,7 +615,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnObjectiveComplete",
-            DisplayName = "Al Completar Objetivo",
+            DisplayName = "Juego: Al Completar Objetivo",
             Description = "Se ejecuta cuando se completa un objetivo de la misión",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Quest", "Game" },
@@ -630,7 +630,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnPlayerDeath",
-            DisplayName = "Al Morir Jugador",
+            DisplayName = "Jugador: Al Morir",
             Description = "Se ejecuta cuando el jugador muere (salud llega a 0)",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -641,7 +641,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnHealthLow",
-            DisplayName = "Al Bajar Salud",
+            DisplayName = "Jugador: Al Bajar Salud",
             Description = "Se ejecuta cuando la salud baja de un umbral (por defecto 25%)",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -660,7 +660,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnHealthCritical",
-            DisplayName = "Al Salud Crítica",
+            DisplayName = "Jugador: Al Salud Crítica",
             Description = "Se ejecuta cuando la salud llega a nivel crítico (por defecto 10%)",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -679,7 +679,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnHungerHigh",
-            DisplayName = "Al Tener Hambre",
+            DisplayName = "Necesidades: Al Tener Hambre",
             Description = "Se ejecuta cuando el hambre supera un umbral",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -698,7 +698,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnThirstHigh",
-            DisplayName = "Al Tener Sed",
+            DisplayName = "Necesidades: Al Tener Sed",
             Description = "Se ejecuta cuando la sed supera un umbral",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -717,7 +717,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnEnergyLow",
-            DisplayName = "Al Estar Cansado",
+            DisplayName = "Jugador: Al Estar Cansado",
             Description = "Se ejecuta cuando la energía baja de un umbral",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -736,7 +736,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnSleepHigh",
-            DisplayName = "Al Necesitar Dormir",
+            DisplayName = "Necesidades: Al Necesitar Dormir",
             Description = "Se ejecuta cuando el nivel de cansancio supera un umbral",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -755,7 +755,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnSanityLow",
-            DisplayName = "Al Perder Cordura",
+            DisplayName = "Jugador: Al Perder Cordura",
             Description = "Se ejecuta cuando la cordura baja de un umbral",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -774,7 +774,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnManaLow",
-            DisplayName = "Al Quedar Sin Mana",
+            DisplayName = "Jugador: Al Quedar Sin Mana",
             Description = "Se ejecuta cuando el mana baja de un umbral",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -793,7 +793,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnStateThreshold",
-            DisplayName = "Al Cruzar Umbral de Estado",
+            DisplayName = "Jugador: Al Cruzar Umbral de Estado",
             Description = "Se ejecuta cuando cualquier estado cruza un umbral (genérico)",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -816,7 +816,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnModifierApplied",
-            DisplayName = "Al Aplicar Modificador",
+            DisplayName = "Jugador: Al Aplicar Modificador",
             Description = "Se ejecuta cuando se aplica un modificador al jugador",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -831,7 +831,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnModifierExpired",
-            DisplayName = "Al Expirar Modificador",
+            DisplayName = "Jugador: Al Expirar Modificador",
             Description = "Se ejecuta cuando un modificador expira",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -847,7 +847,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnMoneyGained",
-            DisplayName = "Al Ganar Dinero",
+            DisplayName = "Dinero: Al Ganar",
             Description = "Se ejecuta cuando el jugador gana dinero",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -861,7 +861,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnMoneyLost",
-            DisplayName = "Al Perder Dinero",
+            DisplayName = "Dinero: Al Perder",
             Description = "Se ejecuta cuando el jugador pierde dinero",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -875,7 +875,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnMoneyThreshold",
-            DisplayName = "Al Cruzar Umbral de Dinero",
+            DisplayName = "Dinero: Al Cruzar Umbral",
             Description = "Se ejecuta cuando el dinero cruza un umbral",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -896,7 +896,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Event_OnPropertyChanged",
-            DisplayName = "Al Cambiar Propiedad",
+            DisplayName = "Juego: Al Cambiar Propiedad",
             Description = "Se ejecuta cuando cambia el valor de una propiedad de una entidad",
             Category = NodeCategory.Event,
             OwnerTypes = new[] { "Game", "*" },
@@ -1832,7 +1832,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Condition_CompareProperty",
-            DisplayName = "Comparar Propiedad",
+            DisplayName = "Operadores: Comparar Propiedad",
             Description = "Compara el valor de una propiedad de cualquier entidad",
             Category = NodeCategory.Condition,
             OwnerTypes = new[] { "*" },
@@ -1867,7 +1867,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_ShowMessage",
-            DisplayName = "Mostrar Mensaje",
+            DisplayName = "Juego: Mostrar Mensaje",
             Description = "Muestra un mensaje al jugador",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -1888,7 +1888,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_GiveItem",
-            DisplayName = "Dar Objeto",
+            DisplayName = "Jugador: Dar Objeto",
             Description = "Da un objeto al jugador",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -1909,7 +1909,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_RemoveItem",
-            DisplayName = "Quitar Objeto",
+            DisplayName = "Jugador: Quitar Objeto",
             Description = "Quita un objeto del inventario del jugador",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -1930,7 +1930,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_TeleportPlayer",
-            DisplayName = "Teletransportar Jugador",
+            DisplayName = "Jugador: Teletransportar",
             Description = "Mueve al jugador a otra sala",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -1952,7 +1952,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetRoomIllumination",
-            DisplayName = "Iluminación Sala",
+            DisplayName = "Iluminación: Sala",
             Description = "Enciende o apaga la iluminación de una sala",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -1968,7 +1968,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetRoomMusic",
-            DisplayName = "Música de Sala",
+            DisplayName = "Juego: Música de Sala",
             Description = "Cambia la música de una sala",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -1984,7 +1984,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetRoomDescription",
-            DisplayName = "Descripción Sala",
+            DisplayName = "Juego: Descripción Sala",
             Description = "Cambia la descripción de una sala",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2001,7 +2001,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetWeather",
-            DisplayName = "Cambiar Clima",
+            DisplayName = "Juego: Cambiar Clima",
             Description = "Cambia el clima del juego",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2016,7 +2016,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetGameHour",
-            DisplayName = "Establecer Hora",
+            DisplayName = "Juego: Establecer Hora",
             Description = "Establece la hora del juego",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2031,7 +2031,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_AdvanceTime",
-            DisplayName = "Avanzar Tiempo",
+            DisplayName = "Juego: Avanzar Tiempo",
             Description = "Avanza el tiempo del juego",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2046,7 +2046,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_MoveNpc",
-            DisplayName = "Mover NPC",
+            DisplayName = "NPC: Mover",
             Description = "Mueve un NPC a otra sala",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2068,7 +2068,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetFlag",
-            DisplayName = "Establecer Flag",
+            DisplayName = "Juego: Establecer Flag",
             Description = "Activa o desactiva un flag",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2090,7 +2090,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetCounter",
-            DisplayName = "Establecer Contador",
+            DisplayName = "Juego: Establecer Contador",
             Description = "Establece el valor de un contador",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2112,7 +2112,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_IncrementCounter",
-            DisplayName = "Incrementar Contador",
+            DisplayName = "Juego: Incrementar Contador",
             Description = "Incrementa o decrementa un contador",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2134,7 +2134,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_PlaySound",
-            DisplayName = "Reproducir Sonido",
+            DisplayName = "Juego: Reproducir Sonido",
             Description = "Reproduce un efecto de sonido",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2155,7 +2155,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_StartQuest",
-            DisplayName = "Iniciar Mision",
+            DisplayName = "Juego: Iniciar Misión",
             Description = "Inicia una mision",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2176,7 +2176,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_CompleteQuest",
-            DisplayName = "Completar Mision",
+            DisplayName = "Juego: Completar Misión",
             Description = "Marca una mision como completada",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2197,7 +2197,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_FailQuest",
-            DisplayName = "Fallar Mision",
+            DisplayName = "Juego: Fallar Misión",
             Description = "Marca una mision como fallida",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2218,7 +2218,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetQuestStatus",
-            DisplayName = "Cambiar Estado Mision",
+            DisplayName = "Juego: Cambiar Estado Misión",
             Description = "Cambia el estado de una mision a cualquier valor",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2240,7 +2240,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_AdvanceObjective",
-            DisplayName = "Avanzar Objetivo",
+            DisplayName = "Juego: Avanzar Objetivo",
             Description = "Avanza al siguiente objetivo de una mision",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2261,7 +2261,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_OpenDoor",
-            DisplayName = "Abrir Puerta",
+            DisplayName = "Juego: Abrir Puerta",
             Description = "Abre una puerta",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2282,7 +2282,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_CloseDoor",
-            DisplayName = "Cerrar Puerta",
+            DisplayName = "Juego: Cerrar Puerta",
             Description = "Cierra una puerta",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2303,7 +2303,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_LockDoor",
-            DisplayName = "Bloquear Puerta",
+            DisplayName = "Juego: Bloquear Puerta",
             Description = "Bloquea una puerta",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2324,7 +2324,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_UnlockDoor",
-            DisplayName = "Desbloquear Puerta",
+            DisplayName = "Juego: Desbloquear Puerta",
             Description = "Desbloquea una puerta",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2345,7 +2345,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetDoorVisible",
-            DisplayName = "Visibilidad Puerta",
+            DisplayName = "Juego: Visibilidad Puerta",
             Description = "Muestra u oculta una puerta y sus salidas asociadas",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2367,7 +2367,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetNpcVisible",
-            DisplayName = "Visibilidad NPC",
+            DisplayName = "NPC: Visibilidad",
             Description = "Muestra u oculta un NPC",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2389,7 +2389,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetObjectVisible",
-            DisplayName = "Visibilidad Objeto",
+            DisplayName = "Objetos: Visibilidad",
             Description = "Muestra u oculta un objeto",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2411,7 +2411,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetObjectTakeable",
-            DisplayName = "Objeto Cogible",
+            DisplayName = "Objetos: Cogible",
             Description = "Permite o impide coger un objeto",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2427,7 +2427,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_OpenContainer",
-            DisplayName = "Abrir Contenedor",
+            DisplayName = "Objetos: Abrir Contenedor",
             Description = "Abre un contenedor",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2442,7 +2442,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_CloseContainer",
-            DisplayName = "Cerrar Contenedor",
+            DisplayName = "Objetos: Cerrar Contenedor",
             Description = "Cierra un contenedor",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2457,7 +2457,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_LockContainer",
-            DisplayName = "Bloquear Contenedor",
+            DisplayName = "Objetos: Bloquear Contenedor",
             Description = "Bloquea un contenedor",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2472,7 +2472,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_UnlockContainer",
-            DisplayName = "Desbloquear Contenedor",
+            DisplayName = "Objetos: Desbloquear Contenedor",
             Description = "Desbloquea un contenedor",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2487,7 +2487,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetContentsVisible",
-            DisplayName = "Visibilidad Contenido",
+            DisplayName = "Objetos: Visibilidad Contenido",
             Description = "Muestra u oculta el contenido de un contenedor",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2503,7 +2503,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetObjectPrice",
-            DisplayName = "Precio Objeto",
+            DisplayName = "Objetos: Precio",
             Description = "Establece el precio de un objeto",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2519,7 +2519,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetObjectDurability",
-            DisplayName = "Durabilidad Objeto",
+            DisplayName = "Objetos: Durabilidad",
             Description = "Establece la durabilidad actual de un objeto",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2535,7 +2535,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_MoveObjectToRoom",
-            DisplayName = "Mover Objeto a Sala",
+            DisplayName = "Objetos: Mover a Sala",
             Description = "Mueve un objeto a una sala específica",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2551,7 +2551,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_PutObjectInContainer",
-            DisplayName = "Poner en Contenedor",
+            DisplayName = "Objetos: Poner en Contenedor",
             Description = "Pone un objeto dentro de un contenedor",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2567,7 +2567,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_RemoveObjectFromContainer",
-            DisplayName = "Sacar de Contenedor",
+            DisplayName = "Objetos: Sacar de Contenedor",
             Description = "Saca un objeto de un contenedor",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2585,7 +2585,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetObjectLit",
-            DisplayName = "Encender/Apagar Objeto",
+            DisplayName = "Iluminación: Encender/Apagar Objeto",
             Description = "Enciende o apaga un objeto luminoso",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2607,7 +2607,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetLightTurns",
-            DisplayName = "Turnos de Luz",
+            DisplayName = "Iluminación: Turnos de Luz",
             Description = "Establece los turnos de luz restantes de un objeto luminoso (-1 = infinito)",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2629,7 +2629,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Condition_IsObjectLit",
-            DisplayName = "¿Objeto encendido?",
+            DisplayName = "Iluminación: Objeto Encendido",
             Description = "Comprueba si un objeto luminoso está encendido",
             Category = NodeCategory.Condition,
             OwnerTypes = new[] { "*" },
@@ -2651,7 +2651,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Condition_IsRoomLit",
-            DisplayName = "¿Sala iluminada?",
+            DisplayName = "Iluminación: Sala Iluminada",
             Description = "Comprueba si la sala actual está iluminada (por la sala misma o por fuentes de luz)",
             Category = NodeCategory.Condition,
             OwnerTypes = new[] { "*" },
@@ -2670,7 +2670,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_AddMoney",
-            DisplayName = "Dar Oro",
+            DisplayName = "Dinero: Dar Oro",
             Description = "Da oro al jugador",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2691,7 +2691,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_RemoveMoney",
-            DisplayName = "Quitar Oro",
+            DisplayName = "Dinero: Quitar Oro",
             Description = "Quita oro al jugador",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2713,7 +2713,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_StartPatrol",
-            DisplayName = "NPC: Iniciar Patrulla",
+            DisplayName = "NPC: Rutas: Iniciar Patrulla",
             Description = "Hace que un NPC comience a patrullar su ruta definida",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2734,7 +2734,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_StopPatrol",
-            DisplayName = "NPC: Detener Patrulla",
+            DisplayName = "NPC: Rutas: Detener Patrulla",
             Description = "Detiene la patrulla de un NPC",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2755,7 +2755,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_PatrolStep",
-            DisplayName = "NPC: Paso de Patrulla",
+            DisplayName = "NPC: Rutas: Paso de Patrulla",
             Description = "Mueve manualmente un NPC al siguiente punto de su ruta",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2776,7 +2776,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetPatrolMode",
-            DisplayName = "NPC: Modo de Patrulla",
+            DisplayName = "NPC: Rutas: Modo de Patrulla",
             Description = "Configura el modo de movimiento de patrulla (por turnos o por tiempo)",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2801,7 +2801,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_FollowPlayer",
-            DisplayName = "NPC: Seguir Jugador",
+            DisplayName = "NPC: Rutas: Seguir Jugador",
             Description = "Hace que un NPC siga al jugador cuando cambie de sala",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2823,7 +2823,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_StopFollowing",
-            DisplayName = "NPC: Dejar de Seguir",
+            DisplayName = "NPC: Rutas: Dejar de Seguir",
             Description = "Hace que un NPC deje de seguir al jugador",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2844,7 +2844,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetFollowMode",
-            DisplayName = "NPC: Modo de Seguimiento",
+            DisplayName = "NPC: Rutas: Modo de Seguimiento",
             Description = "Configura el modo de movimiento de seguimiento (por turnos o por tiempo)",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2869,7 +2869,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetPlayerState",
-            DisplayName = "Estado: Establecer Valor",
+            DisplayName = "Jugador: Establecer Estado",
             Description = "Establece el valor de un estado del jugador",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2893,7 +2893,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_ModifyPlayerState",
-            DisplayName = "Estado: Modificar Valor",
+            DisplayName = "Jugador: Modificar Estado",
             Description = "Añade o resta al valor de un estado del jugador",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2917,7 +2917,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_HealPlayer",
-            DisplayName = "Estado: Curar Jugador",
+            DisplayName = "Jugador: Curar",
             Description = "Restaura salud al jugador (sin exceder el máximo)",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2939,7 +2939,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_DamagePlayer",
-            DisplayName = "Estado: Dañar Jugador",
+            DisplayName = "Jugador: Dañar",
             Description = "Inflige daño al jugador (reduce salud)",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2962,7 +2962,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_RestoreMana",
-            DisplayName = "Estado: Restaurar Mana",
+            DisplayName = "Jugador: Restaurar Mana",
             Description = "Restaura mana al jugador (sin exceder el máximo)",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -2984,7 +2984,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_ConsumeMana",
-            DisplayName = "Estado: Consumir Mana",
+            DisplayName = "Jugador: Consumir Mana",
             Description = "Consume mana del jugador",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -3127,7 +3127,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetPatrolRoute",
-            DisplayName = "Ruta de Patrulla",
+            DisplayName = "NPC: Rutas: Ruta de Patrulla",
             Description = "Establece la ruta de patrulla de un NPC",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -3143,7 +3143,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_AddItemToNpcInventory",
-            DisplayName = "Dar Item a NPC",
+            DisplayName = "NPC: Dar Item",
             Description = "Añade un objeto al inventario de un NPC",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -3159,7 +3159,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_RemoveItemFromNpcInventory",
-            DisplayName = "Quitar Item de NPC",
+            DisplayName = "NPC: Quitar Item",
             Description = "Quita un objeto del inventario de un NPC",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -3336,7 +3336,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_AddPlayerMoney",
-            DisplayName = "Comercio: Dar Dinero",
+            DisplayName = "Dinero: Dar al Jugador",
             Description = "Añade dinero al jugador",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -3357,7 +3357,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_RemovePlayerMoney",
-            DisplayName = "Comercio: Quitar Dinero",
+            DisplayName = "Dinero: Quitar al Jugador",
             Description = "Quita dinero al jugador",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -3379,7 +3379,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetNpcMoney",
-            DisplayName = "Comercio: Establecer Dinero NPC",
+            DisplayName = "Dinero: Establecer a NPC",
             Description = "Establece el dinero del NPC (-1 para infinito)",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -3580,7 +3580,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_FeedPlayer",
-            DisplayName = "Estado: Alimentar Jugador",
+            DisplayName = "Necesidades: Alimentar Jugador",
             Description = "Reduce el hambre del jugador",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -3602,7 +3602,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_HydratePlayer",
-            DisplayName = "Estado: Hidratar Jugador",
+            DisplayName = "Necesidades: Hidratar Jugador",
             Description = "Reduce la sed del jugador",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -3624,7 +3624,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_RestPlayer",
-            DisplayName = "Estado: Descansar Jugador",
+            DisplayName = "Necesidades: Descansar Jugador",
             Description = "Reduce el cansancio del jugador",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -3672,7 +3672,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_RestoreAllStats",
-            DisplayName = "Estado: Restaurar Todo",
+            DisplayName = "Jugador: Restaurar Todo",
             Description = "Restaura todos los estados del jugador a sus valores máximos/óptimos",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -3803,7 +3803,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_StartConversation",
-            DisplayName = "Iniciar Conversación",
+            DisplayName = "Juego: Iniciar Conversación",
             Description = "Inicia la conversación con un NPC",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -3825,7 +3825,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_SetProperty",
-            DisplayName = "Establecer Propiedad",
+            DisplayName = "Operadores: Establecer Propiedad",
             Description = "Establece el valor de una propiedad de cualquier entidad",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -3850,7 +3850,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Action_ModifyProperty",
-            DisplayName = "Modificar Propiedad Numérica",
+            DisplayName = "Operadores: Modificar Propiedad Numérica",
             Description = "Modifica el valor numérico de una propiedad (suma, resta, multiplica o divide)",
             Category = NodeCategory.Action,
             OwnerTypes = new[] { "*" },
@@ -4437,7 +4437,7 @@ public static class NodeTypeRegistry
         Register(new NodeTypeDefinition
         {
             TypeId = "Variable_GetProperty",
-            DisplayName = "Obtener Propiedad",
+            DisplayName = "Operadores: Obtener Propiedad",
             Description = "Obtiene el valor de cualquier propiedad de una entidad",
             Category = NodeCategory.Variable,
             OwnerTypes = new[] { "*" },

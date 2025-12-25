@@ -235,6 +235,15 @@ public partial class NodePalette : UserControl
             "Jugador" => "👤 ",
             "Juego" => "🎮 ",
             "Operadores" => "🔧 ",
+            "Necesidades" => "🍖 ",
+            "Dinero" => "💰 ",
+            "Combate" => "⚔️ ",
+            "Iluminación" => "💡 ",
+            "Objetos" => "📦 ",
+            "NPC" => "🧑 ",
+            "Rutas" => "🛤️ ",
+            "Salas" => "🏠 ",
+            "Puertas" => "🚪 ",
             _ => "📁 "
         };
 
