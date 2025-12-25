@@ -75,6 +75,7 @@ public partial class MainWindow : Window
         _engine.ConversationOptions += Engine_ConversationOptions;
         _engine.ConversationEnded += Engine_ConversationEnded;
         _engine.TradeOpened += Engine_TradeOpened;
+        _engine.CraftOpened += Engine_CraftOpened;
         _engine.AdventureCompleted += Engine_AdventureCompleted;
         _engine.PlayerDied += Engine_PlayerDied;
         _engine.CombatStarted += Engine_CombatStarted;
@@ -807,6 +808,34 @@ public partial class MainWindow : Window
             };
 
             tradeWindow.ShowDialog();
+        });
+    }
+
+    private void Engine_CraftOpened()
+    {
+        Dispatcher.Invoke(() =>
+        {
+            // Crear el motor de fabricacion
+            var craftEngine = new CraftEngine(_engine.State);
+
+            // Crear y mostrar la ventana de fabricacion
+            var craftWindow = new CraftWindow(craftEngine, _engine.State, _engine.State.CurrentRoomId)
+            {
+                Owner = this
+            };
+
+            craftWindow.CraftClosed += () =>
+            {
+                // Usar BeginInvoke para asegurar que la actualizacion ocurra despues de cerrar el dialogo
+                Dispatcher.BeginInvoke(() =>
+                {
+                    // Actualizar UI principal con cambios de fabricacion
+                    UpdateStatusPanel();
+                    UpdateRoomVisuals();
+                });
+            };
+
+            craftWindow.ShowDialog();
         });
     }
 

@@ -172,6 +172,9 @@ public static class Parser
         AddVerbAlias("ignite", "encender", "enciende", "prender", "prende");
         AddVerbAlias("extinguish", "apagar", "apaga");
 
+        // Verbos de fabricación
+        AddVerbAlias("craft", "fabricar", "fabrica", "crear", "crea", "construir", "construye");
+
         // Verbos de necesidades básicas
         AddVerbAlias("eat", "comer", "come", "devorar", "devora", "masticar", "mastica", "tragar", "zampar");
         AddVerbAlias("drink", "beber", "bebe", "tomar", "sorber", "sorbe");

@@ -112,6 +112,11 @@ public class GameEngine
     public event Action<Npc>? TradeOpened;
 
     /// <summary>
+    /// Evento cuando se abre la ventana de fabricación.
+    /// </summary>
+    public event Action? CraftOpened;
+
+    /// <summary>
     /// Evento cuando termina una conversación.
     /// </summary>
     public event Action? ConversationEnded;
@@ -701,6 +706,7 @@ public class GameEngine
             "equipment" => CommandResult.Success(DescribeEquipment()),
             "ignite" => HandleIgnite(parsedCmd),
             "extinguish" => HandleExtinguish(parsedCmd),
+            "craft" => HandleCraft(parsedCmd),
             "eat" => HandleEat(parsedCmd),
             "drink" => HandleDrink(parsedCmd),
             "sleep" => HandleSleep(parsedCmd),
@@ -1802,6 +1808,10 @@ public class GameEngine
 
         if (!obj.CanTake)
             return CommandResult.Error(RandomMessages.CannotTakeThat);
+
+        // Validar capacidad de inventario (peso y volumen)
+        if (!CanAddToInventory(obj))
+            return CommandResult.Error("No puedes llevar más peso o volumen en tu inventario.");
 
         if (!_state.InventoryObjectIds.Contains(obj.Id))
             _state.InventoryObjectIds.Add(obj.Id);
@@ -3080,6 +3090,80 @@ public class GameEngine
         obj.IsLit = false;
         return CommandResult.Success($"Apagas {WithArticle(obj)}.");
     }
+
+    /// <summary>
+    /// Maneja el comando de fabricación.
+    /// </summary>
+    private CommandResult HandleCraft(ParsedCommand parsed)
+    {
+        var room = CurrentRoom;
+        if (room == null)
+            return CommandResult.Error(RandomMessages.PlayerLost);
+
+        // Disparar evento para abrir ventana de fabricación
+        CraftOpened?.Invoke();
+
+        return CommandResult.Success("");
+    }
+
+    #region Inventory Capacity Helpers
+
+    /// <summary>
+    /// Verifica si el jugador puede añadir un objeto a su inventario
+    /// considerando los límites de peso y volumen.
+    /// </summary>
+    private bool CanAddToInventory(GameObject obj)
+    {
+        var player = _state.Player;
+
+        // Si no hay límites, siempre cabe
+        if (player.MaxInventoryWeight < 0 && player.MaxInventoryVolume < 0)
+            return true;
+
+        // Calcular peso/volumen actual del inventario
+        var currentWeight = GetCurrentInventoryWeight();
+        var currentVolume = GetCurrentInventoryVolume();
+
+        // Verificar peso
+        if (player.MaxInventoryWeight >= 0)
+        {
+            if (currentWeight + obj.Weight > player.MaxInventoryWeight)
+                return false;
+        }
+
+        // Verificar volumen
+        if (player.MaxInventoryVolume >= 0)
+        {
+            if (currentVolume + obj.Volume > player.MaxInventoryVolume)
+                return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Calcula el peso total actual del inventario del jugador en gramos.
+    /// </summary>
+    private int GetCurrentInventoryWeight()
+    {
+        return _state.InventoryObjectIds
+            .Select(id => _state.Objects.FirstOrDefault(o => o.Id.Equals(id, StringComparison.OrdinalIgnoreCase)))
+            .Where(o => o != null)
+            .Sum(o => o!.Weight);
+    }
+
+    /// <summary>
+    /// Calcula el volumen total actual del inventario del jugador en cm³.
+    /// </summary>
+    private double GetCurrentInventoryVolume()
+    {
+        return _state.InventoryObjectIds
+            .Select(id => _state.Objects.FirstOrDefault(o => o.Id.Equals(id, StringComparison.OrdinalIgnoreCase)))
+            .Where(o => o != null)
+            .Sum(o => o!.Volume);
+    }
+
+    #endregion
 
     /// <summary>
     /// Busca un objeto accesible por nombre en inventario, sala, o contenedores abiertos/visibles.

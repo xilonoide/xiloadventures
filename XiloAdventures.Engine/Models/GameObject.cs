@@ -210,4 +210,14 @@ public class GameObject
     public string? IgniterObjectId { get; set; }
 
     #endregion
+
+    #region Crafting Properties
+
+    /// <summary>
+    /// Lista de ingredientes necesarios para fabricar este objeto.
+    /// Si está vacía, el objeto no se puede fabricar.
+    /// </summary>
+    public List<CraftingIngredient> CraftingRecipe { get; set; } = new();
+
+    #endregion
 }

@@ -45,6 +45,20 @@ public class PlayerStats
     /// </summary>
     public int Gold { get; set; } = 0;
 
+    #region Inventory Capacity
+
+    /// <summary>
+    /// Peso máximo que puede cargar el jugador en gramos. -1 = ilimitado.
+    /// </summary>
+    public int MaxInventoryWeight { get; set; } = -1;
+
+    /// <summary>
+    /// Volumen máximo del inventario en centímetros cúbicos (cm³). -1 = ilimitado.
+    /// </summary>
+    public double MaxInventoryVolume { get; set; } = -1;
+
+    #endregion
+
     #region Equipment
 
     /// <summary>
@@ -193,6 +207,16 @@ public class PlayerDefinition
     /// Dinero inicial en monedas (mínimo 0).
     /// </summary>
     public int InitialGold { get; set; } = 0;
+
+    /// <summary>
+    /// Peso máximo que puede cargar el jugador en gramos. -1 = ilimitado.
+    /// </summary>
+    public int MaxInventoryWeight { get; set; } = -1;
+
+    /// <summary>
+    /// Volumen máximo del inventario en centímetros cúbicos (cm³). -1 = ilimitado.
+    /// </summary>
+    public double MaxInventoryVolume { get; set; } = -1;
 
     /// <summary>
     /// IDs de habilidades de combate que el jugador tiene al inicio.

@@ -2298,6 +2298,14 @@ public partial class PropertyEditor : UserControl
             {
                 editor = CreateMultiSelectObjectPicker(npcForObjectList, prop);
             }
+            // Editor de receta de fabricación para GameObject
+            else if (obj is GameObject gameObjForCrafting &&
+                     prop.Name == "CraftingRecipe" &&
+                     prop.PropertyType == typeof(List<CraftingIngredient>) &&
+                     GetObjects != null)
+            {
+                editor = CreateCraftingRecipeEditor(gameObjForCrafting, prop);
+            }
             else
             {
                 // Texto normal / listas
@@ -3541,6 +3549,175 @@ public partial class PropertyEditor : UserControl
         mainPanel.Children.Add(expander);
 
         return mainPanel;
+    }
+
+    /// <summary>
+    /// Crea un editor de receta de fabricación con selección de objetos y cantidades.
+    /// </summary>
+    private FrameworkElement CreateCraftingRecipeEditor(GameObject gameObject, PropertyInfo prop)
+    {
+        var currentRecipe = prop.GetValue(gameObject) as List<CraftingIngredient> ?? new List<CraftingIngredient>();
+        var allObjects = GetObjects?.Invoke()?.ToList() ?? new List<GameObject>();
+
+        var mainPanel = new StackPanel();
+
+        // Etiqueta de resumen
+        var summaryText = new TextBlock
+        {
+            Text = GetRecipeSummary(currentRecipe, allObjects),
+            Foreground = new SolidColorBrush(Color.FromRgb(0xAA, 0xAA, 0xAA)),
+            FontSize = 12,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 4)
+        };
+        mainPanel.Children.Add(summaryText);
+
+        // Expander con los ingredientes
+        var expander = new Expander
+        {
+            Header = $"Se fabrica con ({currentRecipe.Count} ingredientes)",
+            IsExpanded = false,
+            Foreground = Brushes.White,
+            Background = new SolidColorBrush(Color.FromRgb(0x2A, 0x2A, 0x2A)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(0x4A, 0x4A, 0x4A)),
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(4)
+        };
+
+        var ingredientPanel = new StackPanel { Margin = new Thickness(8, 4, 4, 4) };
+
+        foreach (var obj in allObjects.OrderBy(o => o.Name))
+        {
+            // No permitir que un objeto sea ingrediente de si mismo
+            if (obj.Id.Equals(gameObject.Id, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var existingIngredient = currentRecipe.FirstOrDefault(i =>
+                i.ObjectId.Equals(obj.Id, StringComparison.OrdinalIgnoreCase));
+
+            var rowPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 2, 0, 2)
+            };
+
+            var checkbox = new CheckBox
+            {
+                IsChecked = existingIngredient != null,
+                VerticalAlignment = VerticalAlignment.Center,
+                Tag = obj.Id
+            };
+
+            var label = new TextBlock
+            {
+                Text = obj.Name,
+                Foreground = Brushes.White,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(6, 0, 8, 0),
+                Width = 150
+            };
+
+            var quantityLabel = new TextBlock
+            {
+                Text = "x",
+                Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88)),
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 4, 0)
+            };
+
+            var quantityBox = new TextBox
+            {
+                Text = existingIngredient?.Quantity.ToString() ?? "1",
+                Width = 40,
+                IsEnabled = existingIngredient != null,
+                Tag = obj.Id,
+                Background = new SolidColorBrush(Color.FromRgb(0x3A, 0x3A, 0x3A)),
+                Foreground = Brushes.White,
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0x55, 0x55, 0x55))
+            };
+
+            // Eventos para checkbox
+            checkbox.Checked += (_, _) =>
+            {
+                quantityBox.IsEnabled = true;
+                if (!int.TryParse(quantityBox.Text, out int qty) || qty <= 0)
+                {
+                    quantityBox.Text = "1";
+                    qty = 1;
+                }
+                UpdateCraftingRecipe(prop, gameObject, obj.Id, qty, true, summaryText, expander, allObjects);
+            };
+
+            checkbox.Unchecked += (_, _) =>
+            {
+                quantityBox.IsEnabled = false;
+                UpdateCraftingRecipe(prop, gameObject, obj.Id, 0, false, summaryText, expander, allObjects);
+            };
+
+            // Evento para cambio de cantidad
+            quantityBox.TextChanged += (_, _) =>
+            {
+                if (checkbox.IsChecked == true && int.TryParse(quantityBox.Text, out int qty) && qty > 0)
+                {
+                    UpdateCraftingRecipe(prop, gameObject, obj.Id, qty, true, summaryText, expander, allObjects);
+                }
+            };
+
+            rowPanel.Children.Add(checkbox);
+            rowPanel.Children.Add(label);
+            rowPanel.Children.Add(quantityLabel);
+            rowPanel.Children.Add(quantityBox);
+            ingredientPanel.Children.Add(rowPanel);
+        }
+
+        var scrollViewer = new ScrollViewer
+        {
+            MaxHeight = 200,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Content = ingredientPanel
+        };
+
+        expander.Content = scrollViewer;
+        mainPanel.Children.Add(expander);
+
+        return mainPanel;
+    }
+
+    private void UpdateCraftingRecipe(PropertyInfo prop, GameObject gameObject, string objectId,
+        int quantity, bool add, TextBlock summaryText, Expander expander, List<GameObject> allObjects)
+    {
+        if (_currentObject is not GameObject target) return;
+        var recipe = prop.GetValue(target) as List<CraftingIngredient> ?? new List<CraftingIngredient>();
+
+        // Eliminar ingrediente existente
+        recipe.RemoveAll(i => i.ObjectId.Equals(objectId, StringComparison.OrdinalIgnoreCase));
+
+        // Añadir si es necesario
+        if (add && quantity > 0)
+        {
+            recipe.Add(new CraftingIngredient { ObjectId = objectId, Quantity = quantity });
+        }
+
+        prop.SetValue(target, recipe);
+        PropertyEdited?.Invoke(target, prop.Name);
+
+        expander.Header = $"Se fabrica con ({recipe.Count} ingredientes)";
+        summaryText.Text = GetRecipeSummary(recipe, allObjects);
+    }
+
+    private static string GetRecipeSummary(List<CraftingIngredient> recipe, List<GameObject> allObjects)
+    {
+        if (!recipe.Any())
+            return "(Sin receta - no se puede fabricar)";
+
+        var parts = recipe.Select(i =>
+        {
+            var obj = allObjects.FirstOrDefault(o => o.Id.Equals(i.ObjectId, StringComparison.OrdinalIgnoreCase));
+            var name = obj?.Name ?? i.ObjectId;
+            return i.Quantity > 1 ? $"{i.Quantity}x {name}" : name;
+        });
+
+        return string.Join(" + ", parts);
     }
 
     /// <summary>
