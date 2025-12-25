@@ -36,11 +36,18 @@ public partial class PropertyEditor : UserControl
     // Lista de Expanders creados para expandir/contraer todo
     private readonly List<Expander> _expanders = new();
 
+    // Diccionario que asocia cada Expander con su nombre de sección
+    private readonly Dictionary<Expander, string> _expanderSectionNames = new();
+
     // Diccionario para búsqueda: nombre de propiedad traducido → (elemento UI, Expander padre)
     private readonly Dictionary<string, (UIElement Element, Expander? ParentExpander)> _searchableElements = new();
 
     // TextBlock para mostrar el total de puntos de características del jugador
     private TextBlock? _attributesTotalLabel;
+
+    // Diccionario para persistir el estado de expansión de las secciones por tipo de objeto
+    // Clave: tipo de objeto (ej: "Room", "Npc"), Valor: diccionario de sección -> estado expandido
+    private static readonly Dictionary<string, Dictionary<string, bool>> _expanderStates = new();
 
     public event Action<object?, string>? PropertyEdited;
 
@@ -96,6 +103,10 @@ public partial class PropertyEditor : UserControl
     /// </summary>
     public bool IsAiEnabled { get; set; }
 
+    /// <summary>
+    /// Expone el ScrollViewer interno para scroll programático desde el exterior.
+    /// </summary>
+    public ScrollViewer InternalScrollViewer => MainScrollViewer;
 
     public PropertyEditor()
     {
@@ -107,8 +118,52 @@ public partial class PropertyEditor : UserControl
         return _currentObject;
     }
 
+    /// <summary>
+    /// Guarda el estado de expansión actual de todas las secciones para el objeto actual.
+    /// </summary>
+    private void SaveExpanderStates()
+    {
+        if (_currentObject == null || _expanders.Count == 0)
+            return;
+
+        var objectType = _currentObject.GetType().Name;
+
+        if (!_expanderStates.ContainsKey(objectType))
+            _expanderStates[objectType] = new Dictionary<string, bool>();
+
+        foreach (var expander in _expanders)
+        {
+            if (_expanderSectionNames.TryGetValue(expander, out var sectionName) && !string.IsNullOrEmpty(sectionName))
+            {
+                _expanderStates[objectType][sectionName] = expander.IsExpanded;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Obtiene el estado de expansión guardado para una sección, si existe.
+    /// </summary>
+    private bool? GetSavedExpanderState(object? obj, string? sectionName)
+    {
+        if (obj == null || string.IsNullOrEmpty(sectionName))
+            return null;
+
+        var objectType = obj.GetType().Name;
+
+        if (_expanderStates.TryGetValue(objectType, out var sectionStates))
+        {
+            if (sectionStates.TryGetValue(sectionName, out var isExpanded))
+                return isExpanded;
+        }
+
+        return null;
+    }
+
     public void SetObject(object? obj)
     {
+        // Guardar el estado de expansión del objeto anterior antes de limpiar
+        SaveExpanderStates();
+
         _currentObject = obj;
         _encryptionPasswordBox = null;
         _attributesTotalLabel = null;
@@ -117,6 +172,7 @@ public partial class PropertyEditor : UserControl
         _propertyElements.Clear();
         _visibilityConditions.Clear();
         _expanders.Clear();
+        _expanderSectionNames.Clear();
         _searchableElements.Clear();
 
         if (obj == null)
@@ -234,7 +290,9 @@ public partial class PropertyEditor : UserControl
             : (UIElement)headerContent;
 
         // Determinar si la sección debe estar expandida
-        bool isExpanded = ShouldSectionBeExpanded(obj, sectionName, _sectionIndex);
+        // Primero intentar usar el estado guardado, si no existe usar el comportamiento por defecto
+        var savedState = GetSavedExpanderState(obj, sectionName);
+        bool isExpanded = savedState ?? ShouldSectionBeExpanded(obj, sectionName, _sectionIndex);
 
         var expander = new Expander
         {
@@ -252,6 +310,10 @@ public partial class PropertyEditor : UserControl
 
         RootPanel.Children.Add(expander);
         _expanders.Add(expander);
+
+        // Registrar el nombre de sección para persistencia del estado de expansión
+        if (!string.IsNullOrEmpty(sectionName))
+            _expanderSectionNames[expander] = sectionName;
 
         // Registrar elementos searchables del contenido
         RegisterSearchableElements(content, expander);
@@ -507,7 +569,7 @@ public partial class PropertyEditor : UserControl
         contentPanel.Children.Add(panel);
 
         // Crear acordeón
-        AddAccordionSection("📖 SINÓNIMOS DEL PARSER", contentPanel);
+        AddAccordionSection("📖 SINÓNIMOS DEL PARSER", contentPanel, null, "📖 SINÓNIMOS DEL PARSER");
     }
 
     /// <summary>
@@ -542,7 +604,7 @@ public partial class PropertyEditor : UserControl
         }
 
         // Crear acordeón
-        AddAccordionSection("📊 ESTADÍSTICAS DE COMBATE", contentPanel);
+        AddAccordionSection("📊 ESTADÍSTICAS DE COMBATE", contentPanel, null, "📊 ESTADÍSTICAS DE COMBATE");
     }
 
     /// <summary>
@@ -592,7 +654,7 @@ public partial class PropertyEditor : UserControl
         contentPanel.Children.Add(npcAbilitiesPanel);
 
         // Crear acordeón
-        AddAccordionSection("🎮 SISTEMAS", contentPanel);
+        AddAccordionSection("🎮 SISTEMAS", contentPanel, null, "🎮 SISTEMAS");
     }
 
     /// <summary>
@@ -622,7 +684,7 @@ public partial class PropertyEditor : UserControl
         contentPanel.Children.Add(abilitiesSelector);
 
         // Crear acordeón
-        AddAccordionSection("✨ HABILIDADES MÁGICAS", contentPanel);
+        AddAccordionSection("✨ HABILIDADES MÁGICAS", contentPanel, null, "✨ HABILIDADES MÁGICAS");
     }
 
     /// <summary>
@@ -2887,10 +2949,9 @@ public partial class PropertyEditor : UserControl
     /// <summary>
     /// Maneja el scroll con la rueda del ratón sobre el panel de propiedades
     /// </summary>
-    private void RootPanel_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    private void MainScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        // Obtener el ScrollViewer padre
-        var scrollViewer = MainScrollViewer;
+        var scrollViewer = sender as ScrollViewer;
         if (scrollViewer == null) return;
 
         // Calcular el nuevo offset (e.Delta es positivo cuando se hace scroll hacia arriba)

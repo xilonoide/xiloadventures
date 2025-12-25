@@ -926,7 +926,7 @@
                 </ScrollViewer>
 
                 <!-- Panel derecho: propiedades (oculto hasta que se seleccione algo) -->
-                <ScrollViewer x:Name="PropertyScrollViewer"
+                <Border x:Name="PropertyScrollViewer"
                         Grid.Column="2"
                         Grid.Row="0"
                         Grid.RowSpan="2"
@@ -934,12 +934,12 @@
                         Panel.ZIndex="1"
                         Width="425"
                         Visibility="Collapsed"
-                        HorizontalScrollBarVisibility="Disabled"
-                        VerticalScrollBarVisibility="Auto">
-                    <StackPanel Background="#333333">
+                        Background="#333333">
+                    <DockPanel>
                         <!-- Botones expandir/contraer y buscador -->
                         <DockPanel LastChildFill="True"
-                                Margin="4,4,4,4">
+                                Margin="4,4,4,4"
+                                DockPanel.Dock="Top">
                             <StackPanel Orientation="Horizontal"
                                     DockPanel.Dock="Left">
                                 <Button Width="24"
@@ -979,8 +979,8 @@
                                      TextChanged="PropertySearchTextBox_TextChanged"/>
                         </DockPanel>
                         <controls:PropertyEditor x:Name="PropertyEditor"/>
-                    </StackPanel>
-                </ScrollViewer>
+                    </DockPanel>
+                </Border>
 
                 <StackPanel Grid.Column="2"
                         Grid.Row="2"

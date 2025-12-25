@@ -2196,7 +2196,9 @@ public class GameEngine
         _ = TriggerEntityScriptAsync("Npc", npc.Id, "Event_OnTalk");
 
         // Si el NPC no tiene conversación asignada
+#pragma warning disable CS0618 // ConversationId está obsoleto pero se mantiene por compatibilidad
         if (string.IsNullOrEmpty(npc.ConversationId))
+#pragma warning restore CS0618
             return CommandResult.Success(string.Format(RandomMessages.NothingToSay, Cap(npc.Name)));
 
         // Iniciar conversación con el NPC

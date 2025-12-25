@@ -197,7 +197,7 @@ public class TradeIntegrationTests
 
         // Assert
         Assert.True(result.Success);
-        Assert.Empty(state.InventoryObjectIds.Where(id => id == "gem"));
+        Assert.DoesNotContain("gem", state.InventoryObjectIds);
         // Gem price 200 * 0.5 = 100 each, sold 2 = 200
         Assert.Equal(initialMoney + 200, state.Player.Money);
         Assert.Equal(initialMerchantMoney - 200, merchant.Money);
@@ -432,7 +432,7 @@ public class TradeIntegrationTests
 
         // Assert
         Assert.True(result.Success);
-        Assert.Empty(state.InventoryObjectIds.Where(id => id == "rare_artifact"));
+        Assert.DoesNotContain("rare_artifact", state.InventoryObjectIds);
         Assert.Equal(-1, merchant.Money); // Still infinite
     }
 

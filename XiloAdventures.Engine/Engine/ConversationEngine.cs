@@ -67,6 +67,7 @@ public class ConversationEngine
         ConversationDefinition? conversation = null;
 
         // 1. Primero buscar la conversación por ConversationId del NPC
+#pragma warning disable CS0618 // ConversationId está obsoleto pero se mantiene por compatibilidad
         if (!string.IsNullOrEmpty(npc.ConversationId))
         {
             conversation = _world.Conversations.FirstOrDefault(c =>
@@ -77,6 +78,7 @@ public class ConversationEngine
                 DebugMessage($"[Error] Conversación '{npc.ConversationId}' no encontrada en el mundo.");
             }
         }
+#pragma warning restore CS0618
 
         // 2. Si no tiene conversación asignada, intentar crear una desde el script del NPC
         if (conversation == null)

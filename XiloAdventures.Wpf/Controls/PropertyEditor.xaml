@@ -27,7 +27,7 @@
         </Style>
     </UserControl.Resources>
     
-    <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto" Padding="8">
-        <StackPanel x:Name="RootPanel" Margin="0" PreviewMouseWheel="RootPanel_PreviewMouseWheel"/>
+    <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto" Padding="8" PreviewMouseWheel="MainScrollViewer_PreviewMouseWheel">
+        <StackPanel x:Name="RootPanel" Margin="0"/>
     </ScrollViewer>
 </UserControl>

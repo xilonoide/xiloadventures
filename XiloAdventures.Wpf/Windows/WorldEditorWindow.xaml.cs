@@ -1179,22 +1179,24 @@ public partial class WorldEditorWindow : Window
 
     private void ScrollToCenter(UIElement element)
     {
+        var scrollViewer = PropertyEditor.InternalScrollViewer;
+
         // Obtener la posición del elemento relativa al ScrollViewer
-        var transform = element.TransformToAncestor(PropertyScrollViewer);
+        var transform = element.TransformToAncestor(scrollViewer);
         var elementPosition = transform.Transform(new Point(0, 0));
 
         // Calcular el offset para centrar verticalmente
         var elementHeight = element is FrameworkElement fe ? fe.ActualHeight : 20;
-        var viewportHeight = PropertyScrollViewer.ViewportHeight;
-        var currentOffset = PropertyScrollViewer.VerticalOffset;
+        var viewportHeight = scrollViewer.ViewportHeight;
+        var currentOffset = scrollViewer.VerticalOffset;
 
         // Posición deseada: centrar el elemento en el viewport
         var targetOffset = currentOffset + elementPosition.Y - (viewportHeight / 2) + (elementHeight / 2);
 
         // Asegurar que el offset esté dentro de los límites
-        targetOffset = Math.Max(0, Math.Min(targetOffset, PropertyScrollViewer.ScrollableHeight));
+        targetOffset = Math.Max(0, Math.Min(targetOffset, scrollViewer.ScrollableHeight));
 
-        PropertyScrollViewer.ScrollToVerticalOffset(targetOffset);
+        scrollViewer.ScrollToVerticalOffset(targetOffset);
 
         // Resaltar brevemente el elemento encontrado
         HighlightElement(element);

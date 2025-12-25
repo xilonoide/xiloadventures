@@ -486,7 +486,7 @@ public class TradeEngineTests
         Assert.True(result.Success);
         Assert.Equal(2, result.ItemsTransferred);
         Assert.Equal(applePrice * 2, result.MoneyTransferred);
-        Assert.Single(state.InventoryObjectIds.Where(id => id == "apple"));
+        Assert.Single(state.InventoryObjectIds, id => id == "apple");
     }
 
     #endregion

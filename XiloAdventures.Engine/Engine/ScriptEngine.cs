@@ -869,7 +869,7 @@ public class ScriptEngine
 
                 var room = ctx.GameState.Rooms.FirstOrDefault(r =>
                     string.Equals(r.Id, roomId, StringComparison.OrdinalIgnoreCase));
-                if (room != null)
+                if (room != null && !string.IsNullOrEmpty(roomId))
                 {
                     room.MusicId = string.IsNullOrEmpty(musicId) ? null : musicId;
                     OnRoomMusicChanged?.Invoke(roomId, room.MusicId);
@@ -884,7 +884,7 @@ public class ScriptEngine
 
                 var room = ctx.GameState.Rooms.FirstOrDefault(r =>
                     string.Equals(r.Id, roomId, StringComparison.OrdinalIgnoreCase));
-                if (room != null)
+                if (room != null && description != null)
                 {
                     room.Description = description;
                 }
@@ -1169,7 +1169,7 @@ public class ScriptEngine
                 var doorId = GetPropertyValue<string>(node, "DoorId", "");
                 var door = ctx.GameState.Doors.FirstOrDefault(d =>
                     string.Equals(d.Id, doorId, StringComparison.OrdinalIgnoreCase));
-                if (door != null)
+                if (door != null && !string.IsNullOrEmpty(doorId))
                 {
                     door.IsLocked = true;
                     await TriggerEventAsync("Door", doorId, "Event_OnDoorLock");
@@ -1181,7 +1181,7 @@ public class ScriptEngine
                 var doorId = GetPropertyValue<string>(node, "DoorId", "");
                 var door = ctx.GameState.Doors.FirstOrDefault(d =>
                     string.Equals(d.Id, doorId, StringComparison.OrdinalIgnoreCase));
-                if (door != null)
+                if (door != null && !string.IsNullOrEmpty(doorId))
                 {
                     door.IsLocked = false;
                     await TriggerEventAsync("Door", doorId, "Event_OnDoorUnlock");
@@ -1361,7 +1361,7 @@ public class ScriptEngine
                     obj.RoomId = roomId;
                     var newRoom = ctx.GameState.Rooms.FirstOrDefault(r =>
                         string.Equals(r.Id, roomId, StringComparison.OrdinalIgnoreCase));
-                    if (newRoom != null && !newRoom.ObjectIds.Contains(objectId))
+                    if (newRoom != null && !string.IsNullOrEmpty(objectId) && !newRoom.ObjectIds.Contains(objectId))
                     {
                         newRoom.ObjectIds.Add(objectId);
                     }
@@ -1396,7 +1396,7 @@ public class ScriptEngine
                     }
 
                     // Añadir al contenedor
-                    if (!container.ContainedObjectIds.Contains(objectId))
+                    if (!string.IsNullOrEmpty(objectId) && !container.ContainedObjectIds.Contains(objectId))
                     {
                         container.ContainedObjectIds.Add(objectId);
                     }
@@ -2086,7 +2086,7 @@ public class ScriptEngine
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var npc = ctx.GameState.Npcs.FirstOrDefault(n =>
                     string.Equals(n.Id, npcId, StringComparison.OrdinalIgnoreCase));
-                if (npc != null && npc.IsShopkeeper)
+                if (npc != null && npc.IsShopkeeper && !string.IsNullOrEmpty(npcId))
                 {
                     // Trigger trade open event - the actual TradeWindow is opened via GameEngine
                     OnStartTrade?.Invoke(npcId);
