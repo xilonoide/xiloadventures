@@ -1,9 +1,12 @@
 using System.Collections.ObjectModel;
+using System.Text;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using XiloAdventures.Engine;
 using XiloAdventures.Wpf.Common.Windows;
 
 namespace XiloAdventures.Wpf.Windows;
@@ -41,6 +44,7 @@ public partial class ParserDictionaryEditorWindow : Window
         StopwordsListBox.ItemsSource = _stopwords;
 
         LoadFromJson(json);
+        LoadDefaultParserInfo();
 
         // Hide verbs tab if not needed (for object/NPC/door context)
         if (!showVerbs)
@@ -51,6 +55,47 @@ public partial class ParserDictionaryEditorWindow : Window
                 MainTabControl.SelectedIndex = 1; // Select nouns tab by default
             }
         }
+    }
+
+    private void LoadDefaultParserInfo()
+    {
+        // Cargar verbos por defecto
+        var defaultVerbs = Parser.GetDefaultVerbs();
+        var verbsBuilder = new StringBuilder();
+        foreach (var kvp in defaultVerbs.OrderBy(v => v.Key))
+        {
+            var synonyms = kvp.Value.Where(s => !s.Equals(kvp.Key, StringComparison.OrdinalIgnoreCase)).Distinct().ToList();
+            if (synonyms.Count > 0)
+            {
+                verbsBuilder.Append(kvp.Key);
+                verbsBuilder.Append(" → ");
+                verbsBuilder.Append(string.Join(", ", synonyms.Take(8)));
+                if (synonyms.Count > 8)
+                    verbsBuilder.Append("...");
+                verbsBuilder.AppendLine();
+            }
+        }
+        DefaultVerbsText.Text = verbsBuilder.ToString().TrimEnd();
+
+        // Cargar sustantivos por defecto
+        var defaultNouns = Parser.GetDefaultNouns();
+        var nounsBuilder = new StringBuilder();
+        foreach (var kvp in defaultNouns.OrderBy(n => n.Key))
+        {
+            var synonyms = kvp.Value.Where(s => !s.Equals(kvp.Key, StringComparison.OrdinalIgnoreCase)).Distinct().ToList();
+            if (synonyms.Count > 0)
+            {
+                nounsBuilder.Append(kvp.Key);
+                nounsBuilder.Append(" → ");
+                nounsBuilder.Append(string.Join(", ", synonyms));
+                nounsBuilder.AppendLine();
+            }
+        }
+        DefaultNounsText.Text = nounsBuilder.ToString().TrimEnd();
+
+        // Cargar palabras ignoradas por defecto
+        var ignoredWords = Parser.GetDefaultIgnoredWords();
+        DefaultIgnoredText.Text = string.Join(", ", ignoredWords.OrderBy(w => w));
     }
 
     private void LoadFromJson(string? json)

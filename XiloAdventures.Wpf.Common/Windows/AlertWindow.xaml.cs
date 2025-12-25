@@ -68,17 +68,10 @@ public partial class AlertWindow : Window
         {
             ButtonsGrid.Visibility = Visibility.Collapsed;
 
-            // Permitir cerrar con clic en cualquier parte
-            MouseLeftButtonUp += (_, _) =>
-            {
-                DialogResult = true;
-                Close();
-            };
-
-            // Permitir cerrar con ESC
+            // Permitir cerrar con ESC o Enter
             PreviewKeyDown += (_, e) =>
             {
-                if (e.Key == System.Windows.Input.Key.Escape)
+                if (e.Key == System.Windows.Input.Key.Escape || e.Key == System.Windows.Input.Key.Enter)
                 {
                     DialogResult = true;
                     Close();

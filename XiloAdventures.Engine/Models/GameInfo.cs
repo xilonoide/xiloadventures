@@ -1,3 +1,5 @@
+using System;
+using System.ComponentModel;
 using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Engine.Models;
@@ -8,9 +10,10 @@ namespace XiloAdventures.Engine.Models;
 public class GameInfo
 {
     /// <summary>
-    /// Identificador único del mundo.
+    /// Identificador único del mundo (GUID generado automáticamente).
     /// </summary>
-    public string Id { get; set; } = string.Empty;
+    [Browsable(false)]
+    public string Id { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>
     /// Tema o ambientación del mundo (ej: "fantasía medieval", "ciencia ficción", "horror gótico").

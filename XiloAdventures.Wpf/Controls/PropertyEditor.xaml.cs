@@ -814,9 +814,9 @@ public partial class PropertyEditor : UserControl
         var orderedCategories = new[]
         {
             "🔖 Identificación",
+            "🎵 Multimedia",
             "📝 Descripción",
             "🎮 Sistemas",
-            "🎵 Multimedia",
             "⚙️ Comportamiento",
             "⚔️ Combate",
             "📊 Estadísticas",
@@ -2656,7 +2656,7 @@ public partial class PropertyEditor : UserControl
         ["Theme"] = "Tema/Ambientación",
         ["MusicId"] = "Música",
         ["WorldMusicId"] = "Música global",
-        ["EncryptionKey"] = "Clave de cifrado",
+        ["EncryptionKey"] = "Clave de cifrado de las partidas",
         ["ImageBase64"] = "Imagen (Base64)",
         ["ImageId"] = "Imagen (id)",
         ["RoomId"] = "Sala",
@@ -2719,7 +2719,7 @@ public partial class PropertyEditor : UserControl
         ["GameInfo.StartHour"] = "Hora inicial",
         ["GameInfo.StartWeather"] = "Clima inicial",
         ["GameInfo.WorldMusicId"] = "Música global",
-        ["GameInfo.EncryptionKey"] = "Clave de cifrado",
+        ["GameInfo.EncryptionKey"] = "Clave de cifrado de las partidas",
         ["GameInfo.EndingText"] = "Texto de finalización",
         ["GameInfo.EndingMusicId"] = "Música de finalización",
         ["GameInfo.TestModeAiEnabled"] = "IA en modo pruebas",

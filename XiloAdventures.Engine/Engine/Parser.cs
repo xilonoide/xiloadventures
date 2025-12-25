@@ -147,7 +147,7 @@ public static class Parser
         AddVerbAlias("lock", "bloquear", "cerrar con llave", "cerrar con");
         AddVerbAlias("put", "meter", "poner", "colocar", "guardar");
         AddVerbAlias("get_from", "sacar", "quitar", "extraer");
-        AddVerbAlias("look_in", "ver en", "ver dentro");
+        AddVerbAlias("look_in", "ver en", "ver dentro", "mirar", "mirar en");
         AddVerbAlias("talk", "hablar", "habla", "charlar", "conversar", "decir", "di");
         AddVerbAlias("say", "responder", "contestar");
         AddVerbAlias("option", "opcion", "opción");
@@ -582,6 +582,48 @@ public static class Parser
     public static void ClearPronounContext()
     {
         _lastReferencedObject = null;
+    }
+
+    /// <summary>
+    /// Gets all default verb aliases (verb -> synonyms).
+    /// </summary>
+    public static IReadOnlyDictionary<string, List<string>> GetDefaultVerbs()
+    {
+        var result = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kvp in GlobalVerbAliases)
+        {
+            var canonical = kvp.Value;
+            if (!result.ContainsKey(canonical))
+                result[canonical] = new List<string>();
+            if (!canonical.Equals(kvp.Key, StringComparison.OrdinalIgnoreCase))
+                result[canonical].Add(kvp.Key);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Gets all default noun aliases (noun -> synonyms).
+    /// </summary>
+    public static IReadOnlyDictionary<string, List<string>> GetDefaultNouns()
+    {
+        var result = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kvp in GlobalNounAliases)
+        {
+            var canonical = kvp.Value;
+            if (!result.ContainsKey(canonical))
+                result[canonical] = new List<string>();
+            if (!canonical.Equals(kvp.Key, StringComparison.OrdinalIgnoreCase))
+                result[canonical].Add(kvp.Key);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Gets the default ignored words (articles, determiners, etc.).
+    /// </summary>
+    public static IReadOnlyCollection<string> GetDefaultIgnoredWords()
+    {
+        return IgnoredNounPrefixes;
     }
 
     private static string NormalizeVerb(string verb)
