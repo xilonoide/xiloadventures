@@ -1020,7 +1020,6 @@ public class GameEngineTests
                     Money = 10,
                     Stats = new CombatStats
                     {
-                        Level = 1,
                         Strength = 5,
                         Dexterity = 8,
                         Intelligence = 3,

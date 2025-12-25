@@ -67,7 +67,6 @@ public partial class CombatWindow : Window
     {
         // Información del NPC
         NpcNameText.Text = _enemy.Name;
-        NpcLevelText.Text = $"Nivel {_enemy.Stats.Level}";
         UpdateNpcHealth();
 
         // Información del jugador

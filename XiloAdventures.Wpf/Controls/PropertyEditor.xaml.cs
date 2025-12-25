@@ -29,6 +29,10 @@ public partial class PropertyEditor : UserControl
     private readonly Dictionary<string, UIElement> _propertyElements = new();
     // Diccionario para rastrear las condiciones de visibilidad de cada propiedad
     private readonly Dictionary<string, Func<bool>> _visibilityConditions = new();
+    // Diccionario para rastrear a qué sección pertenece cada propiedad (por nombre de sección)
+    private readonly Dictionary<string, string> _propertyToSectionName = new();
+    // Nombre de la sección que se está construyendo actualmente
+    private string? _currentBuildingSectionName;
 
     // Contador de secciones para determinar cuál debe estar expandida (la primera)
     private int _sectionIndex;
@@ -171,6 +175,8 @@ public partial class PropertyEditor : UserControl
         RootPanel.Children.Clear();
         _propertyElements.Clear();
         _visibilityConditions.Clear();
+        _propertyToSectionName.Clear();
+        _currentBuildingSectionName = null;
         _expanders.Clear();
         _expanderSectionNames.Clear();
         _searchableElements.Clear();
@@ -195,8 +201,9 @@ public partial class PropertyEditor : UserControl
         var groups = GroupProperties(obj, props);
 
         // Separar el grupo "Otros" para renderizarlo al final
-        var otrosGroup = groups.FirstOrDefault(g => g.Name == "🏷️ Otros");
-        var mainGroups = groups.Where(g => g.Name != "🏷️ Otros").ToList();
+        var otrosDisplayName = PropertyCategory.Otros.ToDisplayString();
+        var otrosGroup = groups.FirstOrDefault(g => g.Name == otrosDisplayName);
+        var mainGroups = groups.Where(g => g.Name != otrosDisplayName).ToList();
 
         foreach (var group in mainGroups)
         {
@@ -208,7 +215,7 @@ public partial class PropertyEditor : UserControl
 
             // Si es PlayerDefinition y grupo Características, crear header especial con total de puntos
             object headerContent;
-            if (obj is PlayerDefinition playerDef && group.Name == "⚔️ Características")
+            if (obj is PlayerDefinition playerDef && group.Name == PropertyCategory.Caracteristicas.ToDisplayString())
             {
                 var headerPanel = new StackPanel { Orientation = Orientation.Horizontal };
 
@@ -238,6 +245,9 @@ public partial class PropertyEditor : UserControl
                 headerContent = group.Name.ToUpper();
             }
 
+            // Trackear la sección actual para asociar propiedades
+            _currentBuildingSectionName = group.Name;
+
             // Propiedades del grupo
             foreach (var prop in group.Properties)
             {
@@ -246,30 +256,57 @@ public partial class PropertyEditor : UserControl
 
             // Crear acordeón
             AddAccordionSection(headerContent, contentPanel, obj, group.Name);
+            _currentBuildingSectionName = null;
         }
 
-        // Añadir sección de estadísticas de combate para NPCs
-        AddNpcStatsSection(obj);
+        // Añadir sección de Estadísticas de combate para NPCs (solo si combate está habilitado)
+        var gameInfoForSections = GetGameInfo?.Invoke();
+        if (gameInfoForSections?.CombatEnabled == true)
+        {
+            AddNpcStatsSection(obj);
+        }
 
-        // Añadir sección de Sistemas para NPCs (Magia)
-        AddNpcSystemsSection(obj);
+        // Añadir sección de Sistemas para NPCs (Magia) - solo si combate está habilitado
+        if (gameInfoForSections?.CombatEnabled == true)
+        {
+            AddNpcSystemsSection(obj);
+        }
 
         // Añadir sección de habilidades para PlayerDefinition
         AddPlayerAbilitiesSection(obj);
 
-        // Añadir grupo "Otros" al final (si tiene propiedades)
-        if (otrosGroup != null && otrosGroup.Properties.Any())
+        // Añadir grupo "Otros" al final (si tiene propiedades o sinónimos)
+        var synonymPanel = CreateSynonymEditorPanel(obj);
+        var hasOtrosProperties = otrosGroup != null && otrosGroup.Properties.Any();
+
+        if (hasOtrosProperties || synonymPanel != null)
         {
             var contentPanel = new StackPanel();
-            foreach (var prop in otrosGroup.Properties)
+
+            // Trackear la sección actual
+            _currentBuildingSectionName = otrosDisplayName;
+
+            // Añadir propiedades de "Otros"
+            if (hasOtrosProperties)
             {
-                AddPropertyControlToPanel(obj, prop, contentPanel);
+                foreach (var prop in otrosGroup!.Properties)
+                {
+                    AddPropertyControlToPanel(obj, prop, contentPanel);
+                }
             }
-            AddAccordionSection(otrosGroup.Name.ToUpper(), contentPanel, obj, otrosGroup.Name);
+
+            // Añadir editor de sinónimos al final
+            if (synonymPanel != null)
+            {
+                contentPanel.Children.Add(synonymPanel);
+            }
+
+            AddAccordionSection(otrosDisplayName.ToUpper(), contentPanel, obj, otrosDisplayName);
+            _currentBuildingSectionName = null;
         }
 
-        // Añadir botón de sinónimos para objetos, NPCs y puertas
-        AddSynonymEditorButton(obj);
+        // Aplicar visibilidad inicial de secciones
+        UpdateSectionVisibility();
     }
 
     /// <summary>
@@ -493,37 +530,37 @@ public partial class PropertyEditor : UserControl
     }
 
     /// <summary>
-    /// Añade un botón para editar sinónimos del parser (solo para objetos, NPCs y puertas).
+    /// Crea un panel con label y botón para editar sinónimos del parser.
+    /// Retorna null si el objeto no soporta sinónimos o no hay acceso al diccionario.
     /// </summary>
-    private void AddSynonymEditorButton(object obj)
+    private StackPanel? CreateSynonymEditorPanel(object obj)
     {
         // Solo para objetos, NPCs y puertas
         if (obj is not GameObject and not Npc and not Door)
-            return;
+            return null;
 
         // Verificar que tenemos acceso al diccionario
         if (GetParserDictionary == null || SetParserDictionary == null)
-            return;
+            return null;
 
-        // Crear contenido del acordeón
-        var contentPanel = new StackPanel();
+        // Crear panel contenedor con label
+        var container = new StackPanel { Margin = new Thickness(0, 8, 0, 0) };
 
-        // Descripción
-        var description = new TextBlock
+        // Label
+        var label = new TextBlock
         {
-            Text = "Define sinónimos para que el parser reconozca diferentes nombres para este elemento.",
-            TextWrapping = TextWrapping.Wrap,
-            FontSize = 11,
-            Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88)),
-            Margin = new Thickness(0, 0, 0, 8)
+            Text = "Sinónimos del parser",
+            FontSize = 12,
+            Foreground = new SolidColorBrush(Color.FromRgb(0xAA, 0xAA, 0xAA)),
+            Margin = new Thickness(0, 0, 0, 4)
         };
-        contentPanel.Children.Add(description);
+        container.Children.Add(label);
 
-        // Botón
+        // Botón y estado
         var currentJson = GetParserDictionary();
         var hasContent = !string.IsNullOrWhiteSpace(currentJson);
 
-        var panel = new StackPanel { Orientation = Orientation.Horizontal };
+        var buttonPanel = new StackPanel { Orientation = Orientation.Horizontal };
 
         var editButton = new Button
         {
@@ -532,13 +569,12 @@ public partial class PropertyEditor : UserControl
             Background = new SolidColorBrush(Color.FromRgb(0x3A, 0x3A, 0x3A)),
             Foreground = Brushes.White,
             BorderBrush = new SolidColorBrush(Color.FromRgb(0x4A, 0x4A, 0x4A)),
-            Cursor = Cursors.Hand,
-            Margin = new Thickness(0, 2, 0, 0)
+            Cursor = Cursors.Hand
         };
 
         var statusText = new TextBlock
         {
-            Text = hasContent ? " ✓ Diccionario configurado" : "",
+            Text = hasContent ? " ✓ Configurado" : "",
             Foreground = new SolidColorBrush(Color.FromRgb(0x8C, 0xD4, 0x7E)),
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(8, 0, 0, 0),
@@ -560,16 +596,15 @@ public partial class PropertyEditor : UserControl
 
                 // Update status
                 var newHasContent = !string.IsNullOrWhiteSpace(editorWindow.ResultJson);
-                statusText.Text = newHasContent ? " ✓ Diccionario configurado" : "";
+                statusText.Text = newHasContent ? " ✓ Configurado" : "";
             }
         };
 
-        panel.Children.Add(editButton);
-        panel.Children.Add(statusText);
-        contentPanel.Children.Add(panel);
+        buttonPanel.Children.Add(editButton);
+        buttonPanel.Children.Add(statusText);
+        container.Children.Add(buttonPanel);
 
-        // Crear acordeón
-        AddAccordionSection("📖 SINÓNIMOS DEL PARSER", contentPanel, null, "📖 SINÓNIMOS DEL PARSER");
+        return container;
     }
 
     /// <summary>
@@ -589,7 +624,6 @@ public partial class PropertyEditor : UserControl
         // Propiedades de estadísticas
         var statsProperties = new[]
         {
-            ("Level", "Nivel", 1, 100),
             ("Strength", "Fuerza", 1, 100),
             ("Dexterity", "Destreza", 1, 100),
             ("Intelligence", "Inteligencia", 1, 100),
@@ -604,7 +638,8 @@ public partial class PropertyEditor : UserControl
         }
 
         // Crear acordeón
-        AddAccordionSection("📊 ESTADÍSTICAS DE COMBATE", contentPanel, null, "📊 ESTADÍSTICAS DE COMBATE");
+        var combatStatsDisplay = PropertyCategory.EstadisticasCombate.ToDisplayString();
+        AddAccordionSection(combatStatsDisplay.ToUpper(), contentPanel, null, combatStatsDisplay);
     }
 
     /// <summary>
@@ -777,18 +812,19 @@ public partial class PropertyEditor : UserControl
 
     private List<PropertyGroup> GroupProperties(object obj, List<PropertyInfo> props)
     {
-        var groups = new Dictionary<string, List<PropertyInfo>>(StringComparer.OrdinalIgnoreCase)
+        var groups = new Dictionary<PropertyCategory, List<PropertyInfo>>
         {
-            ["🔖 Identificación"] = new(),
-            ["📝 Descripción"] = new(),
-            ["🎮 Sistemas"] = new(),
-            ["🎵 Multimedia"] = new(),
-            ["⚙️ Comportamiento"] = new(),
-            ["⚔️ Combate"] = new(),
-            ["📊 Estadísticas"] = new(),
-            ["⚔️ Características"] = new(),
-            ["🔒 Seguridad"] = new(),
-            ["🏷️ Otros"] = new()
+            [PropertyCategory.Identificacion] = new(),
+            [PropertyCategory.Descripcion] = new(),
+            [PropertyCategory.Sistemas] = new(),
+            [PropertyCategory.Multimedia] = new(),
+            [PropertyCategory.Comportamiento] = new(),
+            [PropertyCategory.Combate] = new(),
+            [PropertyCategory.Estadisticas] = new(),
+            [PropertyCategory.Caracteristicas] = new(),
+            [PropertyCategory.Seguridad] = new(),
+            [PropertyCategory.Fabricacion] = new(),
+            [PropertyCategory.Otros] = new()
         };
 
         foreach (var prop in props)
@@ -800,7 +836,7 @@ public partial class PropertyEditor : UserControl
             }
             else
             {
-                groups["🏷️ Otros"].Add(prop);
+                groups[PropertyCategory.Otros].Add(prop);
             }
         }
 
@@ -813,35 +849,62 @@ public partial class PropertyEditor : UserControl
         // Retornar solo los grupos que tienen propiedades, en orden
         var orderedCategories = new[]
         {
-            "🔖 Identificación",
-            "🎵 Multimedia",
-            "📝 Descripción",
-            "🎮 Sistemas",
-            "⚙️ Comportamiento",
-            "⚔️ Combate",
-            "📊 Estadísticas",
-            "⚔️ Características",
-            "🔒 Seguridad",
-            "🏷️ Otros"
+            PropertyCategory.Identificacion,
+            PropertyCategory.Multimedia,
+            PropertyCategory.Descripcion,
+            PropertyCategory.Sistemas,
+            PropertyCategory.Comportamiento,
+            PropertyCategory.Combate,
+            PropertyCategory.Fabricacion,
+            PropertyCategory.Estadisticas,
+            PropertyCategory.Caracteristicas,
+            PropertyCategory.Seguridad,
+            PropertyCategory.Otros
         };
+
+        // Obtener configuración del juego para filtrar categorías
+        var gameInfo = GetGameInfo?.Invoke();
+        var craftingEnabled = gameInfo?.CraftingEnabled ?? false;
+        var combatEnabled = gameInfo?.CombatEnabled ?? false;
 
         return orderedCategories
             .Where(cat => groups[cat].Any())
-            .Select(cat => new PropertyGroup(cat, groups[cat]))
+            .Where(cat => ShouldShowCategory(cat, obj, craftingEnabled, combatEnabled))
+            .Select(cat => new PropertyGroup(cat.ToDisplayString(), groups[cat]))
             .ToList();
     }
 
-    private static string GetPropertyCategory(object obj, PropertyInfo prop)
+    /// <summary>
+    /// Determina si una categoría debe mostrarse según la configuración del juego.
+    /// </summary>
+    private static bool ShouldShowCategory(PropertyCategory category, object obj, bool craftingEnabled, bool combatEnabled)
+    {
+        // Fabricación solo visible en objetos si está habilitada
+        if (category == PropertyCategory.Fabricacion && obj is GameObject && !craftingEnabled)
+            return false;
+
+        // Combate solo visible en objetos y NPCs si está habilitado
+        if (category == PropertyCategory.Combate && (obj is GameObject || obj is Npc) && !combatEnabled)
+            return false;
+
+        return true;
+    }
+
+    private static PropertyCategory GetPropertyCategory(object obj, PropertyInfo prop)
     {
         var name = prop.Name;
 
+        // QuestDefinition: todas las propiedades en Identificación
+        if (obj is QuestDefinition)
+            return PropertyCategory.Identificacion;
+
         // Identificación
         if (name is var n && n == PN.Id || n == PN.Name || n == PN.Title || n == PN.Theme)
-            return "🔖 Identificación";
+            return PropertyCategory.Identificacion;
 
         // Descripción
-        if (name == PN.Description || name == PN.Dialogue || name == PN.TextContent)
-            return "📝 Descripción";
+        if (name == PN.Description || name == PN.Dialogue)
+            return PropertyCategory.Descripcion;
 
         // Sistemas (Combate, Necesidades básicas y Fabricación)
         if (name == PN.CombatEnabled || name == PN.MagicEnabled || name == PN.BasicNeedsEnabled
@@ -849,16 +912,20 @@ public partial class PropertyEditor : UserControl
             || name == PN.HungerDeathText || name == PN.ThirstDeathText || name == PN.SleepDeathText
             || name == PN.HealthDeathText || name == PN.SanityDeathText
             || name == PN.CraftingEnabled)
-            return "🎮 Sistemas";
+            return PropertyCategory.Sistemas;
 
         // Multimedia
         if (name.Contains("Image") || name.Contains("Music"))
-            return "🎵 Multimedia";
+            return PropertyCategory.Multimedia;
 
         // Salas (al final de Identificación)
         if (name == PN.RoomId || name == PN.RoomIdA || name == PN.RoomIdB
             || name == PN.StartRoomId || name == PN.TargetRoomId || name == PN.Direction)
-            return "🔖 Identificación";
+            return PropertyCategory.Identificacion;
+
+        // NPC: Dinero en Identificación (después de Sala)
+        if (obj is Npc && name == PN.Money)
+            return PropertyCategory.Identificacion;
 
         // Comportamiento (incluyendo propiedades de contenedor de GameObject que irán con sangría)
         if (name == PN.Visible || name == PN.CanTake || name == PN.Type || name == PN.Gender
@@ -867,67 +934,69 @@ public partial class PropertyEditor : UserControl
             || name == PN.IsInterior || name == PN.StartHour || name == PN.StartWeather || name == PN.MinutesPerGameHour
             || name == PN.RequiredQuests || name == PN.OpenFromSide || name == PN.EndingText
             || name == PN.IsLightSource || name == PN.IsLit || name == PN.LightTurnsRemaining
-            || name == PN.CanExtinguish || name == PN.CanIgnite || name == PN.IgniterObjectId)
-            return "⚙️ Comportamiento";
+            || name == PN.CanExtinguish || name == PN.CanIgnite || name == PN.IgniterObjectId
+            || name == PN.CanRead || name == PN.TextContent)
+            return PropertyCategory.Comportamiento;
 
         // Propiedades de llave, visibilidad y misiones de Door
         if (obj is Door && (name == PN.KeyObjectId || name == PN.Visible || name == PN.RequiredQuests))
-            return "⚙️ Comportamiento";
+            return PropertyCategory.Comportamiento;
 
-        // Propiedades de conversación, comercio, patrulla y seguimiento de NPC
+        // Propiedades de conversación, comercio, patrulla, seguimiento y estado de NPC
         if (obj is Npc && (name == PN.ConversationId || name == PN.IsShopkeeper || name == PN.ShopInventory
             || name == PN.BuyPriceMultiplier || name == PN.SellPriceMultiplier
             || name == PN.IsPatrolling || name == PN.PatrolMovementMode || name == PN.PatrolSpeed || name == PN.PatrolTimeInterval
-            || name == PN.IsFollowingPlayer || name == PN.FollowMovementMode || name == PN.FollowSpeed || name == PN.FollowTimeInterval))
-            return "⚙️ Comportamiento";
+            || name == PN.IsFollowingPlayer || name == PN.FollowMovementMode || name == PN.FollowSpeed || name == PN.FollowTimeInterval
+            || name == PN.IsCorpse))
+            return PropertyCategory.Comportamiento;
 
         // Fabricación (GameObject)
         if (obj is GameObject && name == PN.CraftingRecipe)
-            return "🔧 Fabricación";
+            return PropertyCategory.Fabricacion;
 
         // Propiedades de contenedor de GameObject (se mostrarán con sangría dentro de Comportamiento)
         if (obj is GameObject && (name == PN.ContainedObjectIds || name == PN.KeyId || name == PN.MaxCapacity))
-            return "⚙️ Comportamiento";
+            return PropertyCategory.Comportamiento;
 
         // Propiedades de combate de GameObject (armas y armaduras)
         if (obj is GameObject && (name == PN.AttackBonus || name == PN.DefenseBonus || name == PN.DamageType
             || name == PN.MaxDurability || name == PN.CurrentDurability || name == PN.InitiativeBonus))
-            return "⚔️ Combate";
+            return PropertyCategory.Combate;
 
         // Otras propiedades de contenido que no son de GameObject
         if (name == PN.InventoryObjectIds || name == PN.Objectives || name == PN.KeyObjectId
             || name == PN.DoorId || name == PN.ObjectId)
-            return "🏷️ Otros";
+            return PropertyCategory.Otros;
 
         // PlayerDefinition: propiedades físicas y económicas
         if (obj is PlayerDefinition && (name == PN.Age || name == PN.Weight || name == PN.Height || name == PN.InitialMoney
             || name == PN.MaxInventoryWeight || name == PN.MaxInventoryVolume))
-            return "📊 Estadísticas";
+            return PropertyCategory.Estadisticas;
 
         // PlayerDefinition: características
         if (obj is PlayerDefinition && (name == PN.Strength || name == PN.Constitution
             || name == PN.Intelligence || name == PN.Dexterity || name == PN.Charisma))
-            return "⚔️ Características";
+            return PropertyCategory.Caracteristicas;
 
         // Estadísticas
-        if (name == PN.Level || name == PN.Strength || name == PN.Dexterity || name == PN.Intelligence
+        if (name == PN.Strength || name == PN.Dexterity || name == PN.Intelligence
             || name == PN.MaxHealth || name == PN.CurrentHealth || name == PN.Money || name == PN.Stats
             || name == PN.Volume || name == PN.Weight || name == PN.Price)
-            return "📊 Estadísticas";
+            return PropertyCategory.Estadisticas;
 
         // Seguridad
         if (name == PN.EncryptionKey)
-            return "🔒 Seguridad";
+            return PropertyCategory.Seguridad;
 
         // Tags
         if (name == PN.Tags)
-            return "🏷️ Otros";
+            return PropertyCategory.Otros;
 
         // Parser Dictionary al final de Otros
         if (name == PN.ParserDictionaryJson)
-            return "🏷️ Otros";
+            return PropertyCategory.Otros;
 
-        return "🏷️ Otros";
+        return PropertyCategory.Otros;
     }
 
     private static int GetPropertyOrder(PropertyInfo prop)
@@ -937,22 +1006,26 @@ public partial class PropertyEditor : UserControl
         if (name == PN.Id) return 0;
         if (name == PN.Name) return 1;
         if (name == PN.Theme) return 1;
-        if (name == PN.Title) return 2;
-        if (name == PN.Description) return 0;
-        if (name == PN.TextContent) return 1;
-        if (name == PN.Dialogue) return 2;
-        if (name == PN.ImageId) return 0;
-        if (name == PN.ImageBase64) return 1;
-        if (name == PN.MusicId) return 2;
-        if (name == PN.WorldMusicId) return 3;
+        if (name == PN.IsMainQuest) return 2;
+        if (name == PN.Title) return 3;
+        if (name == PN.Description) return 3;
+        if (name == PN.Dialogue) return 5;
+        if (name == PN.ImageId) return 10;
+        if (name == PN.ImageBase64) return 11;
+        if (name == PN.MusicId) return 12;
+        if (name == PN.WorldMusicId) return 13;
+
+        // QuestDefinition: orden específico (Id, Nombre, Misión principal, Descripción, Objetivos)
+        if (name == PN.Objectives) return 4;
 
         // Propiedades de sala al final de Identificación
         if (name == PN.StartRoomId) return 100;
         if (name == PN.RoomId) return 101;
-        if (name == PN.RoomIdA) return 102;
-        if (name == PN.RoomIdB) return 103;
-        if (name == PN.Direction) return 104;
-        if (name == PN.TargetRoomId) return 105;
+        if (name == PN.Money) return 102; // NPC: Dinero después de Sala
+        if (name == PN.RoomIdA) return 103;
+        if (name == PN.RoomIdB) return 104;
+        if (name == PN.Direction) return 105;
+        if (name == PN.TargetRoomId) return 106;
 
         // Texto de finalización al final de Comportamiento
         if (name == PN.EndingText) return 200;
@@ -974,28 +1047,31 @@ public partial class PropertyEditor : UserControl
         // Parser Dictionary al final de Otros
         if (name == PN.ParserDictionaryJson) return 999;
 
-        // Orden para propiedades de contenedor (GameObject)
+        // Orden para propiedades de contenedor (GameObject) y NPC
         if (name == PN.Type) return 10;
         if (name == PN.CanTake) return 11;
         if (name == PN.Visible) return 12;
-        if (name == PN.Gender) return 13;
-        if (name == PN.IsPlural) return 14;
+        if (name == PN.IsCorpse) return 13;
+        if (name == PN.Gender) return 14;
+        if (name == PN.IsPlural) return 15;
+        if (name == PN.CanRead) return 16;
+        if (name == PN.TextContent) return 17;
         if (name == PN.IsContainer) return 20;
-        if (name == PN.IsOpenable) return 21;
-        if (name == PN.IsOpen) return 22;
-        if (name == PN.IsLocked) return 23;
-        if (name == PN.KeyId) return 24;
-        if (name == PN.ContentsVisible) return 25;
+        if (name == PN.ContentsVisible) return 21;
+        if (name == PN.IsOpenable) return 22;
+        if (name == PN.IsOpen) return 23;
+        if (name == PN.IsLocked) return 24;
+        if (name == PN.KeyId) return 25;
         if (name == PN.MaxCapacity) return 26;
         if (name == PN.ContainedObjectIds) return 27;
 
         // Orden para propiedades de iluminación (GameObject)
         if (name == PN.IsLightSource) return 50;
         if (name == PN.IsLit) return 51;
-        if (name == PN.LightTurnsRemaining) return 52;
-        if (name == PN.CanExtinguish) return 53;
-        if (name == PN.CanIgnite) return 54;
-        if (name == PN.IgniterObjectId) return 55;
+        if (name == PN.CanExtinguish) return 52;
+        if (name == PN.CanIgnite) return 53;
+        if (name == PN.IgniterObjectId) return 54;
+        if (name == PN.LightTurnsRemaining) return 55;
 
         // Orden para propiedades de patrulla/seguimiento de NPC
         if (name == PN.IsPatrolling) return 30;
@@ -1007,7 +1083,11 @@ public partial class PropertyEditor : UserControl
         if (name == PN.FollowSpeed) return 37;
         if (name == PN.FollowTimeInterval) return 38;
 
-        // Estadísticas
+        // Estadísticas de combate (NPC)
+        if (name == PN.MaxHealth) return 0;
+        if (name == PN.CurrentHealth) return 1;
+
+        // Estadísticas de objetos
         if (name == PN.Volume) return 40;
         if (name == PN.Weight) return 41;
         if (name == PN.Price) return 42;
@@ -1179,7 +1259,11 @@ public partial class PropertyEditor : UserControl
             var elementToAdd = propertyContainer ?? (UIElement)containerPanel;
             RootPanel.Children.Add(elementToAdd);
 
-            // Registrar el elemento para control de visibilidad
+            // Registrar la propiedad en su sección (para control de visibilidad de secciones)
+            if (_currentBuildingSectionName != null)
+                _propertyToSectionName[prop.Name] = _currentBuildingSectionName;
+
+            // Registrar el elemento para control de visibilidad condicional
             var visibilityCondition = GetVisibilityCondition(obj, prop);
             if (visibilityCondition != null)
             {
@@ -1217,6 +1301,8 @@ public partial class PropertyEditor : UserControl
                 // Registrar visibilidad: solo visible si IsPatrolling está activado
                 _propertyElements["_PatrolRouteButton"] = patrolButton;
                 _visibilityConditions["_PatrolRouteButton"] = () => npcForPatrolButton.IsPatrolling && !npcForPatrolButton.IsFollowingPlayer;
+                if (_currentBuildingSectionName != null)
+                    _propertyToSectionName["_PatrolRouteButton"] = _currentBuildingSectionName;
 
                 // Aplicar visibilidad inicial
                 patrolButton.Visibility = npcForPatrolButton.IsPatrolling && !npcForPatrolButton.IsFollowingPlayer
@@ -1264,6 +1350,8 @@ public partial class PropertyEditor : UserControl
                 // Registrar visibilidad: solo visible si MagicEnabled está activado
                 _propertyElements["_AbilitiesPanel"] = abilitiesPanel;
                 _visibilityConditions["_AbilitiesPanel"] = () => gameInfoForMagic.MagicEnabled;
+                if (_currentBuildingSectionName != null)
+                    _propertyToSectionName["_AbilitiesPanel"] = _currentBuildingSectionName;
 
                 // Aplicar visibilidad inicial
                 abilitiesPanel.Visibility = gameInfoForMagic.MagicEnabled
@@ -1575,6 +1663,8 @@ public partial class PropertyEditor : UserControl
                     // Registrar el panel del checkbox para control de visibilidad basado en IA
                     _propertyElements["GenderAndPluralSetManually"] = manualCheckPanel;
                     _visibilityConditions["GenderAndPluralSetManually"] = () => IsAiEnabled;
+                    if (_currentBuildingSectionName != null)
+                        _propertyToSectionName["GenderAndPluralSetManually"] = _currentBuildingSectionName;
 
                     editor = genderPanel;
                 }
@@ -2431,12 +2521,23 @@ public partial class PropertyEditor : UserControl
                 }
 
                 bool isMultilineDescription =
-                    (prop.PropertyType == typeof(string) &&
+                    prop.PropertyType == typeof(string) &&
                     string.Equals(prop.Name, "Description", StringComparison.OrdinalIgnoreCase) &&
-                    (obj is Room || obj is GameObject || obj is Npc)) ||
-                    (prop.PropertyType == typeof(string) &&
+                    (obj is Room || obj is GameObject || obj is Npc || obj is QuestDefinition);
+
+                // TextContent: multilinea con 6 líneas de altura
+                bool isTextContent =
+                    prop.PropertyType == typeof(string) &&
                     string.Equals(prop.Name, "TextContent", StringComparison.OrdinalIgnoreCase) &&
-                    obj is GameObject);
+                    obj is GameObject;
+
+                // Objetivos de misión también multilínea
+                bool isQuestObjectives =
+                    prop.PropertyType == typeof(List<string>) &&
+                    string.Equals(prop.Name, "Objectives", StringComparison.OrdinalIgnoreCase) &&
+                    obj is QuestDefinition;
+
+                bool isLargeMultiline = isMultilineDescription || isQuestObjectives || isTextContent;
 
                 // Si es una propiedad de llave (KeyObjectId o KeyId), crear un ComboBox con objetos de tipo Llave
                 bool isKeyProperty =
@@ -2538,14 +2639,17 @@ public partial class PropertyEditor : UserControl
                 }
                 else
                 {
+                    // TextContent usa 120px (6 líneas), Description usa 160px
+                    var multilineHeight = isTextContent ? 120 : (isLargeMultiline ? 160 : 0);
                     var tb = new TextBox
                 {
                     Text = text,
                     Margin = new Thickness(0, 2, 0, 0),
-                    AcceptsReturn = isMultilineDescription,
-                    TextWrapping = isMultilineDescription ? TextWrapping.Wrap : TextWrapping.NoWrap,
-                    VerticalScrollBarVisibility = isMultilineDescription ? ScrollBarVisibility.Auto : ScrollBarVisibility.Hidden,
-                    MinHeight = isMultilineDescription ? 80 : 0
+                    AcceptsReturn = isLargeMultiline,
+                    TextWrapping = isLargeMultiline ? TextWrapping.Wrap : TextWrapping.NoWrap,
+                    VerticalScrollBarVisibility = isLargeMultiline ? ScrollBarVisibility.Auto : ScrollBarVisibility.Hidden,
+                    VerticalContentAlignment = isLargeMultiline ? VerticalAlignment.Top : VerticalAlignment.Center,
+                    MinHeight = multilineHeight
                 };
                 var originalText = text;
                 tb.LostFocus += (_, _) =>
@@ -2633,7 +2737,11 @@ public partial class PropertyEditor : UserControl
             var finalElement = propertyContainer ?? (UIElement)containerPanel;
             RootPanel.Children.Add(finalElement);
 
-            // Registrar el elemento para control de visibilidad
+            // Registrar la propiedad en su sección (para control de visibilidad de secciones)
+            if (_currentBuildingSectionName != null)
+                _propertyToSectionName[prop.Name] = _currentBuildingSectionName;
+
+            // Registrar el elemento para control de visibilidad condicional
             var condition = GetVisibilityCondition(obj, prop);
             if (condition != null)
             {
@@ -2676,8 +2784,9 @@ public partial class PropertyEditor : UserControl
         ["RequiredQuests"] = "Requisitos de misión",
         ["Visible"] = "Visible",
         ["CanTake"] = "Se puede coger",
+        ["CanRead"] = "Se puede leer",
         ["Type"] = "Tipo de objeto",
-        ["TextContent"] = "Contenido de texto",
+        ["TextContent"] = "Texto",
         ["Gender"] = "Género gramatical",
         ["IsPlural"] = "Es plural",
         ["IsContainer"] = "Es contenedor",
@@ -2701,7 +2810,6 @@ public partial class PropertyEditor : UserControl
         ["InventoryObjectIds"] = "Objetos en inventario",
         ["Dialogue"] = "Diálogo",
         ["Stats"] = "Estadísticas",
-        ["Level"] = "Nivel",
         ["Strength"] = "Fuerza",
         ["Dexterity"] = "Destreza",
         ["Intelligence"] = "Inteligencia",
@@ -2974,6 +3082,51 @@ public partial class PropertyEditor : UserControl
                 element.Visibility = shouldBeVisible ? Visibility.Visible : Visibility.Collapsed;
             }
         }
+
+        // Actualizar visibilidad de secciones basado en si tienen propiedades visibles
+        UpdateSectionVisibility();
+    }
+
+    /// <summary>
+    /// Oculta secciones (Expanders) que no tienen ninguna propiedad visible.
+    /// Una sección se oculta solo si TODAS sus propiedades con condiciones de visibilidad están ocultas.
+    /// </summary>
+    private void UpdateSectionVisibility()
+    {
+        // Crear diccionario inverso: sectionName -> expander
+        var sectionToExpander = _expanderSectionNames.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
+
+        // Agrupar propiedades por sección
+        var propertiesBySection = _propertyToSectionName
+            .GroupBy(kvp => kvp.Value)
+            .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Key).ToList());
+
+        foreach (var section in propertiesBySection)
+        {
+            if (!sectionToExpander.TryGetValue(section.Key, out var expander))
+                continue;
+
+            // Contar propiedades con condiciones y cuántas están visibles
+            var conditionalCount = 0;
+            var visibleConditionalCount = 0;
+
+            foreach (var propName in section.Value)
+            {
+                if (_visibilityConditions.TryGetValue(propName, out var condition))
+                {
+                    conditionalCount++;
+                    if (condition())
+                        visibleConditionalCount++;
+                }
+            }
+
+            // Si todas las propiedades de la sección tienen condiciones y ninguna es visible, ocultar
+            // (Si hay propiedades sin condiciones, siempre serán visibles, así que la sección se muestra)
+            var allPropertiesAreConditional = conditionalCount == section.Value.Count;
+            var shouldHideSection = allPropertiesAreConditional && visibleConditionalCount == 0;
+
+            expander.Visibility = shouldHideSection ? Visibility.Collapsed : Visibility.Visible;
+        }
     }
 
     /// <summary>
@@ -2992,6 +3145,10 @@ public partial class PropertyEditor : UserControl
 
             // Propiedades de iluminación (subpropiedades de IsLightSource)
             if (name is "IsLit" or "LightTurnsRemaining" or "CanExtinguish" or "CanIgnite" or "IgniterObjectId")
+                return true;
+
+            // TextContent es subpropiedad de CanRead
+            if (name == PN.TextContent)
                 return true;
         }
 
@@ -3042,9 +3199,9 @@ public partial class PropertyEditor : UserControl
         // Condiciones para GameObject
         if (obj is GameObject gameObject)
         {
-            // TextContent solo visible si Type = Texto
+            // TextContent solo visible si CanRead = true
             if (name == PN.TextContent)
-                return () => gameObject.Type == ObjectType.Texto;
+                return () => gameObject.CanRead;
 
             // IsOpen solo visible si IsContainer = true Y IsOpenable = true
             if (name == PN.IsOpen)

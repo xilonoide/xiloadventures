@@ -181,12 +181,8 @@
                                        Text="Enemigo"
                                        FontSize="18"
                                        FontWeight="Bold"
-                                       Foreground="#FF6B6B"/>
-                            <TextBlock x:Name="NpcLevelText"
-                                       Text="Nivel 1"
-                                       FontSize="12"
-                                       Foreground="#AAAAAA"
-                                       Margin="0,4,0,8"/>
+                                       Foreground="#FF6B6B"
+                                       Margin="0,0,0,8"/>
                             <TextBlock Text="Salud:" FontSize="12" Foreground="#AAAAAA"/>
                             <Grid>
                                 <ProgressBar x:Name="NpcHealthBar"

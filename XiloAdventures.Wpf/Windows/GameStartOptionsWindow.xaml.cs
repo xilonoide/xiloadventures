@@ -32,8 +32,10 @@ public partial class GameStartOptionsWindow : Window
         DragMove();
     }
 
-    private void LlmInfoIcon_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    private void LlmInfoIcon_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        e.Handled = true; // Evitar que la ventana inicie el arrastre
+
         var message = "Si activas la IA, el juego intentará entender mejor comandos complejos o mal escritos. Además, si subes el volumen de voz en las opciones, oirás las descripciones de las salas.\n\nPara usarla debes tener Docker Desktop instalado. La primera vez que se use se descargarán algunos componentes y puede tardar unos minutos. Después funcionará muy rápido.";
 
         var link = new System.Windows.Controls.TextBlock

@@ -39,7 +39,7 @@
                                FontWeight="Bold"
                                Cursor="Hand"
                                VerticalAlignment="Center"
-                               MouseLeftButtonUp="LlmInfoIcon_MouseLeftButtonUp">
+                               MouseLeftButtonDown="LlmInfoIcon_MouseLeftButtonDown">
                         <TextBlock.ToolTip>
                             <TextBlock Text="Activa la IA para que el juego entienda mejor comandos complejos o mal escritos. Haz clic para más detalles." />
                         </TextBlock.ToolTip>

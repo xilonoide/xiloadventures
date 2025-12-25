@@ -2357,8 +2357,8 @@ public class GameEngine
         if (obj == null)
             return CommandResult.Error(RandomMessages.ObjectNotFound);
 
-        // Verificar que el objeto sea de tipo Texto
-        if (obj.Type != ObjectType.Texto)
+        // Verificar que el objeto se pueda leer
+        if (!obj.CanRead)
             return CommandResult.Error($"No puedes leer {WithArticle(obj)}.");
 
         // Verificar que tenga contenido de texto

@@ -11,6 +11,19 @@ public partial class TestModeOptionsWindow : Window
     public TestModeOptionsWindow()
     {
         InitializeComponent();
+        Loaded += OnLoaded;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        // Inicializar labels
+        MusicVolumeLabel.Text = MusicVolumeSlider.Value.ToString("0");
+        EffectsVolumeLabel.Text = EffectsVolumeSlider.Value.ToString("0");
+        VoiceVolumeLabel.Text = VoiceVolumeSlider.Value.ToString("0");
+        MasterVolumeLabel.Text = MasterVolumeSlider.Value.ToString("0");
+
+        // Habilitar/deshabilitar sliders según el estado del sonido
+        UpdateSlidersEnabled();
     }
 
     public bool SoundEnabled
@@ -19,10 +32,80 @@ public partial class TestModeOptionsWindow : Window
         set => SoundCheckBox.IsChecked = value;
     }
 
+    public double MusicVolume
+    {
+        get => MusicVolumeSlider.Value;
+        set => MusicVolumeSlider.Value = value;
+    }
+
+    public double EffectsVolume
+    {
+        get => EffectsVolumeSlider.Value;
+        set => EffectsVolumeSlider.Value = value;
+    }
+
+    public double VoiceVolume
+    {
+        get => VoiceVolumeSlider.Value;
+        set => VoiceVolumeSlider.Value = value;
+    }
+
+    public double MasterVolume
+    {
+        get => MasterVolumeSlider.Value;
+        set => MasterVolumeSlider.Value = value;
+    }
+
     public bool AiEnabled
     {
         get => AiCheckBox.IsChecked == true;
         set => AiCheckBox.IsChecked = value;
+    }
+
+    private void SoundCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        UpdateSlidersEnabled();
+    }
+
+    private void UpdateSlidersEnabled()
+    {
+        var enabled = SoundCheckBox.IsChecked == true;
+        MusicVolumeSlider.IsEnabled = enabled;
+        EffectsVolumeSlider.IsEnabled = enabled;
+        VoiceVolumeSlider.IsEnabled = enabled;
+        MasterVolumeSlider.IsEnabled = enabled;
+    }
+
+    private void MusicVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (MusicVolumeLabel != null)
+        {
+            MusicVolumeLabel.Text = e.NewValue.ToString("0");
+        }
+    }
+
+    private void EffectsVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (EffectsVolumeLabel != null)
+        {
+            EffectsVolumeLabel.Text = e.NewValue.ToString("0");
+        }
+    }
+
+    private void VoiceVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (VoiceVolumeLabel != null)
+        {
+            VoiceVolumeLabel.Text = e.NewValue.ToString("0");
+        }
+    }
+
+    private void MasterVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (MasterVolumeLabel != null)
+        {
+            MasterVolumeLabel.Text = e.NewValue.ToString("0");
+        }
     }
 
     private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -35,8 +118,10 @@ public partial class TestModeOptionsWindow : Window
         DragMove();
     }
 
-    private void AiInfoIcon_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    private void AiInfoIcon_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        e.Handled = true; // Evitar que la ventana inicie el arrastre
+
         var message = "Si activas la IA, el modo pruebas intentará entender mejor comandos complejos o mal escritos. Además, si subes el volumen de voz en las opciones, oirás las descripciones de las salas.\n\nPara usarla debes tener Docker Desktop instalado y en ejecución.";
 
         var link = new System.Windows.Controls.TextBlock

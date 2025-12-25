@@ -53,6 +53,7 @@ public static class PropertyNames
     public static readonly string Visible = nameof(GameObject.Visible);
     public static readonly string CanTake = nameof(GameObject.CanTake);
     public static readonly string Type = nameof(GameObject.Type);
+    public static readonly string CanRead = nameof(GameObject.CanRead);
     public static readonly string Gender = nameof(GameObject.Gender);
     public static readonly string IsPlural = nameof(GameObject.IsPlural);
     public static readonly string IsContainer = nameof(GameObject.IsContainer);
@@ -126,6 +127,7 @@ public static class PropertyNames
     public static readonly string FollowTimeInterval = nameof(Npc.FollowTimeInterval);
     public static readonly string InventoryObjectIds = nameof(Npc.InventoryObjectIds);
     public static readonly string Stats = nameof(Npc.Stats);
+    public static readonly string IsCorpse = nameof(Npc.IsCorpse);
 
     // === PlayerDefinition ===
     public static readonly string Age = nameof(PlayerDefinition.Age);
@@ -141,12 +143,12 @@ public static class PropertyNames
     public static readonly string AbilityIds = nameof(PlayerDefinition.AbilityIds);
 
     // === Stats (CombatStats/PlayerStats) ===
-    public static readonly string Level = nameof(CombatStats.Level);
     public static readonly string MaxHealth = nameof(CombatStats.MaxHealth);
     public static readonly string CurrentHealth = nameof(CombatStats.CurrentHealth);
     public static readonly string Money = nameof(PlayerStats.Money);
 
     // === Quest ===
     public static readonly string Objectives = nameof(QuestDefinition.Objectives);
+    public static readonly string IsMainQuest = nameof(QuestDefinition.IsMainQuest);
     public const string ObjectId = "ObjectId"; // Usado en varios contextos
 }

@@ -40,6 +40,11 @@ public partial class WorldEditorWindow : Window
 
     private readonly UndoRedoManager _undoRedo = new();
 
+    // Búsqueda de propiedades
+    private TextBlock? _highlightedPropertyLabel;
+    private Brush? _highlightedPropertyOriginalForeground;
+    private System.Windows.Threading.DispatcherTimer? _highlightTimer;
+
     private bool _isPlayRunning;
     private System.Windows.Threading.DispatcherTimer? _autoSyncTimer;
     private System.Windows.Threading.DispatcherTimer? _testNpcMovementTimer;
@@ -1155,6 +1160,9 @@ public partial class WorldEditorWindow : Window
 
     private void PerformPropertySearch(string text)
     {
+        // Limpiar highlight anterior
+        ClearPropertyHighlight();
+
         if (string.IsNullOrWhiteSpace(text))
             return;
 
@@ -1204,31 +1212,42 @@ public partial class WorldEditorWindow : Window
 
     private void HighlightElement(UIElement element)
     {
-        if (element is not FrameworkElement fe) return;
+        if (element is not TextBlock tb) return;
 
-        // Guardar el fondo original
-        var originalBackground = fe is Control ctrl ? ctrl.Background : null;
+        // Guardar referencia para poder limpiar después
+        _highlightedPropertyLabel = tb;
+        _highlightedPropertyOriginalForeground = tb.Foreground;
+        tb.Foreground = new SolidColorBrush(Colors.Yellow);
 
-        // Crear animación de resaltado
-        var highlightBrush = new SolidColorBrush(Color.FromArgb(100, 255, 200, 0));
+        // Detener timer anterior si existe
+        _highlightTimer?.Stop();
 
-        if (fe is TextBlock tb)
+        // Restaurar después de un tiempo si no se limpia manualmente
+        _highlightTimer = new System.Windows.Threading.DispatcherTimer
         {
-            var originalForeground = tb.Foreground;
-            tb.Foreground = new SolidColorBrush(Colors.Yellow);
+            Interval = TimeSpan.FromMilliseconds(1500)
+        };
+        _highlightTimer.Tick += (s, e) =>
+        {
+            ClearPropertyHighlight();
+        };
+        _highlightTimer.Start();
+    }
 
-            // Restaurar después de un tiempo
-            var timer = new System.Windows.Threading.DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(1500)
-            };
-            timer.Tick += (s, e) =>
-            {
-                tb.Foreground = originalForeground;
-                timer.Stop();
-            };
-            timer.Start();
+    private void ClearPropertyHighlight()
+    {
+        // Detener timer
+        _highlightTimer?.Stop();
+        _highlightTimer = null;
+
+        // Restaurar color original
+        if (_highlightedPropertyLabel != null && _highlightedPropertyOriginalForeground != null)
+        {
+            _highlightedPropertyLabel.Foreground = _highlightedPropertyOriginalForeground;
         }
+
+        _highlightedPropertyLabel = null;
+        _highlightedPropertyOriginalForeground = null;
     }
 
     #endregion
@@ -1418,17 +1437,14 @@ public partial class WorldEditorWindow : Window
                 }
             }
 
-            // Cargar configuración de volumen del usuario
-            var uiSettings = UiSettingsManager.LoadForWorld(_world.Game.Id);
-
             // Crear SoundManager con la configuración del modo pruebas
             _testSoundManager = new SoundManager
             {
                 SoundEnabled = soundEnabled,
-                MusicVolume = (float)(uiSettings.MusicVolume / 10.0),
-                EffectsVolume = (float)(uiSettings.EffectsVolume / 10.0),
-                MasterVolume = (float)(uiSettings.MasterVolume / 10.0),
-                VoiceVolume = (float)(uiSettings.VoiceVolume / 10.0)
+                MusicVolume = (float)(_world.Game.TestModeMusicVolume / 10.0),
+                EffectsVolume = (float)(_world.Game.TestModeEffectsVolume / 10.0),
+                MasterVolume = (float)(_world.Game.TestModeMasterVolume / 10.0),
+                VoiceVolume = (float)(_world.Game.TestModeVoiceVolume / 10.0)
             };
             _testSoundManager.RefreshVolumes();
 
@@ -1446,7 +1462,7 @@ public partial class WorldEditorWindow : Window
             _testEngine.ConversationEnded += () => Dispatcher.Invoke(HandleTestConversationEnded);
 
             // Si hay sonido y voz, precargar la descripción de la sala inicial
-            if (soundEnabled && uiSettings.VoiceVolume > 0 && aiEnabled)
+            if (soundEnabled && _world.Game.TestModeVoiceVolume > 0 && aiEnabled)
             {
                 try
                 {
@@ -2562,6 +2578,10 @@ public partial class WorldEditorWindow : Window
         {
             Owner = this,
             SoundEnabled = _world.Game.TestModeSoundEnabled,
+            MusicVolume = _world.Game.TestModeMusicVolume,
+            EffectsVolume = _world.Game.TestModeEffectsVolume,
+            VoiceVolume = _world.Game.TestModeVoiceVolume,
+            MasterVolume = _world.Game.TestModeMasterVolume,
             AiEnabled = _world.Game.TestModeAiEnabled
         };
 
@@ -2569,6 +2589,10 @@ public partial class WorldEditorWindow : Window
 
         // Siempre guardar las opciones al cerrar la ventana
         _world.Game.TestModeSoundEnabled = optionsWindow.SoundEnabled;
+        _world.Game.TestModeMusicVolume = optionsWindow.MusicVolume;
+        _world.Game.TestModeEffectsVolume = optionsWindow.EffectsVolume;
+        _world.Game.TestModeVoiceVolume = optionsWindow.VoiceVolume;
+        _world.Game.TestModeMasterVolume = optionsWindow.MasterVolume;
         _world.Game.TestModeAiEnabled = optionsWindow.AiEnabled;
         SetDirty(true);
     }

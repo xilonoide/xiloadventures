@@ -79,7 +79,6 @@ public class CombatEngineTests
                     Visible = true,
                     Stats = new CombatStats
                     {
-                        Level = 1,
                         MaxHealth = 20,
                         CurrentHealth = 20,
                         Strength = 10,
@@ -1650,7 +1649,6 @@ public class CombatEngineTests
                     Visible = true,
                     Stats = new CombatStats
                     {
-                        Level = 1,
                         MaxHealth = 20,
                         CurrentHealth = 20,
                         Strength = 10,
@@ -1747,7 +1745,6 @@ public class CombatEngineTests
                     InventoryObjectIds = new List<string> { "rusty_sword", "great_axe", "leather_armor", "plate_armor" },
                     Stats = new CombatStats
                     {
-                        Level = 3,
                         MaxHealth = 40,
                         CurrentHealth = 40,
                         Strength = 15,
@@ -1830,7 +1827,6 @@ public class CombatEngineTests
                     InventoryObjectIds = new List<string> { "staff", "enchanted_robe" },
                     Stats = new CombatStats
                     {
-                        Level = 2,
                         MaxHealth = 25,
                         CurrentHealth = 25,
                         Strength = 6,
@@ -1904,7 +1900,6 @@ public class CombatEngineTests
                     Visible = true,
                     Stats = new CombatStats
                     {
-                        Level = 1,
                         MaxHealth = 30,
                         CurrentHealth = 30,
                         Strength = 10,
@@ -1991,7 +1986,6 @@ public class CombatEngineTests
                     AbilityIds = new List<string> { "npc_fireball" },
                     Stats = new CombatStats
                     {
-                        Level = 2,
                         MaxHealth = 25,
                         CurrentHealth = 25,
                         Strength = 6,

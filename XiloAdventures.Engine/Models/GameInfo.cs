@@ -69,6 +69,30 @@ public class GameInfo
     public bool TestModeSoundEnabled { get; set; } = false;
 
     /// <summary>
+    /// Volumen de música en modo pruebas (0-10).
+    /// </summary>
+    [Browsable(false)]
+    public double TestModeMusicVolume { get; set; } = 5;
+
+    /// <summary>
+    /// Volumen de efectos en modo pruebas (0-10).
+    /// </summary>
+    [Browsable(false)]
+    public double TestModeEffectsVolume { get; set; } = 5;
+
+    /// <summary>
+    /// Volumen de voz en modo pruebas (0-10).
+    /// </summary>
+    [Browsable(false)]
+    public double TestModeVoiceVolume { get; set; } = 5;
+
+    /// <summary>
+    /// Volumen master en modo pruebas (1-10).
+    /// </summary>
+    [Browsable(false)]
+    public double TestModeMasterVolume { get; set; } = 5;
+
+    /// <summary>
     /// Activar IA en modo pruebas del editor.
     /// </summary>
     [Browsable(false)]

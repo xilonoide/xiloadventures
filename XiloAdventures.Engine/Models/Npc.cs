@@ -214,11 +214,6 @@ public class Npc
 public class CombatStats
 {
     /// <summary>
-    /// Nivel del NPC.
-    /// </summary>
-    public int Level { get; set; } = 1;
-
-    /// <summary>
     /// Fuerza (afecta daño físico).
     /// </summary>
     public int Strength { get; set; } = 5;

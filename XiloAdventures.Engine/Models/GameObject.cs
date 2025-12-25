@@ -30,7 +30,12 @@ public class GameObject
     public ObjectType Type { get; set; } = ObjectType.Ninguno;
 
     /// <summary>
-    /// Contenido de texto legible (solo para objetos de tipo Texto).
+    /// Indica si el objeto se puede leer (libro, carta, pergamino, cartel, etc.).
+    /// </summary>
+    public bool CanRead { get; set; } = false;
+
+    /// <summary>
+    /// Contenido de texto legible (solo si CanRead es true).
     /// Se muestra al usar el comando "leer" sobre el objeto.
     /// </summary>
     public string? TextContent { get; set; }

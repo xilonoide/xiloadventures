@@ -15,10 +15,6 @@ public enum ObjectType
     Comida,
     /// <summary>Bebida consumible que reduce la sed.</summary>
     Bebida,
-    /// <summary>Prenda de vestir.</summary>
-    Ropa,
     /// <summary>Llave para abrir cerraduras.</summary>
-    Llave,
-    /// <summary>Documento legible (libro, carta, pergamino, etc.).</summary>
-    Texto
+    Llave
 }
