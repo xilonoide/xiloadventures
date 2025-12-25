@@ -524,7 +524,7 @@ public partial class PropertyEditor : UserControl
             ("Intelligence", "Inteligencia", 1, 100),
             ("MaxHealth", "Vida máxima", 1, 1000),
             ("CurrentHealth", "Vida actual", 0, 1000),
-            ("Gold", "Oro", 0, 100000)
+            ("Gold", "Dinero", 0, 100000)
         };
 
         foreach (var (propName, displayName, minVal, maxVal) in statsProperties)
@@ -2590,7 +2590,7 @@ public partial class PropertyEditor : UserControl
         ["Intelligence"] = "Inteligencia",
         ["MaxHealth"] = "Salud máxima",
         ["CurrentHealth"] = "Salud actual",
-        ["Gold"] = "Oro",
+        ["Gold"] = "Dinero",
         ["Objectives"] = "Objetivos",
 
         // Juego
@@ -3470,7 +3470,7 @@ public partial class PropertyEditor : UserControl
                 // Si el objeto tiene precio, mostrarlo
                 if (obj.Price > 0)
                 {
-                    checkLabel.Text = $"{obj.Name} ({obj.Price} 🪙)";
+                    checkLabel.Text = $"{obj.Name} ({obj.Price})";
                 }
 
                 checkLabel.MouseLeftButtonDown += (_, _) => checkbox.IsChecked = !checkbox.IsChecked;
