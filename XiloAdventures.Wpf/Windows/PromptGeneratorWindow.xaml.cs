@@ -61,7 +61,7 @@ public partial class PromptGeneratorWindow : Window
       ""Id"": ""obj_id"",
       ""Name"": ""Nombre"",
       ""Description"": ""Descripción"",
-      ""Type"": ""ninguno|arma|armadura|escudo|comida|bebida|llave"",
+      ""Type"": ""ninguno|arma|armadura|casco|escudo|comida|bebida|llave"",
       ""CanRead"": false,
       ""TextContent"": ""Contenido legible (solo si CanRead=true)"",
       ""Gender"": ""Masculine|Feminine"",
@@ -596,6 +596,7 @@ Genera un mundo con temática ""{THEME}"" que contenga:
 4. **{TOTAL_OBJECTS} objetos** distribuidos así:
    - {WEAPON_COUNT} armas (Type=""arma"") - espadas, dagas, arcos... con AttackBonus y HandsRequired (1 o 2 manos)
    - {ARMOR_COUNT} armaduras/escudos - armaduras (Type=""armadura"") para torso, escudos (Type=""escudo"") para mano izquierda, con DefenseBonus
+   - {HELMET_COUNT} cascos (Type=""casco"") - yelmos, gorros de mago, capuchas... con DefenseBonus
    - {FOOD_COUNT} comida (Type=""comida"") - pan, manzana, carne... con NutritionAmount
    - {DRINK_COUNT} bebidas (Type=""bebida"") - pociones, agua, vino... con NutritionAmount
    - {KEY_COUNT} llaves (Type=""llave"") - para abrir puertas/contenedores
@@ -659,7 +660,7 @@ Genera un mundo con temática ""{THEME}"" que contenga:
   - **Arriba**: (X, Y - 180) — para subir pisos/escaleras, usa misma posición visual que norte
   - **Abajo**: (X, Y + 180) — para bajar pisos/sótanos, usa misma posición visual que sur
 - Ejemplo para 5 salas en cruz: central (80,45), norte (80,-135), sur (80,225), este (400,45), oeste (-240,45)
-- **Type de objetos SOLO puede ser uno de estos valores exactos**: ninguno, arma, armadura, escudo, comida, bebida, llave
+- **Type de objetos SOLO puede ser uno de estos valores exactos**: ninguno, arma, armadura, casco, escudo, comida, bebida, llave
 - **Los objetos que son llaves DEBEN tener Type=""llave""**
 - **Para objetos legibles** (cartas, diarios, pergaminos...): usa Type=""ninguno"" con CanRead=true y TextContent con el texto. El jugador usará el comando ""leer"".
 
@@ -866,53 +867,23 @@ Genera el mundo con la temática ""{THEME}"" y puzzles lógicos acordes a esa am
 
         // Fórmulas basadas en el número de salas
         DoorsSlider.Value = Math.Max(1, roomCount / 3);           // 1 puerta cada 3 salas
-        NpcsSlider.Value = Math.Max(1, roomCount / 3);            // 1 NPC cada 3 salas
-        QuestsSlider.Value = Math.Max(1, roomCount / 6);          // 1 misión cada 6 salas
-        ContainersSlider.Value = Math.Max(1, roomCount / 4);      // 1 contenedor cada 4 salas
+        NpcsSlider.Value = Math.Max(1, roomCount / 4);            // 1 NPC cada 4 salas (25% menos)
+        QuestsSlider.Value = Math.Max(1, roomCount / 8);          // 1 misión cada 8 salas (25% menos)
+        ContainersSlider.Value = Math.Max(1, roomCount / 5);      // 1 contenedor cada 5 salas (25% menos)
 
         // Tipos de objetos según salas
         WeaponsSlider.Value = Math.Max(1, roomCount / 5);         // 1 arma cada 5 salas
         ArmorsSlider.Value = Math.Max(0, (roomCount - 5) / 6);    // armaduras solo en mundos grandes
-        FoodSlider.Value = Math.Max(1, roomCount / 4);            // 1 comida cada 4 salas
-        DrinksSlider.Value = Math.Max(1, roomCount / 5);          // 1 bebida cada 5 salas
-        ClothingSlider.Value = Math.Max(0, (roomCount - 4) / 8);  // ropa solo en mundos medianos+
+        FoodSlider.Value = Math.Max(0, roomCount / 8);            // 1 comida cada 8 salas (50% menos)
+        DrinksSlider.Value = Math.Max(0, roomCount / 10);         // 1 bebida cada 10 salas (50% menos)
+        HelmetsSlider.Value = Math.Max(0, (roomCount - 8) / 12);  // cascos solo en mundos grandes (50% menos)
         KeysSlider.Value = Math.Max(1, roomCount / 6);            // 1 llave cada 6 salas
-        TextsSlider.Value = Math.Max(1, roomCount / 5);           // 1 texto cada 5 salas
-        OtherObjectsSlider.Value = Math.Max(2, roomCount / 3);    // objetos genéricos
+        TextsSlider.Value = Math.Max(0, roomCount / 10);          // 1 texto cada 10 salas (50% menos)
+        OtherObjectsSlider.Value = Math.Max(1, roomCount / 6);    // objetos genéricos (50% menos)
 
         _isUpdatingFromRoomCount = false;
     }
 
-    private void UpdateSliderValueTexts()
-    {
-        // Sliders generales
-        if (DoorsValueText != null)
-            DoorsValueText.Text = ((int)DoorsSlider.Value).ToString();
-        if (NpcsValueText != null)
-            NpcsValueText.Text = ((int)NpcsSlider.Value).ToString();
-        if (QuestsValueText != null)
-            QuestsValueText.Text = ((int)QuestsSlider.Value).ToString();
-        if (ContainersValueText != null)
-            ContainersValueText.Text = ((int)ContainersSlider.Value).ToString();
-
-        // Sliders de tipos de objetos
-        if (WeaponsValueText != null)
-            WeaponsValueText.Text = ((int)WeaponsSlider.Value).ToString();
-        if (ArmorsValueText != null)
-            ArmorsValueText.Text = ((int)ArmorsSlider.Value).ToString();
-        if (FoodValueText != null)
-            FoodValueText.Text = ((int)FoodSlider.Value).ToString();
-        if (DrinksValueText != null)
-            DrinksValueText.Text = ((int)DrinksSlider.Value).ToString();
-        if (ClothingValueText != null)
-            ClothingValueText.Text = ((int)ClothingSlider.Value).ToString();
-        if (KeysValueText != null)
-            KeysValueText.Text = ((int)KeysSlider.Value).ToString();
-        if (TextsValueText != null)
-            TextsValueText.Text = ((int)TextsSlider.Value).ToString();
-        if (OtherObjectsValueText != null)
-            OtherObjectsValueText.Text = ((int)OtherObjectsSlider.Value).ToString();
-    }
 
     private void UpdatePrompt()
     {
@@ -940,16 +911,14 @@ Genera el mundo con la temática ""{THEME}"" y puzzles lógicos acordes a esa am
         var armorCount = ArmorsSlider != null ? (int)ArmorsSlider.Value : 0;
         var foodCount = FoodSlider != null ? (int)FoodSlider.Value : 1;
         var drinkCount = DrinksSlider != null ? (int)DrinksSlider.Value : 1;
-        var clothingCount = ClothingSlider != null ? (int)ClothingSlider.Value : 0;
+        var helmetCount = HelmetsSlider != null ? (int)HelmetsSlider.Value : 0;
         var keyCount = KeysSlider != null ? (int)KeysSlider.Value : 1;
         var textCount = TextsSlider != null ? (int)TextsSlider.Value : 1;
         var otherCount = OtherObjectsSlider != null ? (int)OtherObjectsSlider.Value : 2;
 
         // Calcular total de objetos
         var totalObjects = weaponCount + armorCount + foodCount + drinkCount +
-                          clothingCount + keyCount + textCount + otherCount;
-
-        UpdateSliderValueTexts();
+                          helmetCount + keyCount + textCount + otherCount;
 
         var prompt = PromptTemplate
             .Replace("{THEME}", theme)
@@ -962,7 +931,7 @@ Genera el mundo con la temática ""{THEME}"" y puzzles lógicos acordes a esa am
             .Replace("{ARMOR_COUNT}", armorCount.ToString())
             .Replace("{FOOD_COUNT}", foodCount.ToString())
             .Replace("{DRINK_COUNT}", drinkCount.ToString())
-            .Replace("{CLOTHING_COUNT}", clothingCount.ToString())
+            .Replace("{HELMET_COUNT}", helmetCount.ToString())
             .Replace("{KEY_COUNT}", keyCount.ToString())
             .Replace("{TEXT_COUNT}", textCount.ToString())
             .Replace("{OTHER_COUNT}", otherCount.ToString())

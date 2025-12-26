@@ -98,10 +98,7 @@
 
                     <!-- Doors slider -->
                     <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                        <TextBlock FontSize="11" Foreground="#BBBBBB" Margin="0,0,0,2">
-                            <Run Text="Puertas: "/>
-                            <Run x:Name="DoorsValueText" Text="2"/>
-                        </TextBlock>
+                        <TextBlock Text="Puertas" FontSize="11" Foreground="#BBBBBB" Margin="0,0,0,2"/>
                         <Slider x:Name="DoorsSlider"
                                 Minimum="0"
                                 Maximum="100"
@@ -113,10 +110,7 @@
 
                     <!-- NPCs slider -->
                     <StackPanel Grid.Column="1" Margin="8,0,8,0">
-                        <TextBlock FontSize="11" Foreground="#BBBBBB" Margin="0,0,0,2">
-                            <Run Text="NPCs: "/>
-                            <Run x:Name="NpcsValueText" Text="2"/>
-                        </TextBlock>
+                        <TextBlock Text="NPCs" FontSize="11" Foreground="#BBBBBB" Margin="0,0,0,2"/>
                         <Slider x:Name="NpcsSlider"
                                 Minimum="0"
                                 Maximum="100"
@@ -128,10 +122,7 @@
 
                     <!-- Quests slider -->
                     <StackPanel Grid.Column="2" Margin="8,0,8,0">
-                        <TextBlock FontSize="11" Foreground="#BBBBBB" Margin="0,0,0,2">
-                            <Run Text="Misiones: "/>
-                            <Run x:Name="QuestsValueText" Text="1"/>
-                        </TextBlock>
+                        <TextBlock Text="Misiones" FontSize="11" Foreground="#BBBBBB" Margin="0,0,0,2"/>
                         <Slider x:Name="QuestsSlider"
                                 Minimum="0"
                                 Maximum="100"
@@ -143,10 +134,7 @@
 
                     <!-- Contenedores slider -->
                     <StackPanel Grid.Column="3" Margin="8,0,0,0">
-                        <TextBlock FontSize="11" Foreground="#BBBBBB" Margin="0,0,0,2">
-                            <Run Text="Contenedores: "/>
-                            <Run x:Name="ContainersValueText" Text="1"/>
-                        </TextBlock>
+                        <TextBlock Text="Contenedores" FontSize="11" Foreground="#BBBBBB" Margin="0,0,0,2"/>
                         <Slider x:Name="ContainersSlider"
                                 Minimum="0"
                                 Maximum="100"
@@ -177,12 +165,11 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
+                    <!-- Primera fila: Armas, Armaduras, Cascos, Llaves -->
+
                     <!-- Armas slider -->
                     <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,8">
-                        <TextBlock FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2">
-                            <Run Text="⚔️ Armas: "/>
-                            <Run x:Name="WeaponsValueText" Text="1"/>
-                        </TextBlock>
+                        <TextBlock Text="⚔️ Armas" FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2"/>
                         <Slider x:Name="WeaponsSlider"
                                 Minimum="0"
                                 Maximum="100"
@@ -194,10 +181,7 @@
 
                     <!-- Armaduras slider -->
                     <StackPanel Grid.Row="0" Grid.Column="1" Margin="8,0,8,8">
-                        <TextBlock FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2">
-                            <Run Text="🛡️ Armaduras: "/>
-                            <Run x:Name="ArmorsValueText" Text="0"/>
-                        </TextBlock>
+                        <TextBlock Text="🛡️ Armaduras" FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2"/>
                         <Slider x:Name="ArmorsSlider"
                                 Minimum="0"
                                 Maximum="100"
@@ -207,12 +191,35 @@
                                 ValueChanged="ObjectTypeSlider_ValueChanged"/>
                     </StackPanel>
 
-                    <!-- Comida slider -->
+                    <!-- Cascos slider -->
                     <StackPanel Grid.Row="0" Grid.Column="2" Margin="8,0,8,8">
-                        <TextBlock FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2">
-                            <Run Text="🍎 Comida: "/>
-                            <Run x:Name="FoodValueText" Text="1"/>
-                        </TextBlock>
+                        <TextBlock Text="🪖 Cascos" FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2"/>
+                        <Slider x:Name="HelmetsSlider"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="0"
+                                IsSnapToTickEnabled="True"
+                                TickFrequency="1"
+                                ValueChanged="ObjectTypeSlider_ValueChanged"/>
+                    </StackPanel>
+
+                    <!-- Llaves slider -->
+                    <StackPanel Grid.Row="0" Grid.Column="3" Margin="8,0,0,8">
+                        <TextBlock Text="🔑 Llaves" FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2"/>
+                        <Slider x:Name="KeysSlider"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="1"
+                                IsSnapToTickEnabled="True"
+                                TickFrequency="1"
+                                ValueChanged="ObjectTypeSlider_ValueChanged"/>
+                    </StackPanel>
+
+                    <!-- Segunda fila: Comida, Bebidas, Textos, Otros -->
+
+                    <!-- Comida slider -->
+                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,0">
+                        <TextBlock Text="🍎 Comida" FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2"/>
                         <Slider x:Name="FoodSlider"
                                 Minimum="0"
                                 Maximum="100"
@@ -223,42 +230,9 @@
                     </StackPanel>
 
                     <!-- Bebida slider -->
-                    <StackPanel Grid.Row="0" Grid.Column="3" Margin="8,0,0,8">
-                        <TextBlock FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2">
-                            <Run Text="🍺 Bebidas: "/>
-                            <Run x:Name="DrinksValueText" Text="1"/>
-                        </TextBlock>
-                        <Slider x:Name="DrinksSlider"
-                                Minimum="0"
-                                Maximum="100"
-                                Value="1"
-                                IsSnapToTickEnabled="True"
-                                TickFrequency="1"
-                                ValueChanged="ObjectTypeSlider_ValueChanged"/>
-                    </StackPanel>
-
-                    <!-- Ropa slider -->
-                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,0">
-                        <TextBlock FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2">
-                            <Run Text="👕 Ropa: "/>
-                            <Run x:Name="ClothingValueText" Text="0"/>
-                        </TextBlock>
-                        <Slider x:Name="ClothingSlider"
-                                Minimum="0"
-                                Maximum="100"
-                                Value="0"
-                                IsSnapToTickEnabled="True"
-                                TickFrequency="1"
-                                ValueChanged="ObjectTypeSlider_ValueChanged"/>
-                    </StackPanel>
-
-                    <!-- Llaves slider -->
                     <StackPanel Grid.Row="1" Grid.Column="1" Margin="8,0,8,0">
-                        <TextBlock FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2">
-                            <Run Text="🔑 Llaves: "/>
-                            <Run x:Name="KeysValueText" Text="1"/>
-                        </TextBlock>
-                        <Slider x:Name="KeysSlider"
+                        <TextBlock Text="🍺 Bebidas" FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2"/>
+                        <Slider x:Name="DrinksSlider"
                                 Minimum="0"
                                 Maximum="100"
                                 Value="1"
@@ -269,10 +243,7 @@
 
                     <!-- Textos slider -->
                     <StackPanel Grid.Row="1" Grid.Column="2" Margin="8,0,8,0">
-                        <TextBlock FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2">
-                            <Run Text="📜 Textos: "/>
-                            <Run x:Name="TextsValueText" Text="1"/>
-                        </TextBlock>
+                        <TextBlock Text="📜 Textos" FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2"/>
                         <Slider x:Name="TextsSlider"
                                 Minimum="0"
                                 Maximum="100"
@@ -284,10 +255,7 @@
 
                     <!-- Otros slider -->
                     <StackPanel Grid.Row="1" Grid.Column="3" Margin="8,0,0,0">
-                        <TextBlock FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2">
-                            <Run Text="📦 Otros: "/>
-                            <Run x:Name="OtherObjectsValueText" Text="2"/>
-                        </TextBlock>
+                        <TextBlock Text="📦 Otros" FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2"/>
                         <Slider x:Name="OtherObjectsSlider"
                                 Minimum="0"
                                 Maximum="100"

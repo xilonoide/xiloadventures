@@ -11,6 +11,8 @@ public enum ObjectType
     Arma,
     /// <summary>Armadura equipable para defensa (torso).</summary>
     Armadura,
+    /// <summary>Casco equipable para defensa (cabeza).</summary>
+    Casco,
     /// <summary>Escudo equipable para defensa (mano izquierda).</summary>
     Escudo,
     /// <summary>Alimento consumible que reduce el hambre.</summary>
