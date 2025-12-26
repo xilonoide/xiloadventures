@@ -1,4 +1,6 @@
+using XiloAdventures.Engine.Models.Enums;
 using static XiloAdventures.Engine.Engine.RandomMessageHelper;
+using static XiloAdventures.Engine.Engine.GrammarHelper;
 
 namespace XiloAdventures.Engine.Engine;
 
@@ -39,66 +41,83 @@ public static partial class RandomMessages
     /// <summary>
     /// Mensaje cuando algo no se puede comer.
     /// </summary>
-    public static string CannotEat => Pick(
-        "No puedes comer {0}.",
-        "{0} no es comestible.",
-        "Es imposible comer {0}.",
-        "No te puedes comer {0}.",
-        "{0} no se puede comer.",
-        "Eso no es algo que puedas comer.",
-        "{0} no es apto para el consumo.",
-        "No creo que {0} sea comestible.",
-        "Mejor no te comas {0}.",
-        "Tu estómago rechaza la idea de comer {0}."
-    );
+    public static string GetCannotEat(string name, GrammaticalGender gender, bool isPlural)
+    {
+        var template = Pick(
+            "No puedes comer {0}.",
+            "{0} no es comestible.",
+            "Es imposible comer {0}.",
+            "No te puedes comer {0}.",
+            "{0} no se puede comer.",
+            "Eso no es algo que puedas comer.",
+            "{0} no es apto para el consumo.",
+            "No creo que {0} sea comestible.",
+            "Mejor no te comas {0}.",
+            "Tu estómago rechaza la idea de comer {0}."
+        );
+        return string.Format(template, name);
+    }
 
     /// <summary>
     /// Mensaje cuando algo no se puede beber.
     /// </summary>
-    public static string CannotDrink => Pick(
-        "No puedes beber {0}.",
-        "{0} no es bebible.",
-        "Es imposible beber {0}.",
-        "No te puedes beber {0}.",
-        "{0} no se puede beber.",
-        "Eso no es algo que puedas beber.",
-        "{0} no es potable.",
-        "No creo que {0} sea bebible.",
-        "Mejor no te bebas {0}.",
-        "Tu garganta rechaza la idea de beber {0}."
-    );
+    public static string GetCannotDrink(string name, GrammaticalGender gender, bool isPlural)
+    {
+        var template = Pick(
+            "No puedes beber {0}.",
+            "{0} no es bebible.",
+            "Es imposible beber {0}.",
+            "No te puedes beber {0}.",
+            "{0} no se puede beber.",
+            "Eso no es algo que puedas beber.",
+            "{0} no es potable.",
+            "No creo que {0} sea bebible.",
+            "Mejor no te bebas {0}.",
+            "Tu garganta rechaza la idea de beber {0}."
+        );
+        return string.Format(template, name);
+    }
 
     /// <summary>
     /// Mensaje al comer algo exitosamente.
     /// </summary>
-    public static string EatSuccess => Pick(
-        "Te comes {0}. ¡Delicioso!",
-        "Devoras {0} con gusto.",
-        "Comes {0} con apetito.",
-        "Te alimentas con {0}.",
-        "Saboreas {0} lentamente.",
-        "Engulles {0} sin dudarlo.",
-        "Te llevas {0} a la boca y lo disfrutas.",
-        "Masticas {0} con satisfacción.",
-        "Disfrutas comiendo {0}.",
-        "Te zampas {0} de un bocado."
-    );
+    public static string GetEatSuccess(string name, GrammaticalGender gender, bool isPlural)
+    {
+        var e = Ending(gender, isPlural);
+        var template = Pick(
+            "Te comes {0}. ¡Delicioso!",
+            "Devoras {0} con gusto.",
+            "Comes {0} con apetito.",
+            "Te alimentas con {0}.",
+            "Saboreas {0} lentamente.",
+            "Engulles {0} sin dudarlo.",
+            "Te llevas {0} a la boca y l{1} disfrutas.",
+            "Masticas {0} con satisfacción.",
+            "Disfrutas comiendo {0}.",
+            "Te zampas {0} de un bocado."
+        );
+        return string.Format(template, name, e);
+    }
 
     /// <summary>
     /// Mensaje al beber algo exitosamente.
     /// </summary>
-    public static string DrinkSuccess => Pick(
-        "Te bebes {0}. ¡Refrescante!",
-        "Bebes {0} de un trago.",
-        "Saboreas {0} con gusto.",
-        "Te hidratas con {0}.",
-        "Tomas un sorbo de {0}.",
-        "Bebes {0} con avidez.",
-        "Te refrescas con {0}.",
-        "Disfrutas bebiendo {0}.",
-        "Vacías {0} de un trago.",
-        "Bebes {0} lentamente."
-    );
+    public static string GetDrinkSuccess(string name, GrammaticalGender gender, bool isPlural)
+    {
+        var template = Pick(
+            "Te bebes {0}. ¡Refrescante!",
+            "Bebes {0} de un trago.",
+            "Saboreas {0} con gusto.",
+            "Te hidratas con {0}.",
+            "Tomas un sorbo de {0}.",
+            "Bebes {0} con avidez.",
+            "Te refrescas con {0}.",
+            "Disfrutas bebiendo {0}.",
+            "Vacías {0} de un trago.",
+            "Bebes {0} lentamente."
+        );
+        return string.Format(template, name);
+    }
 
     /// <summary>
     /// Mensaje cuando el sistema de necesidades básicas no está activo.
@@ -302,5 +321,62 @@ public static partial class RandomMessages
         "Número inválido, usa del 1 al 8.",
         "Elige entre 1 y 8 horas.",
         "Solo acepto números del 1 al 8."
+    );
+
+    // Propiedades legacy para compatibilidad (deprecadas)
+    [System.Obsolete("Use GetCannotEat(name, gender, isPlural) instead")]
+    public static string CannotEat => Pick(
+        "No puedes comer {0}.",
+        "{0} no es comestible.",
+        "Es imposible comer {0}.",
+        "No te puedes comer {0}.",
+        "{0} no se puede comer.",
+        "Eso no es algo que puedas comer.",
+        "{0} no es apto para el consumo.",
+        "No creo que {0} sea comestible.",
+        "Mejor no te comas {0}.",
+        "Tu estómago rechaza la idea de comer {0}."
+    );
+
+    [System.Obsolete("Use GetCannotDrink(name, gender, isPlural) instead")]
+    public static string CannotDrink => Pick(
+        "No puedes beber {0}.",
+        "{0} no es bebible.",
+        "Es imposible beber {0}.",
+        "No te puedes beber {0}.",
+        "{0} no se puede beber.",
+        "Eso no es algo que puedas beber.",
+        "{0} no es potable.",
+        "No creo que {0} sea bebible.",
+        "Mejor no te bebas {0}.",
+        "Tu garganta rechaza la idea de beber {0}."
+    );
+
+    [System.Obsolete("Use GetEatSuccess(name, gender, isPlural) instead")]
+    public static string EatSuccess => Pick(
+        "Te comes {0}. ¡Delicioso!",
+        "Devoras {0} con gusto.",
+        "Comes {0} con apetito.",
+        "Te alimentas con {0}.",
+        "Saboreas {0} lentamente.",
+        "Engulles {0} sin dudarlo.",
+        "Te llevas {0} a la boca y lo disfrutas.",
+        "Masticas {0} con satisfacción.",
+        "Disfrutas comiendo {0}.",
+        "Te zampas {0} de un bocado."
+    );
+
+    [System.Obsolete("Use GetDrinkSuccess(name, gender, isPlural) instead")]
+    public static string DrinkSuccess => Pick(
+        "Te bebes {0}. ¡Refrescante!",
+        "Bebes {0} de un trago.",
+        "Saboreas {0} con gusto.",
+        "Te hidratas con {0}.",
+        "Tomas un sorbo de {0}.",
+        "Bebes {0} con avidez.",
+        "Te refrescas con {0}.",
+        "Disfrutas bebiendo {0}.",
+        "Vacías {0} de un trago.",
+        "Bebes {0} lentamente."
     );
 }

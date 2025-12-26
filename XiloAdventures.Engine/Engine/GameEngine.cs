@@ -731,7 +731,7 @@ public class GameEngine
             {
                 obj.IsLit = false;
                 obj.LightTurnsRemaining = 0;
-                sb.AppendLine(string.Format(RandomMessages.LightGoesOut, Cap(obj.Name)));
+                sb.AppendLine(RandomMessages.GetLightGoesOut(Cap(obj.Name), obj.Gender, obj.IsPlural));
             }
         }
 
@@ -1734,7 +1734,7 @@ public class GameEngine
             return CommandResult.Error(RandomMessages.NoSuchContainer);
 
         if (container.IsOpenable && !container.IsOpen)
-            return CommandResult.Error(string.Format(RandomMessages.ContainerIsClosed, Cap(container.Name)));
+            return CommandResult.Error(RandomMessages.GetContainerIsClosed(Cap(container.Name), container.Gender, container.IsPlural));
 
         // Verificar capacidad por volumen
         if (container.MaxCapacity > 0)
@@ -1781,7 +1781,7 @@ public class GameEngine
             return CommandResult.Error(RandomMessages.NoSuchContainer);
 
         if (container.IsOpenable && !container.IsOpen && !container.ContentsVisible)
-            return CommandResult.Error(string.Format(RandomMessages.ContainerIsClosed, Cap(container.Name)));
+            return CommandResult.Error(RandomMessages.GetContainerIsClosed(Cap(container.Name), container.Gender, container.IsPlural));
 
         // Buscar el objeto dentro del contenedor
         var objToExtract = container.ContainedObjectIds
@@ -1817,7 +1817,7 @@ public class GameEngine
             return CommandResult.Error($"{Cap(container.Name)} está cerrado y no puedes ver su interior.");
 
         if (container.ContainedObjectIds.Count == 0)
-            return CommandResult.Success(string.Format(RandomMessages.ContainerEmpty, Cap(container.Name)));
+            return CommandResult.Success(RandomMessages.GetContainerEmpty(Cap(container.Name), container.Gender, container.IsPlural));
 
         var sb = new StringBuilder();
         sb.AppendLine($"Dentro de {WithArticle(container)} ves:");
@@ -3209,15 +3209,15 @@ public class GameEngine
 
         // Verificar que es un objeto luminoso
         if (!obj.IsLightSource)
-            return CommandResult.Error(string.Format(RandomMessages.CannotIgnite, Cap(obj.Name)));
+            return CommandResult.Error(RandomMessages.GetCannotIgnite(Cap(obj.Name), obj.Gender, obj.IsPlural));
 
         // Verificar que se puede encender
         if (!obj.CanIgnite)
-            return CommandResult.Error(string.Format(RandomMessages.CannotIgnite, Cap(obj.Name)));
+            return CommandResult.Error(RandomMessages.GetCannotIgnite(Cap(obj.Name), obj.Gender, obj.IsPlural));
 
         // Si ya está encendido
         if (obj.IsLit)
-            return CommandResult.Error(string.Format(RandomMessages.AlreadyLit, Cap(obj.Name)));
+            return CommandResult.Error(RandomMessages.GetAlreadyLit(Cap(obj.Name), obj.Gender, obj.IsPlural));
 
         // Verificar si necesita un objeto encendedor
         if (!string.IsNullOrEmpty(obj.IgniterObjectId))
@@ -3273,15 +3273,15 @@ public class GameEngine
 
         // Verificar que es un objeto luminoso
         if (!obj.IsLightSource)
-            return CommandResult.Error(string.Format(RandomMessages.CannotExtinguish, Cap(obj.Name)));
+            return CommandResult.Error(RandomMessages.GetCannotExtinguish(Cap(obj.Name), obj.Gender, obj.IsPlural));
 
         // Verificar que se puede apagar
         if (!obj.CanExtinguish)
-            return CommandResult.Error(string.Format(RandomMessages.CannotExtinguish, Cap(obj.Name)));
+            return CommandResult.Error(RandomMessages.GetCannotExtinguish(Cap(obj.Name), obj.Gender, obj.IsPlural));
 
         // Si ya está apagado
         if (!obj.IsLit)
-            return CommandResult.Error(string.Format(RandomMessages.AlreadyOff, Cap(obj.Name)));
+            return CommandResult.Error(RandomMessages.GetAlreadyOff(Cap(obj.Name), obj.Gender, obj.IsPlural));
 
         // Apagar el objeto
         obj.IsLit = false;
@@ -3717,7 +3717,7 @@ public class GameEngine
 
         // Verificar que sea comida
         if (obj.Type != ObjectType.Comida)
-            return CommandResult.Error(string.Format(RandomMessages.CannotEat, Cap(obj.Name)));
+            return CommandResult.Error(RandomMessages.GetCannotEat(Cap(obj.Name), obj.Gender, obj.IsPlural));
 
         // Consumir el objeto
         var stats = _state.Player.DynamicStats;
@@ -3731,7 +3731,7 @@ public class GameEngine
         _ = TriggerEntityScriptAsync("GameObject", obj.Id, "Event_OnEat");
 
         // Mostrar mensaje
-        var message = string.Format(RandomMessages.EatSuccess, Low(obj.Name));
+        var message = RandomMessages.GetEatSuccess(Low(obj.Name), obj.Gender, obj.IsPlural);
         if (oldHunger > 0 && stats.Hunger == 0)
             message += " " + RandomMessages.NotHungry;
 
@@ -3764,7 +3764,7 @@ public class GameEngine
 
         // Verificar que sea bebida
         if (obj.Type != ObjectType.Bebida)
-            return CommandResult.Error(string.Format(RandomMessages.CannotDrink, Cap(obj.Name)));
+            return CommandResult.Error(RandomMessages.GetCannotDrink(Cap(obj.Name), obj.Gender, obj.IsPlural));
 
         // Consumir el objeto
         var stats = _state.Player.DynamicStats;
@@ -3778,7 +3778,7 @@ public class GameEngine
         _ = TriggerEntityScriptAsync("GameObject", obj.Id, "Event_OnDrink");
 
         // Mostrar mensaje
-        var message = string.Format(RandomMessages.DrinkSuccess, Low(obj.Name));
+        var message = RandomMessages.GetDrinkSuccess(Low(obj.Name), obj.Gender, obj.IsPlural);
         if (oldThirst > 0 && stats.Thirst == 0)
             message += " " + RandomMessages.NotThirsty;
 

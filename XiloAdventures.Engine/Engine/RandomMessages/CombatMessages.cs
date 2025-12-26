@@ -1,4 +1,6 @@
+using XiloAdventures.Engine.Models.Enums;
 using static XiloAdventures.Engine.Engine.RandomMessageHelper;
+using static XiloAdventures.Engine.Engine.GrammarHelper;
 
 namespace XiloAdventures.Engine.Engine;
 
@@ -23,18 +25,23 @@ public static partial class RandomMessages
     /// <summary>
     /// Mensaje cuando el NPC ya está muerto.
     /// </summary>
-    public static string AlreadyDead => Pick(
-        "{0} ya está muerto.",
-        "{0} ya no respira.",
-        "No tiene sentido, {0} ya ha caído.",
-        "{0} yace sin vida en el suelo.",
-        "{0} ya ha dejado este mundo.",
-        "Es inútil, {0} ya está muerto.",
-        "{0} ya no representa una amenaza.",
-        "No puedes atacar a {0}, ya está muerto.",
-        "{0} ya ha perecido.",
-        "El cadáver de {0} yace inerte."
-    );
+    public static string GetAlreadyDead(string name, GrammaticalGender gender, bool isPlural)
+    {
+        var e = Ending(gender, isPlural);
+        var template = Pick(
+            "{0} ya está muert{1}.",
+            "{0} ya no respira.",
+            "No tiene sentido, {0} ya ha caído.",
+            "{0} yace sin vida en el suelo.",
+            "{0} ya ha dejado este mundo.",
+            "Es inútil, {0} ya está muert{1}.",
+            "{0} ya no representa una amenaza.",
+            "No puedes atacar a {0}, ya está muert{1}.",
+            "{0} ya ha perecido.",
+            "El cadáver de {0} yace inerte."
+        );
+        return string.Format(template, name, e);
+    }
 
     /// <summary>
     /// Mensaje preguntando qué saquear.
@@ -55,6 +62,39 @@ public static partial class RandomMessages
     /// <summary>
     /// Mensaje cuando el cadáver no tiene nada.
     /// </summary>
+    public static string GetCorpseEmpty(string name, GrammaticalGender gender, bool isPlural)
+    {
+        var template = Pick(
+            "El cadáver de {0} no tiene nada de valor.",
+            "{0} no llevaba nada encima.",
+            "No encuentras nada útil en el cuerpo de {0}.",
+            "El cuerpo de {0} está vacío.",
+            "{0} no tenía nada que mereciera la pena.",
+            "Registras el cadáver pero no hay nada.",
+            "El cadáver de {0} no tiene botín.",
+            "No hay nada que saquear de {0}.",
+            "{0} murió sin posesiones.",
+            "Sus bolsillos están vacíos."
+        );
+        return string.Format(template, name);
+    }
+
+    // Propiedades legacy para compatibilidad (deprecadas)
+    [System.Obsolete("Use GetAlreadyDead(name, gender, isPlural) instead")]
+    public static string AlreadyDead => Pick(
+        "{0} ya está muerto.",
+        "{0} ya no respira.",
+        "No tiene sentido, {0} ya ha caído.",
+        "{0} yace sin vida en el suelo.",
+        "{0} ya ha dejado este mundo.",
+        "Es inútil, {0} ya está muerto.",
+        "{0} ya no representa una amenaza.",
+        "No puedes atacar a {0}, ya está muerto.",
+        "{0} ya ha perecido.",
+        "El cadáver de {0} yace inerte."
+    );
+
+    [System.Obsolete("Use GetCorpseEmpty(name, gender, isPlural) instead")]
     public static string CorpseEmpty => Pick(
         "El cadáver de {0} no tiene nada de valor.",
         "{0} no llevaba nada encima.",
