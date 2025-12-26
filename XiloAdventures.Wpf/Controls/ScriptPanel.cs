@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Wpf.Controls;
 
@@ -402,8 +403,9 @@ public partial class ScriptPanel : Control
 
         if (e.Data.GetDataPresent("NodeType"))
         {
-            var nodeType = e.Data.GetData("NodeType") as string;
-            if (string.IsNullOrEmpty(nodeType)) return;
+            var nodeTypeStr = e.Data.GetData("NodeType") as string;
+            if (string.IsNullOrEmpty(nodeTypeStr)) return;
+            if (!Enum.TryParse<NodeTypeId>(nodeTypeStr, true, out var nodeType)) return;
 
             var typeDef = NodeTypeRegistry.GetNodeType(nodeType);
             if (typeDef == null) return;

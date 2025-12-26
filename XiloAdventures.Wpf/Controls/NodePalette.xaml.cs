@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Wpf.Controls;
 
@@ -116,9 +117,9 @@ public partial class NodePalette : UserControl
             NodeCategory.Event => 0,
             NodeCategory.Dialogue => 1,
             NodeCategory.Condition => 2,
-            NodeCategory.Action => 3,
-            NodeCategory.Flow => 4,
-            NodeCategory.Variable => 5,
+            NodeCategory.Variable => 3,
+            NodeCategory.Action => 4,
+            NodeCategory.Flow => 5,
             _ => 99
         };
     }
@@ -177,15 +178,15 @@ public partial class NodePalette : UserControl
 
         var nodesPanel = new StackPanel { Margin = new Thickness(4, 2, 4, 4) };
 
-        // Agrupar nodos por prefijo (ej: "Jugador:" crea un subgrupo)
+        // Agrupar nodos por subgrupo usando el enum
         var subgroups = nodes
-            .GroupBy(n => GetNodeSubgroup(n.DisplayName))
-            .OrderBy(g => g.Key == null ? 0 : 1) // Nodos sin subgrupo primero
-            .ThenBy(g => g.Key ?? "");
+            .GroupBy(n => n.Subgroup)
+            .OrderBy(g => g.Key == NodeSubgroup.None ? 0 : 1) // Nodos sin subgrupo primero
+            .ThenBy(g => g.Key.GetDisplayName());
 
         foreach (var group in subgroups)
         {
-            if (group.Key == null)
+            if (group.Key == NodeSubgroup.None)
             {
                 // Nodos sin subgrupo
                 foreach (var nodeDef in group.OrderBy(n => n.DisplayName))
@@ -214,42 +215,14 @@ public partial class NodePalette : UserControl
         return expander;
     }
 
-    private static string? GetNodeSubgroup(string displayName)
-    {
-        // Detectar prefijos como "Jugador:" para crear subgrupos
-        var colonIndex = displayName.IndexOf(':');
-        if (colonIndex > 0 && colonIndex < displayName.Length - 1)
-        {
-            return displayName[..colonIndex].Trim();
-        }
-        return null;
-    }
-
-    private Expander CreateSubgroupExpander(string subgroupName, List<NodeTypeDefinition> nodes, Color categoryColor)
+    private Expander CreateSubgroupExpander(NodeSubgroup subgroup, List<NodeTypeDefinition> nodes, Color categoryColor)
     {
         var headerPanel = new StackPanel { Orientation = Orientation.Horizontal };
 
-        // Icono de subgrupo según nombre
-        var iconText = subgroupName switch
-        {
-            "Jugador" => "👤 ",
-            "Juego" => "🎮 ",
-            "Operadores" => "🔧 ",
-            "Necesidades" => "🍖 ",
-            "Dinero" => "💰 ",
-            "Combate" => "⚔️ ",
-            "Iluminación" => "💡 ",
-            "Objetos" => "📦 ",
-            "NPC" => "🧑 ",
-            "Rutas" => "🛤️ ",
-            "Salas" => "🏠 ",
-            "Puertas" => "🚪 ",
-            _ => "📁 "
-        };
-
+        // Icono de subgrupo usando el enum
         var icon = new TextBlock
         {
-            Text = iconText,
+            Text = subgroup.GetIcon() + " ",
             FontSize = 11,
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -258,7 +231,7 @@ public partial class NodePalette : UserControl
         // Nombre del subgrupo
         var headerText = new TextBlock
         {
-            Text = subgroupName,
+            Text = subgroup.GetDisplayName(),
             Foreground = new SolidColorBrush(Color.FromRgb(200, 200, 200)),
             FontWeight = FontWeights.Normal,
             FontSize = 11
@@ -278,8 +251,7 @@ public partial class NodePalette : UserControl
 
         foreach (var nodeDef in nodes.OrderBy(n => n.DisplayName))
         {
-            // Mostrar solo la parte después del prefijo
-            var nodeItem = CreateNodeItem(nodeDef, categoryColor, removePrefix: true);
+            var nodeItem = CreateNodeItem(nodeDef, categoryColor);
             nodesPanel.Children.Add(nodeItem);
         }
 
@@ -293,20 +265,9 @@ public partial class NodePalette : UserControl
         };
     }
 
-    private Border CreateNodeItem(NodeTypeDefinition nodeDef, Color categoryColor, bool removePrefix = false)
+    private Border CreateNodeItem(NodeTypeDefinition nodeDef, Color categoryColor)
     {
         var itemPanel = new StackPanel { Orientation = Orientation.Horizontal };
-
-        // Determinar el nombre a mostrar
-        var displayName = nodeDef.DisplayName;
-        if (removePrefix)
-        {
-            var colonIndex = displayName.IndexOf(':');
-            if (colonIndex > 0 && colonIndex < displayName.Length - 1)
-            {
-                displayName = displayName[(colonIndex + 1)..].Trim();
-            }
-        }
 
         // Mini indicador de color
         var miniIndicator = new Border
@@ -322,7 +283,7 @@ public partial class NodePalette : UserControl
         // Nombre del nodo
         var nameText = new TextBlock
         {
-            Text = displayName,
+            Text = nodeDef.DisplayName,
             Foreground = Brushes.White,
             FontSize = 11,
             VerticalAlignment = VerticalAlignment.Center
@@ -395,7 +356,7 @@ public partial class NodePalette : UserControl
         panel.Children.Add(descText);
 
         // Ejemplo de uso
-        var example = GetNodeExample(nodeDef.TypeId);
+        var example = GetNodeExample(nodeDef.TypeId.ToString());
         if (!string.IsNullOrEmpty(example))
         {
             var exampleLabel = new TextBlock

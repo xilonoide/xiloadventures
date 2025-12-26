@@ -110,9 +110,6 @@ public static class PropertyNames
     public static readonly string DoorId = nameof(Exit.DoorId);
 
     // === NPC ===
-#pragma warning disable CS0618 // ConversationId está obsoleto pero se mantiene por compatibilidad
-    public static readonly string ConversationId = nameof(Npc.ConversationId);
-#pragma warning restore CS0618
     public static readonly string IsShopkeeper = nameof(Npc.IsShopkeeper);
     public static readonly string ShopInventory = nameof(Npc.ShopInventory);
     public static readonly string BuyPriceMultiplier = nameof(Npc.BuyPriceMultiplier);

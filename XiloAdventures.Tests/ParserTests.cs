@@ -4,6 +4,8 @@ using System.Text.Json;
 using XiloAdventures.Engine;
 using Xunit;
 
+using XiloAdventures.Engine.Models.Enums;
+
 namespace XiloAdventures.Tests;
 
 public class ParserTests

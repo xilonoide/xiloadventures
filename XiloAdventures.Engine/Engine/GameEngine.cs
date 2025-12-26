@@ -1007,7 +1007,7 @@ public class GameEngine
                 var obj = FindObjectById(id);
                 if (obj != null)
                 {
-                    if (obj.IsLightSource)
+                    if (obj.IsLightSource && obj.IsLit)
                     {
                         var turnsDisplay = obj.LightTurnsRemaining == -1 ? "∞" : obj.LightTurnsRemaining.ToString();
                         sb.AppendLine($" - {Cap(obj.Name)} ({turnsDisplay})");
@@ -2195,10 +2195,13 @@ public class GameEngine
         // Disparar script Event_OnTalk
         _ = TriggerEntityScriptAsync("Npc", npc.Id, "Event_OnTalk");
 
-        // Si el NPC no tiene conversación asignada
-#pragma warning disable CS0618 // ConversationId está obsoleto pero se mantiene por compatibilidad
-        if (string.IsNullOrEmpty(npc.ConversationId))
-#pragma warning restore CS0618
+        // Verificar si el NPC tiene un script con nodos de diálogo
+        var hasDialogue = _world.Scripts.Any(s =>
+            string.Equals(s.OwnerType, "Npc", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(s.OwnerId, npc.Id, StringComparison.OrdinalIgnoreCase) &&
+            s.Nodes.Any(n => n.Category == NodeCategory.Dialogue));
+
+        if (!hasDialogue)
             return CommandResult.Success(string.Format(RandomMessages.NothingToSay, Cap(npc.Name)));
 
         // Iniciar conversación con el NPC
@@ -2597,8 +2600,10 @@ public class GameEngine
         if (script == null) return false;
 
         // Buscar el nodo de evento
-        var eventNode = script.Nodes.FirstOrDefault(n =>
-            string.Equals(n.NodeType, eventType, StringComparison.OrdinalIgnoreCase));
+        if (!Enum.TryParse<NodeTypeId>(eventType, true, out var nodeTypeId))
+            return false;
+
+        var eventNode = script.Nodes.FirstOrDefault(n => n.NodeType == nodeTypeId);
 
         if (eventNode == null) return false;
 
@@ -2614,7 +2619,7 @@ public class GameEngine
             visited.Add(currentId);
 
             var currentNode = script.Nodes.FirstOrDefault(n => n.Id == currentId);
-            if (currentNode?.NodeType == "Action_ShowMessage")
+            if (currentNode?.NodeType == NodeTypeId.Action_ShowMessage)
                 return true;
 
             // Añadir nodos conectados
@@ -3480,7 +3485,7 @@ public class GameEngine
 
         // Buscar un nodo de evento para iniciar la ejecución
         var eventNode = script.Nodes.FirstOrDefault(n =>
-            n.NodeType.StartsWith("Event_", StringComparison.OrdinalIgnoreCase));
+            n.Category == NodeCategory.Event);
 
         if (eventNode == null)
             return ScriptExecutionResult.Error("El script no tiene ningún evento de inicio");
@@ -3495,7 +3500,7 @@ public class GameEngine
             ScriptMessage += messageHandler;
 
             // Ejecutar el evento del script
-            var task = _scriptEngine.TriggerEventAsync(script.OwnerType, script.OwnerId, eventNode.NodeType);
+            var task = _scriptEngine.TriggerEventAsync(script.OwnerType, script.OwnerId, eventNode.NodeType.ToString());
             task.Wait();
 
             return ScriptExecutionResult.Ok(messages);

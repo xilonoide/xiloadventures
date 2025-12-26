@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using XiloAdventures.Engine;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Wpf.Windows;
 
@@ -1493,7 +1494,7 @@ public partial class ScriptEditorWindow : Window
                 // Los nodos y conexiones ya están vinculados por referencia
                 // pero actualizamos el StartNodeId si hay un nodo de inicio
                 var startNode = conversation.Nodes.FirstOrDefault(n =>
-                    string.Equals(n.NodeType, "Conversation_Start", StringComparison.OrdinalIgnoreCase));
+                    n.NodeType == NodeTypeId.Conversation_Start);
                 conversation.StartNodeId = startNode?.Id;
             }
         }
@@ -1658,7 +1659,7 @@ public partial class ScriptEditorWindow : Window
         if (_testEngine == null || _testWorld == null) return;
 
         // Verificar que hay al menos un evento
-        var hasEvent = _script.Nodes.Any(n => n.NodeType.StartsWith("Event_", StringComparison.OrdinalIgnoreCase));
+        var hasEvent = _script.Nodes.Any(n => n.Category == NodeCategory.Event);
         if (!hasEvent)
         {
             AppendTestOutput("✗ El script necesita al menos un evento para poder ejecutarse.", Colors.Red);

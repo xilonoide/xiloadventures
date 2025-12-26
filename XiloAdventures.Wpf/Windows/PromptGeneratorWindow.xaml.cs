@@ -77,7 +77,6 @@ public partial class PromptGeneratorWindow : Window
       ""Description"": ""Descripción del NPC y su personalidad"",
       ""RoomId"": ""room_id"",
       ""Visible"": true,
-      ""ConversationId"": ""conversation_id o null"",
       ""InventoryObjectIds"": [],
       ""IsShopkeeper"": false,
       ""ShopInventory"": [],
@@ -318,7 +317,7 @@ Genera un mundo con temática ""{THEME}"" que contenga:
 5. **{NPC_COUNT} NPCs** con personalidad acorde a la temática:
    - Si es comerciante: IsShopkeeper=true y añade IDs de objetos a ShopInventory
    - Si lleva objetos (que puede dar/intercambiar): añade IDs a InventoryObjectIds
-   - Si tiene diálogo: crea una Conversation y asigna ConversationId
+   - Si tiene diálogo: crea un Script para el NPC con nodos Conversation_* (ver punto 8)
    - **Stats de combate**: Level, Strength, Dexterity, Intelligence, MaxHealth, CurrentHealth, Money
    - **Patrulla por turnos**: PatrolRoute con lista de IDs de salas conectadas. PatrolMovementMode=""Turns"", PatrolSpeed=1 (cada turno), 2 (lento), 3 (muy lento). IsPatrolling=true para empezar patrullando.
    - **Patrulla por tiempo**: PatrolMovementMode=""Time"", PatrolTimeInterval=3.0 (segundos entre movimientos)
@@ -338,12 +337,10 @@ Genera un mundo con temática ""{THEME}"" que contenga:
    - Un NPC patrullero con IsPatrolling=true desde el inicio
    - Un script que haga que un NPC siga al jugador (`Action_FollowPlayer`) cuando se cumpla alguna condición (ej: hablar con él, darle un objeto)
    - **Al menos un script que complete la misión** (`Action_CompleteQuest`) cuando se cumpla un objetivo final
-8. **Conversaciones opcionales** para NPCs importantes:
-   - Crea conversaciones con nodos Conversation_Start → Conversation_NpcSay → Conversation_End
+8. **Diálogos de NPCs** mediante Scripts:
+   - Crea un Script con OwnerType=""Npc"" y OwnerId=id_del_npc
+   - Usa nodos Conversation_Start → Conversation_NpcSay → Conversation_End
    - Usa Conversation_PlayerChoice para diálogos con opciones
-   - Asigna el ConversationId al NPC correspondiente
-   - **Estructura de Conversations**: Cada conversación tiene su propio array Nodes y Connections (igual que Scripts, pero con nodos Conversation_*)
-   - **StartNodeId** (solo Conversations): DEBE apuntar al Id del nodo Conversation_Start de esa conversación
    - **Connections entre nodos de conversación**: Usa los nombres de puerto correctos (Exec, Option1, Option2, True, False, OnClose, etc.)
 
 ## NOTAS IMPORTANTES
@@ -435,7 +432,7 @@ Genera un mundo con temática ""{THEME}"" que contenga:
 
 ## ⚠️ ERRORES COMUNES A EVITAR
 
-1. **IDs inexistentes**: Cada Id referenciado (ObjectId, RoomId, NpcId, DoorId, QuestId, ConversationId) DEBE existir en su array correspondiente
+1. **IDs inexistentes**: Cada Id referenciado (ObjectId, RoomId, NpcId, DoorId, QuestId) DEBE existir en su array correspondiente
 2. **StartRoomId inválido**: Game.StartRoomId DEBE coincidir exactamente con el Id de una sala en el array Rooms
 3. **StartNodeId inválido**: Cada Conversation DEBE tener un StartNodeId que apunte al nodo Conversation_Start. Scripts NO necesitan StartNodeId (empiezan desde nodos Event)
 4. **Conexiones rotas**: Cada Connection debe referenciar FromNodeId y ToNodeId que existan en el mismo Script/Conversation

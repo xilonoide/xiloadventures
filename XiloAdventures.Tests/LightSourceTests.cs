@@ -4,6 +4,7 @@ using System.Linq;
 using Xunit;
 using XiloAdventures.Engine;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Tests;
 

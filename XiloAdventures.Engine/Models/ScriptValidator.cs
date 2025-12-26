@@ -1,50 +1,28 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using XiloAdventures.Engine.Models.Enums;
+
 namespace XiloAdventures.Engine.Models;
 
 /// <summary>
-/// Información sobre un nodo con datos incompletos
+/// Validador estático para scripts de nodos.
+/// Proporciona métodos para verificar que un script es válido y ejecutable.
 /// </summary>
-public class IncompleteNodeInfo
-{
-    public string NodeId { get; set; } = "";
-    public string NodeDisplayName { get; set; } = "";
-    public List<string> MissingProperties { get; set; } = new();
-}
-
-/// <summary>
-/// Resultado de validación de un script
-/// </summary>
-public class ScriptValidationResult
-{
-    public bool IsValid => !HasErrors;
-    public bool HasErrors => !HasEvent || !HasAction || !IsConnected || IncompleteNodes.Count > 0;
-    public bool HasWarnings => HasErrors;
-
-    public bool HasEvent { get; set; }
-    public bool HasAction { get; set; }
-    public bool IsConnected { get; set; }
-
-    /// <summary>Nodos que tienen propiedades obligatorias sin completar</summary>
-    public List<IncompleteNodeInfo> IncompleteNodes { get; } = new();
-
-    public List<string> Errors { get; } = new();
-    public List<string> Warnings { get; } = new();
-
-    public static ScriptValidationResult Empty => new()
-    {
-        HasEvent = false,
-        HasAction = false,
-        IsConnected = false
-    };
-}
-
-/// <summary>
-/// Validador de scripts
-/// </summary>
+/// <remarks>
+/// La validación verifica:
+/// - Que exista al menos un nodo de evento
+/// - Que exista al menos una acción
+/// - Que haya una ruta de ejecución desde el evento hasta la acción
+/// - Que todas las propiedades obligatorias de los nodos estén completas
+/// </remarks>
 public static class ScriptValidator
 {
     /// <summary>
-    /// Valida un script y devuelve el resultado
+    /// Valida un script y devuelve el resultado con errores y advertencias.
     /// </summary>
+    /// <param name="script">El script a validar.</param>
+    /// <returns>Resultado de la validación con detalles de errores encontrados.</returns>
     public static ScriptValidationResult Validate(ScriptDefinition script)
     {
         var result = new ScriptValidationResult();
@@ -98,7 +76,7 @@ public static class ScriptValidator
     }
 
     /// <summary>
-    /// Valida que todas las propiedades obligatorias estén completadas
+    /// Valida que todas las propiedades obligatorias estén completadas en cada nodo.
     /// </summary>
     private static void ValidateRequiredProperties(ScriptDefinition script, ScriptValidationResult result)
     {
@@ -150,25 +128,30 @@ public static class ScriptValidator
     }
 
     /// <summary>
-    /// Verifica si un tipo de nodo es un evento
+    /// Verifica si un tipo de nodo es un evento.
     /// </summary>
-    public static bool IsEventNode(string nodeType)
+    /// <param name="nodeType">El tipo de nodo a verificar.</param>
+    /// <returns>True si el nodo es un evento.</returns>
+    public static bool IsEventNode(NodeTypeId nodeType)
     {
         var typeDef = NodeTypeRegistry.GetNodeType(nodeType);
         return typeDef?.Category == NodeCategory.Event;
     }
 
     /// <summary>
-    /// Verifica si un tipo de nodo es una acción
+    /// Verifica si un tipo de nodo es una acción.
     /// </summary>
-    public static bool IsActionNode(string nodeType)
+    /// <param name="nodeType">El tipo de nodo a verificar.</param>
+    /// <returns>True si el nodo es una acción.</returns>
+    public static bool IsActionNode(NodeTypeId nodeType)
     {
         var typeDef = NodeTypeRegistry.GetNodeType(nodeType);
         return typeDef?.Category == NodeCategory.Action;
     }
 
     /// <summary>
-    /// Verifica si algún evento está conectado a alguna acción a través del flujo de ejecución
+    /// Verifica si algún evento está conectado a alguna acción a través del flujo de ejecución.
+    /// Realiza una búsqueda en profundidad siguiendo las conexiones de ejecución.
     /// </summary>
     private static bool IsEventConnectedToAction(
         ScriptDefinition script,
@@ -191,7 +174,7 @@ public static class ScriptValidator
 
     /// <summary>
     /// Busca recursivamente si desde un nodo se puede llegar a alguna acción
-    /// siguiendo las conexiones de ejecución
+    /// siguiendo únicamente las conexiones de ejecución (no las de datos).
     /// </summary>
     private static bool CanReachAction(
         ScriptDefinition script,

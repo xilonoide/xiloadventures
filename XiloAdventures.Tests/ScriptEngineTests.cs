@@ -6,6 +6,7 @@ using Xunit;
 using XiloAdventures.Engine;
 using XiloAdventures.Engine.Engine;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Tests;
 
@@ -93,8 +94,8 @@ public class ScriptEngineTests
     private static ScriptDefinition CreateScript(
         string ownerType,
         string ownerId,
-        string eventType,
-        string actionType,
+        NodeTypeId eventType,
+        NodeTypeId actionType,
         Dictionary<string, object?>? actionProps = null)
     {
         return new ScriptDefinition
@@ -146,13 +147,13 @@ public class ScriptEngineTests
             ["Message"] = "You entered room1!"
         };
 
-        world.Scripts.Add(CreateScript("Room", "room1", "Event_OnEnter", "Action_ShowMessage", actionProps));
+        world.Scripts.Add(CreateScript("Room", "room1", NodeTypeId.Event_OnEnter, NodeTypeId.Action_ShowMessage, actionProps));
 
         var engine = new ScriptEngine(world, state);
         string? receivedMessage = null;
         engine.OnMessage += msg => receivedMessage = msg;
 
-        await engine.TriggerEventAsync("Room", "room1", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room1", NodeTypeId.Event_OnEnter);
 
         Assert.Equal("You entered room1!", receivedMessage);
     }
@@ -168,14 +169,14 @@ public class ScriptEngineTests
         };
 
         // Script is for room2
-        world.Scripts.Add(CreateScript("Room", "room2", "Event_OnEnter", "Action_ShowMessage", actionProps));
+        world.Scripts.Add(CreateScript("Room", "room2", NodeTypeId.Event_OnEnter, NodeTypeId.Action_ShowMessage, actionProps));
 
         var engine = new ScriptEngine(world, state);
         string? receivedMessage = null;
         engine.OnMessage += msg => receivedMessage = msg;
 
         // Trigger for room1
-        await engine.TriggerEventAsync("Room", "room1", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room1", NodeTypeId.Event_OnEnter);
 
         Assert.Null(receivedMessage);
     }
@@ -194,10 +195,10 @@ public class ScriptEngineTests
             ["DoorId"] = "door1"
         };
 
-        world.Scripts.Add(CreateScript("Game", "test_scripts", "Event_OnGameStart", "Action_OpenDoor", actionProps));
+        world.Scripts.Add(CreateScript("Game", "test_scripts", NodeTypeId.Event_OnGameStart, NodeTypeId.Action_OpenDoor, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_scripts", NodeTypeId.Event_OnGameStart);
 
         var door = state.Doors.First(d => d.Id == "door1");
         Assert.True(door.IsOpen);
@@ -213,10 +214,10 @@ public class ScriptEngineTests
             ["DoorId"] = "door1"
         };
 
-        world.Scripts.Add(CreateScript("Game", "test_scripts", "Event_OnGameStart", "Action_UnlockDoor", actionProps));
+        world.Scripts.Add(CreateScript("Game", "test_scripts", NodeTypeId.Event_OnGameStart, NodeTypeId.Action_UnlockDoor, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_scripts", NodeTypeId.Event_OnGameStart);
 
         var door = state.Doors.First(d => d.Id == "door1");
         Assert.False(door.IsLocked);
@@ -237,10 +238,10 @@ public class ScriptEngineTests
             ["Value"] = true
         };
 
-        world.Scripts.Add(CreateScript("Game", "test_scripts", "Event_OnGameStart", "Action_SetFlag", actionProps));
+        world.Scripts.Add(CreateScript("Game", "test_scripts", NodeTypeId.Event_OnGameStart, NodeTypeId.Action_SetFlag, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_scripts", NodeTypeId.Event_OnGameStart);
 
         Assert.True(state.Flags.ContainsKey("test_flag"));
         Assert.True(state.Flags["test_flag"]);
@@ -257,10 +258,10 @@ public class ScriptEngineTests
             ["Value"] = 42
         };
 
-        world.Scripts.Add(CreateScript("Game", "test_scripts", "Event_OnGameStart", "Action_SetCounter", actionProps));
+        world.Scripts.Add(CreateScript("Game", "test_scripts", NodeTypeId.Event_OnGameStart, NodeTypeId.Action_SetCounter, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_scripts", NodeTypeId.Event_OnGameStart);
 
         Assert.True(state.Counters.ContainsKey("test_counter"));
         Assert.Equal(42, state.Counters["test_counter"]);
@@ -280,10 +281,10 @@ public class ScriptEngineTests
             ["ObjectId"] = "obj1"
         };
 
-        world.Scripts.Add(CreateScript("Game", "test_scripts", "Event_OnGameStart", "Action_GiveItem", actionProps));
+        world.Scripts.Add(CreateScript("Game", "test_scripts", NodeTypeId.Event_OnGameStart, NodeTypeId.Action_GiveItem, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_scripts", NodeTypeId.Event_OnGameStart);
 
         // GiveItem adds to InventoryObjectIds and sets RoomId to null
         Assert.Contains("obj1", state.InventoryObjectIds);
@@ -301,10 +302,10 @@ public class ScriptEngineTests
             ["ObjectId"] = "obj1"
         };
 
-        world.Scripts.Add(CreateScript("Game", "test_scripts", "Event_OnGameStart", "Action_RemoveItem", actionProps));
+        world.Scripts.Add(CreateScript("Game", "test_scripts", NodeTypeId.Event_OnGameStart, NodeTypeId.Action_RemoveItem, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_scripts", NodeTypeId.Event_OnGameStart);
 
         // RemoveItem removes from InventoryObjectIds
         Assert.DoesNotContain("obj1", state.InventoryObjectIds);
@@ -324,13 +325,13 @@ public class ScriptEngineTests
             ["RoomId"] = "room2"
         };
 
-        world.Scripts.Add(CreateScript("Game", "test_scripts", "Event_OnGameStart", "Action_TeleportPlayer", actionProps));
+        world.Scripts.Add(CreateScript("Game", "test_scripts", NodeTypeId.Event_OnGameStart, NodeTypeId.Action_TeleportPlayer, actionProps));
 
         var engine = new ScriptEngine(world, state);
         string? teleportedTo = null;
         engine.OnPlayerTeleported += roomId => teleportedTo = roomId;
 
-        await engine.TriggerEventAsync("Game", "test_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_scripts", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal("room2", teleportedTo);
         Assert.Equal("room2", state.CurrentRoomId);
@@ -351,10 +352,10 @@ public class ScriptEngineTests
             ["Amount"] = 50
         };
 
-        world.Scripts.Add(CreateScript("Game", "test_scripts", "Event_OnGameStart", "Action_AddMoney", actionProps));
+        world.Scripts.Add(CreateScript("Game", "test_scripts", NodeTypeId.Event_OnGameStart, NodeTypeId.Action_AddMoney, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_scripts", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(150, state.Player.Money);
     }
@@ -370,10 +371,10 @@ public class ScriptEngineTests
             ["Amount"] = 30
         };
 
-        world.Scripts.Add(CreateScript("Game", "test_scripts", "Event_OnGameStart", "Action_RemoveMoney", actionProps));
+        world.Scripts.Add(CreateScript("Game", "test_scripts", NodeTypeId.Event_OnGameStart, NodeTypeId.Action_RemoveMoney, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_scripts", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(70, state.Player.Money);
     }
@@ -411,10 +412,10 @@ public class ScriptEngineTests
             ["Visible"] = true
         };
 
-        world.Scripts.Add(CreateScript("Game", "test_scripts", "Event_OnGameStart", "Action_SetObjectVisible", actionProps));
+        world.Scripts.Add(CreateScript("Game", "test_scripts", NodeTypeId.Event_OnGameStart, NodeTypeId.Action_SetObjectVisible, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_scripts", NodeTypeId.Event_OnGameStart);
 
         Assert.True(state.Objects.First(o => o.Id == "obj1").Visible);
     }
@@ -430,10 +431,10 @@ public class ScriptEngineTests
             ["Visible"] = false
         };
 
-        world.Scripts.Add(CreateScript("Game", "test_scripts", "Event_OnGameStart", "Action_SetObjectVisible", actionProps));
+        world.Scripts.Add(CreateScript("Game", "test_scripts", NodeTypeId.Event_OnGameStart, NodeTypeId.Action_SetObjectVisible, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_scripts", NodeTypeId.Event_OnGameStart);
 
         Assert.False(state.Objects.First(o => o.Id == "obj1").Visible);
     }
@@ -454,10 +455,10 @@ public class ScriptEngineTests
             ["Amount"] = 5
         };
 
-        world.Scripts.Add(CreateScript("Game", "test_scripts", "Event_OnGameStart", "Action_IncrementCounter", actionProps));
+        world.Scripts.Add(CreateScript("Game", "test_scripts", NodeTypeId.Event_OnGameStart, NodeTypeId.Action_IncrementCounter, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_scripts", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(15, state.Counters["test_counter"]);
     }
@@ -472,13 +473,13 @@ public class ScriptEngineTests
             ["SoundId"] = "test_sound"
         };
 
-        world.Scripts.Add(CreateScript("Game", "test_scripts", "Event_OnGameStart", "Action_PlaySound", actionProps));
+        world.Scripts.Add(CreateScript("Game", "test_scripts", NodeTypeId.Event_OnGameStart, NodeTypeId.Action_PlaySound, actionProps));
 
         var engine = new ScriptEngine(world, state);
         string? playedSound = null;
         engine.OnPlaySound += soundId => playedSound = soundId;
 
-        await engine.TriggerEventAsync("Game", "test_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_scripts", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal("test_sound", playedSound);
     }

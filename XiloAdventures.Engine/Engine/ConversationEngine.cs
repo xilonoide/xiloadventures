@@ -64,31 +64,12 @@ public class ConversationEngine
             return;
         }
 
-        ConversationDefinition? conversation = null;
+        // Crear conversación desde el script del NPC
+        var npcScript = _world.Scripts.FirstOrDefault(s =>
+            string.Equals(s.OwnerType, "Npc", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(s.OwnerId, npcId, StringComparison.OrdinalIgnoreCase));
 
-        // 1. Primero buscar la conversación por ConversationId del NPC
-#pragma warning disable CS0618 // ConversationId está obsoleto pero se mantiene por compatibilidad
-        if (!string.IsNullOrEmpty(npc.ConversationId))
-        {
-            conversation = _world.Conversations.FirstOrDefault(c =>
-                string.Equals(c.Id, npc.ConversationId, StringComparison.OrdinalIgnoreCase));
-
-            if (conversation == null)
-            {
-                DebugMessage($"[Error] Conversación '{npc.ConversationId}' no encontrada en el mundo.");
-            }
-        }
-#pragma warning restore CS0618
-
-        // 2. Si no tiene conversación asignada, intentar crear una desde el script del NPC
-        if (conversation == null)
-        {
-            var npcScript = _world.Scripts.FirstOrDefault(s =>
-                string.Equals(s.OwnerType, "Npc", StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(s.OwnerId, npcId, StringComparison.OrdinalIgnoreCase));
-
-            conversation = CreateConversationFromScript(npcScript, npcId);
-        }
+        var conversation = CreateConversationFromScript(npcScript, npcId);
 
         if (conversation == null || conversation.Nodes.Count == 0)
         {
@@ -130,7 +111,7 @@ public class ConversationEngine
 
         // Filtrar solo los nodos de conversación
         var conversationNodes = script.Nodes
-            .Where(n => n.NodeType.StartsWith("Conversation_", StringComparison.OrdinalIgnoreCase))
+            .Where(n => n.Category == NodeCategory.Dialogue)
             .ToList();
 
         if (conversationNodes.Count == 0) return null;
@@ -265,41 +246,41 @@ public class ConversationEngine
 
         switch (node.NodeType)
         {
-            case "Conversation_Start":
+            case NodeTypeId.Conversation_Start:
                 await ContinueAsync();
                 break;
 
-            case "Conversation_NpcSay":
+            case NodeTypeId.Conversation_NpcSay:
                 HandleNpcSay(node);
                 // Continuar automáticamente al siguiente nodo
                 await ContinueAsync();
                 break;
 
-            case "Conversation_PlayerChoice":
+            case NodeTypeId.Conversation_PlayerChoice:
                 HandlePlayerChoice(conversation, node);
                 break;
 
-            case "Conversation_Branch":
+            case NodeTypeId.Conversation_Branch:
                 await HandleBranchAsync(conversation, node);
                 break;
 
-            case "Conversation_Shop":
+            case NodeTypeId.Conversation_Shop:
                 HandleShop(node);
                 break;
 
-            case "Conversation_BuyItem":
+            case NodeTypeId.Conversation_BuyItem:
                 await HandleBuyItemAsync(conversation, node);
                 break;
 
-            case "Conversation_SellItem":
+            case NodeTypeId.Conversation_SellItem:
                 await HandleSellItemAsync(conversation, node);
                 break;
 
-            case "Conversation_Action":
+            case NodeTypeId.Conversation_Action:
                 await HandleActionAsync(conversation, node);
                 break;
 
-            case "Conversation_End":
+            case NodeTypeId.Conversation_End:
                 EndConversation();
                 break;
         }
@@ -603,7 +584,7 @@ public class ConversationEngine
     private ScriptNode? FindStartNode(ConversationDefinition conversation)
     {
         return conversation.Nodes.FirstOrDefault(n =>
-            string.Equals(n.NodeType, "Conversation_Start", StringComparison.OrdinalIgnoreCase));
+            n.NodeType == NodeTypeId.Conversation_Start);
     }
 
     private Npc? GetCurrentNpc()

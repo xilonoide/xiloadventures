@@ -6,6 +6,7 @@ using Xunit;
 using XiloAdventures.Engine;
 using XiloAdventures.Engine.Engine;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Tests;
 
@@ -83,19 +84,19 @@ public class LightSourceIntegrationTests
     [Fact]
     public void NodeTypeRegistry_HasLightSourceNodes()
     {
-        Assert.NotNull(NodeTypeRegistry.GetNodeType("Action_SetObjectLit"));
-        Assert.NotNull(NodeTypeRegistry.GetNodeType("Action_SetLightTurns"));
-        Assert.NotNull(NodeTypeRegistry.GetNodeType("Condition_IsObjectLit"));
-        Assert.NotNull(NodeTypeRegistry.GetNodeType("Condition_IsRoomLit"));
+        Assert.NotNull(NodeTypeRegistry.GetNodeType(NodeTypeId.Action_SetObjectLit));
+        Assert.NotNull(NodeTypeRegistry.GetNodeType(NodeTypeId.Action_SetLightTurns));
+        Assert.NotNull(NodeTypeRegistry.GetNodeType(NodeTypeId.Condition_IsObjectLit));
+        Assert.NotNull(NodeTypeRegistry.GetNodeType(NodeTypeId.Condition_IsRoomLit));
     }
 
     [Fact]
     public void Action_SetObjectLit_HasCorrectProperties()
     {
-        var nodeType = NodeTypeRegistry.GetNodeType("Action_SetObjectLit");
+        var nodeType = NodeTypeRegistry.GetNodeType(NodeTypeId.Action_SetObjectLit);
 
         Assert.NotNull(nodeType);
-        Assert.Equal("Action_SetObjectLit", nodeType.TypeId);
+        Assert.Equal(NodeTypeId.Action_SetObjectLit, nodeType.TypeId);
         Assert.Equal(NodeCategory.Action, nodeType.Category);
 
         var objectIdProp = nodeType.Properties.FirstOrDefault(p => p.Name == "ObjectId");
@@ -110,10 +111,10 @@ public class LightSourceIntegrationTests
     [Fact]
     public void Action_SetLightTurns_HasCorrectProperties()
     {
-        var nodeType = NodeTypeRegistry.GetNodeType("Action_SetLightTurns");
+        var nodeType = NodeTypeRegistry.GetNodeType(NodeTypeId.Action_SetLightTurns);
 
         Assert.NotNull(nodeType);
-        Assert.Equal("Action_SetLightTurns", nodeType.TypeId);
+        Assert.Equal(NodeTypeId.Action_SetLightTurns, nodeType.TypeId);
         Assert.Equal(NodeCategory.Action, nodeType.Category);
 
         var objectIdProp = nodeType.Properties.FirstOrDefault(p => p.Name == "ObjectId");
@@ -127,7 +128,7 @@ public class LightSourceIntegrationTests
     [Fact]
     public void Condition_IsObjectLit_HasCorrectPorts()
     {
-        var nodeType = NodeTypeRegistry.GetNodeType("Condition_IsObjectLit");
+        var nodeType = NodeTypeRegistry.GetNodeType(NodeTypeId.Condition_IsObjectLit);
 
         Assert.NotNull(nodeType);
         Assert.Equal(NodeCategory.Condition, nodeType.Category);
@@ -139,7 +140,7 @@ public class LightSourceIntegrationTests
     [Fact]
     public void Condition_IsRoomLit_HasNoProperties()
     {
-        var nodeType = NodeTypeRegistry.GetNodeType("Condition_IsRoomLit");
+        var nodeType = NodeTypeRegistry.GetNodeType(NodeTypeId.Condition_IsRoomLit);
 
         Assert.NotNull(nodeType);
         Assert.Equal(NodeCategory.Condition, nodeType.Category);
@@ -167,13 +168,13 @@ public class LightSourceIntegrationTests
                 new ScriptNode
                 {
                     Id = "event",
-                    NodeType = "Event_OnGameStart",
+                    NodeType = NodeTypeId.Event_OnGameStart,
                     Category = NodeCategory.Event
                 },
                 new ScriptNode
                 {
                     Id = "action",
-                    NodeType = "Action_SetObjectLit",
+                    NodeType = NodeTypeId.Action_SetObjectLit,
                     Category = NodeCategory.Action,
                     Properties = new Dictionary<string, object?>
                     {
@@ -197,7 +198,7 @@ public class LightSourceIntegrationTests
         world.Scripts.Add(script);
 
         var engine = new ScriptEngine(world, state, false);
-        await engine.TriggerEventAsync("Game", "test_light_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_light_scripts", NodeTypeId.Event_OnGameStart);
 
         var torch = state.Objects.First(o => o.Id == "torch");
         Assert.True(torch.IsLit);
@@ -221,13 +222,13 @@ public class LightSourceIntegrationTests
                 new ScriptNode
                 {
                     Id = "event",
-                    NodeType = "Event_OnGameStart",
+                    NodeType = NodeTypeId.Event_OnGameStart,
                     Category = NodeCategory.Event
                 },
                 new ScriptNode
                 {
                     Id = "action",
-                    NodeType = "Action_SetObjectLit",
+                    NodeType = NodeTypeId.Action_SetObjectLit,
                     Category = NodeCategory.Action,
                     Properties = new Dictionary<string, object?>
                     {
@@ -251,7 +252,7 @@ public class LightSourceIntegrationTests
         world.Scripts.Add(script);
 
         var engine = new ScriptEngine(world, state, false);
-        await engine.TriggerEventAsync("Game", "test_light_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_light_scripts", NodeTypeId.Event_OnGameStart);
 
         Assert.False(torch.IsLit);
     }
@@ -274,13 +275,13 @@ public class LightSourceIntegrationTests
                 new ScriptNode
                 {
                     Id = "event",
-                    NodeType = "Event_OnGameStart",
+                    NodeType = NodeTypeId.Event_OnGameStart,
                     Category = NodeCategory.Event
                 },
                 new ScriptNode
                 {
                     Id = "action",
-                    NodeType = "Action_SetLightTurns",
+                    NodeType = NodeTypeId.Action_SetLightTurns,
                     Category = NodeCategory.Action,
                     Properties = new Dictionary<string, object?>
                     {
@@ -304,7 +305,7 @@ public class LightSourceIntegrationTests
         world.Scripts.Add(script);
 
         var engine = new ScriptEngine(world, state, false);
-        await engine.TriggerEventAsync("Game", "test_light_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_light_scripts", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(50, torch.LightTurnsRemaining);
     }
@@ -328,13 +329,13 @@ public class LightSourceIntegrationTests
                 new ScriptNode
                 {
                     Id = "event",
-                    NodeType = "Event_OnGameStart",
+                    NodeType = NodeTypeId.Event_OnGameStart,
                     Category = NodeCategory.Event
                 },
                 new ScriptNode
                 {
                     Id = "condition",
-                    NodeType = "Condition_IsObjectLit",
+                    NodeType = NodeTypeId.Condition_IsObjectLit,
                     Category = NodeCategory.Condition,
                     Properties = new Dictionary<string, object?>
                     {
@@ -344,7 +345,7 @@ public class LightSourceIntegrationTests
                 new ScriptNode
                 {
                     Id = "set_flag_true",
-                    NodeType = "Action_SetFlag",
+                    NodeType = NodeTypeId.Action_SetFlag,
                     Category = NodeCategory.Action,
                     Properties = new Dictionary<string, object?>
                     {
@@ -375,7 +376,7 @@ public class LightSourceIntegrationTests
         world.Scripts.Add(script);
 
         var engine = new ScriptEngine(world, state, false);
-        await engine.TriggerEventAsync("Game", "test_light_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_light_scripts", NodeTypeId.Event_OnGameStart);
 
         Assert.True(state.Flags.TryGetValue("torch_was_lit", out var flagValue) && flagValue);
     }
@@ -398,13 +399,13 @@ public class LightSourceIntegrationTests
                 new ScriptNode
                 {
                     Id = "event",
-                    NodeType = "Event_OnGameStart",
+                    NodeType = NodeTypeId.Event_OnGameStart,
                     Category = NodeCategory.Event
                 },
                 new ScriptNode
                 {
                     Id = "condition",
-                    NodeType = "Condition_IsObjectLit",
+                    NodeType = NodeTypeId.Condition_IsObjectLit,
                     Category = NodeCategory.Condition,
                     Properties = new Dictionary<string, object?>
                     {
@@ -414,7 +415,7 @@ public class LightSourceIntegrationTests
                 new ScriptNode
                 {
                     Id = "set_flag_false",
-                    NodeType = "Action_SetFlag",
+                    NodeType = NodeTypeId.Action_SetFlag,
                     Category = NodeCategory.Action,
                     Properties = new Dictionary<string, object?>
                     {
@@ -445,7 +446,7 @@ public class LightSourceIntegrationTests
         world.Scripts.Add(script);
 
         var engine = new ScriptEngine(world, state, false);
-        await engine.TriggerEventAsync("Game", "test_light_scripts", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_light_scripts", NodeTypeId.Event_OnGameStart);
 
         Assert.True(state.Flags.TryGetValue("torch_was_off", out var flagValue) && flagValue);
     }

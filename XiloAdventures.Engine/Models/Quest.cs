@@ -34,24 +34,3 @@ public class QuestDefinition
     /// </summary>
     public List<string> Objectives { get; set; } = new();
 }
-
-/// <summary>
-/// Estado actual de una misión en la partida.
-/// </summary>
-public class QuestState
-{
-    /// <summary>
-    /// ID de la misión.
-    /// </summary>
-    public string QuestId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Estado actual de la misión.
-    /// </summary>
-    public QuestStatus Status { get; set; } = QuestStatus.NotStarted;
-
-    /// <summary>
-    /// Índice del objetivo actual (para misiones con múltiples objetivos).
-    /// </summary>
-    public int CurrentObjectiveIndex { get; set; }
-}

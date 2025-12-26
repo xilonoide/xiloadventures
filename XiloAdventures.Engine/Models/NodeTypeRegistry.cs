@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Engine.Models;
 
@@ -8,7 +9,7 @@ namespace XiloAdventures.Engine.Models;
 /// </summary>
 public static class NodeTypeRegistry
 {
-    private static readonly Dictionary<string, NodeTypeDefinition> _types = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<NodeTypeId, NodeTypeDefinition> _types = new();
 
     static NodeTypeRegistry()
     {
@@ -24,17 +25,26 @@ public static class NodeTypeRegistry
         RegisterConversationNodes();
     }
 
-    public static IReadOnlyDictionary<string, NodeTypeDefinition> Types => _types;
+    public static IReadOnlyDictionary<NodeTypeId, NodeTypeDefinition> Types => _types;
 
-    public static NodeTypeDefinition? GetNodeType(string typeId)
+    public static NodeTypeDefinition? GetNodeType(NodeTypeId typeId)
     {
         return _types.TryGetValue(typeId, out var def) ? def : null;
     }
 
+    /// <summary>
+    /// Obtiene un tipo de nodo por su nombre (string). Retrocompatibilidad.
+    /// </summary>
+    public static NodeTypeDefinition? GetNodeType(string typeIdString)
+    {
+        if (Enum.TryParse<NodeTypeId>(typeIdString, true, out var typeId))
+            return GetNodeType(typeId);
+        return null;
+    }
+
     public static IEnumerable<NodeTypeDefinition> GetNodesForOwnerType(string ownerType)
     {
-        return _types.Values.Where(n =>
-            n.OwnerTypes.Contains("*") || n.OwnerTypes.Contains(ownerType));
+        return _types.Values.Where(n => n.OwnerTypes.Matches(ownerType));
     }
 
     public static IEnumerable<NodeTypeDefinition> GetNodesByCategory(NodeCategory category)
@@ -48,22 +58,22 @@ public static class NodeTypeRegistry
     public static IEnumerable<NodeTypeDefinition> GetNodesForOwnerType(string ownerType, GameInfo gameInfo)
     {
         return _types.Values.Where(n =>
-            (n.OwnerTypes.Contains("*") || n.OwnerTypes.Contains(ownerType)) &&
+            n.OwnerTypes.Matches(ownerType) &&
             IsFeatureEnabled(n.RequiredFeature, gameInfo));
     }
 
     /// <summary>
     /// Verifica si una característica requerida está habilitada.
     /// </summary>
-    private static bool IsFeatureEnabled(string? requiredFeature, GameInfo? gameInfo)
+    private static bool IsFeatureEnabled(RequiredFeature requiredFeature, GameInfo? gameInfo)
     {
-        if (string.IsNullOrEmpty(requiredFeature) || gameInfo == null)
+        if (requiredFeature == RequiredFeature.None || gameInfo == null)
             return true;
 
         return requiredFeature switch
         {
-            "Combat" => gameInfo.CombatEnabled,
-            "BasicNeeds" => gameInfo.BasicNeedsEnabled,
+            RequiredFeature.Combat => gameInfo.CombatEnabled,
+            RequiredFeature.BasicNeeds => gameInfo.BasicNeedsEnabled,
             _ => true
         };
     }
@@ -80,51 +90,56 @@ public static class NodeTypeRegistry
         // === GAME EVENTS ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnGameStart",
-            DisplayName = "Juego: Al Iniciar",
+            TypeId = NodeTypeId.Event_OnGameStart,
+            DisplayName = "Al Iniciar",
             Description = "Se ejecuta cuando el jugador inicia una nueva partida",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game" },
+            Subgroup = NodeSubgroup.Juego,
+            OwnerTypes = NodeOwnerType.Game,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnGameEnd",
-            DisplayName = "Juego: Al Terminar",
+            TypeId = NodeTypeId.Event_OnGameEnd,
+            DisplayName = "Al Terminar",
             Description = "Se ejecuta cuando el jugador termina la partida (victoria o derrota)",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game" },
+            Subgroup = NodeSubgroup.Juego,
+            OwnerTypes = NodeOwnerType.Game,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_EveryMinute",
-            DisplayName = "Juego: Cada Minuto",
+            TypeId = NodeTypeId.Event_EveryMinute,
+            DisplayName = "Cada Minuto",
             Description = "Se ejecuta cada minuto de tiempo de juego",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game" },
+            Subgroup = NodeSubgroup.Juego,
+            OwnerTypes = NodeOwnerType.Game,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_EveryHour",
-            DisplayName = "Juego: Cada Hora",
+            TypeId = NodeTypeId.Event_EveryHour,
+            DisplayName = "Cada Hora",
             Description = "Se ejecuta cada hora de tiempo de juego",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game" },
+            Subgroup = NodeSubgroup.Juego,
+            OwnerTypes = NodeOwnerType.Game,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnTurnStart",
-            DisplayName = "Juego: Al Inicio del Turno",
+            TypeId = NodeTypeId.Event_OnTurnStart,
+            DisplayName = "Al Inicio del Turno",
             Description = "Se ejecuta al inicio de cada turno del jugador",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
+            Subgroup = NodeSubgroup.Juego,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -134,11 +149,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnWeatherChange",
-            DisplayName = "Juego: Al Cambiar Clima",
+            TypeId = NodeTypeId.Event_OnWeatherChange,
+            DisplayName = "Al Cambiar Clima",
             Description = "Se ejecuta cuando cambia el clima",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game" },
+            Subgroup = NodeSubgroup.Juego,
+            OwnerTypes = NodeOwnerType.Game,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -149,21 +165,23 @@ public static class NodeTypeRegistry
         // === ROOM EVENTS ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnEnter",
-            DisplayName = "Salas: Al Entrar",
+            TypeId = NodeTypeId.Event_OnEnter,
+            DisplayName = "Al Entrar",
             Description = "Se ejecuta cuando el jugador entra en la sala",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Room" },
+            Subgroup = NodeSubgroup.Salas,
+            OwnerTypes = NodeOwnerType.Room,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnExit",
-            DisplayName = "Salas: Al Salir",
+            TypeId = NodeTypeId.Event_OnExit,
+            DisplayName = "Al Salir",
             Description = "Se ejecuta cuando el jugador sale de la sala",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Room" },
+            Subgroup = NodeSubgroup.Salas,
+            OwnerTypes = NodeOwnerType.Room,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -173,151 +191,165 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnLook",
-            DisplayName = "Salas: Al Mirar",
+            TypeId = NodeTypeId.Event_OnLook,
+            DisplayName = "Al Mirar",
             Description = "Se ejecuta cuando el jugador mira/examina la sala (comando 'mirar')",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Room" },
+            Subgroup = NodeSubgroup.Salas,
+            OwnerTypes = NodeOwnerType.Room,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         // === DOOR EVENTS ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnDoorOpen",
-            DisplayName = "Puertas: Al Abrir",
+            TypeId = NodeTypeId.Event_OnDoorOpen,
+            DisplayName = "Al Abrir",
             Description = "Se ejecuta cuando se abre la puerta",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Door" },
+            Subgroup = NodeSubgroup.Puertas,
+            OwnerTypes = NodeOwnerType.Door,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnDoorClose",
-            DisplayName = "Puertas: Al Cerrar",
+            TypeId = NodeTypeId.Event_OnDoorClose,
+            DisplayName = "Al Cerrar",
             Description = "Se ejecuta cuando se cierra la puerta",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Door" },
+            Subgroup = NodeSubgroup.Puertas,
+            OwnerTypes = NodeOwnerType.Door,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnDoorLock",
-            DisplayName = "Puertas: Al Bloquear",
+            TypeId = NodeTypeId.Event_OnDoorLock,
+            DisplayName = "Al Bloquear",
             Description = "Se ejecuta cuando se bloquea la puerta",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Door" },
+            Subgroup = NodeSubgroup.Puertas,
+            OwnerTypes = NodeOwnerType.Door,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnDoorUnlock",
-            DisplayName = "Puertas: Al Desbloquear",
+            TypeId = NodeTypeId.Event_OnDoorUnlock,
+            DisplayName = "Al Desbloquear",
             Description = "Se ejecuta cuando se desbloquea la puerta",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Door" },
+            Subgroup = NodeSubgroup.Puertas,
+            OwnerTypes = NodeOwnerType.Door,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         // === NPC EVENTS ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnTalk",
-            DisplayName = "NPC: Al Hablar",
+            TypeId = NodeTypeId.Event_OnTalk,
+            DisplayName = "Al Hablar",
             Description = "Se ejecuta cuando el jugador habla con el NPC",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Npc" },
+            Subgroup = NodeSubgroup.NPC,
+            OwnerTypes = NodeOwnerType.Npc,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnNpcAttack",
-            DisplayName = "Combate: Al Atacar NPC",
+            TypeId = NodeTypeId.Event_OnNpcAttack,
+            DisplayName = "Al Atacar NPC",
             Description = "Se ejecuta cuando el jugador ataca al NPC",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Npc" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Combate,
+            OwnerTypes = NodeOwnerType.Npc,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnNpcDeath",
-            DisplayName = "Combate: Al Morir NPC",
+            TypeId = NodeTypeId.Event_OnNpcDeath,
+            DisplayName = "Al Morir NPC",
             Description = "Se ejecuta cuando el NPC muere",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Npc" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Combate,
+            OwnerTypes = NodeOwnerType.Npc,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnNpcSee",
-            DisplayName = "NPC: Al Ver Jugador",
+            TypeId = NodeTypeId.Event_OnNpcSee,
+            DisplayName = "Al Ver Jugador",
             Description = "Se ejecuta cuando el NPC ve al jugador entrar en su sala",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Npc" },
+            Subgroup = NodeSubgroup.NPC,
+            OwnerTypes = NodeOwnerType.Npc,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         // === COMBAT EVENTS ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnCombatStart",
-            DisplayName = "Combate: Al Iniciar",
+            TypeId = NodeTypeId.Event_OnCombatStart,
+            DisplayName = "Al Iniciar",
             Description = "Se ejecuta cuando el jugador inicia combate con este NPC",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Npc" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Combate,
+            OwnerTypes = NodeOwnerType.Npc,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnCombatVictory",
-            DisplayName = "Combate: Al Ganar",
+            TypeId = NodeTypeId.Event_OnCombatVictory,
+            DisplayName = "Al Ganar",
             Description = "Se ejecuta cuando el jugador vence a este NPC en combate",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Npc" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Combate,
+            OwnerTypes = NodeOwnerType.Npc,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnCombatDefeat",
-            DisplayName = "Combate: Al Perder",
+            TypeId = NodeTypeId.Event_OnCombatDefeat,
+            DisplayName = "Al Perder",
             Description = "Se ejecuta cuando el NPC vence al jugador en combate",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Npc" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Combate,
+            OwnerTypes = NodeOwnerType.Npc,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnCombatFlee",
-            DisplayName = "Combate: Al Huir",
+            TypeId = NodeTypeId.Event_OnCombatFlee,
+            DisplayName = "Al Huir",
             Description = "Se ejecuta cuando el jugador huye del combate con este NPC",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Npc" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Combate,
+            OwnerTypes = NodeOwnerType.Npc,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnPlayerAttack",
-            DisplayName = "Combate: Al Atacar Jugador",
+            TypeId = NodeTypeId.Event_OnPlayerAttack,
+            DisplayName = "Al Atacar Jugador",
             Description = "Se ejecuta cuando el jugador realiza un ataque en combate",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Npc", "Game" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Combate,
+            OwnerTypes = NodeOwnerType.Npc | NodeOwnerType.Game,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -327,12 +359,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnNpcTurn",
-            DisplayName = "Combate: Al Turno del NPC",
+            TypeId = NodeTypeId.Event_OnNpcTurn,
+            DisplayName = "Al Turno del NPC",
             Description = "Se ejecuta cuando es el turno del NPC en combate",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Npc" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Combate,
+            OwnerTypes = NodeOwnerType.Npc,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -342,23 +375,25 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnPlayerDefend",
-            DisplayName = "Combate: Al Defender Jugador",
+            TypeId = NodeTypeId.Event_OnPlayerDefend,
+            DisplayName = "Al Defender Jugador",
             Description = "Se ejecuta cuando el jugador elige defenderse en combate",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Npc", "Game" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Combate,
+            OwnerTypes = NodeOwnerType.Npc | NodeOwnerType.Game,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnCriticalHit",
-            DisplayName = "Combate: Al Golpe Crítico",
+            TypeId = NodeTypeId.Event_OnCriticalHit,
+            DisplayName = "Al Golpe Crítico",
             Description = "Se ejecuta cuando ocurre un golpe crítico en combate",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Npc", "Game" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Combate,
+            OwnerTypes = NodeOwnerType.Npc | NodeOwnerType.Game,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -369,12 +404,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnMiss",
-            DisplayName = "Combate: Al Fallar Ataque",
+            TypeId = NodeTypeId.Event_OnMiss,
+            DisplayName = "Al Fallar Ataque",
             Description = "Se ejecuta cuando un ataque falla en combate",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Npc", "Game" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Combate,
+            OwnerTypes = NodeOwnerType.Npc | NodeOwnerType.Game,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -385,31 +421,34 @@ public static class NodeTypeRegistry
         // === TRADE EVENTS ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnTradeStart",
-            DisplayName = "Dinero: Al Iniciar Comercio",
+            TypeId = NodeTypeId.Event_OnTradeStart,
+            DisplayName = "Al Iniciar Comercio",
             Description = "Se ejecuta cuando el jugador inicia comercio con este NPC",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Npc" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.Npc,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnTradeEnd",
-            DisplayName = "Dinero: Al Cerrar Comercio",
+            TypeId = NodeTypeId.Event_OnTradeEnd,
+            DisplayName = "Al Cerrar Comercio",
             Description = "Se ejecuta cuando el jugador cierra el comercio con este NPC",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Npc" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.Npc,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnItemBought",
-            DisplayName = "Dinero: Al Comprar",
+            TypeId = NodeTypeId.Event_OnItemBought,
+            DisplayName = "Al Comprar",
             Description = "Se ejecuta cuando el jugador compra un item de este NPC",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Npc" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.Npc,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -420,11 +459,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnItemSold",
-            DisplayName = "Dinero: Al Vender",
+            TypeId = NodeTypeId.Event_OnItemSold,
+            DisplayName = "Al Vender",
             Description = "Se ejecuta cuando el jugador vende un item a este NPC",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Npc" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.Npc,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -436,83 +476,91 @@ public static class NodeTypeRegistry
         // === OBJECT EVENTS ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnTake",
-            DisplayName = "Objetos: Al Coger",
+            TypeId = NodeTypeId.Event_OnTake,
+            DisplayName = "Al Coger",
             Description = "Se ejecuta cuando el jugador coge el objeto",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "GameObject" },
+            Subgroup = NodeSubgroup.Objetos,
+            OwnerTypes = NodeOwnerType.GameObject,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnDrop",
-            DisplayName = "Objetos: Al Soltar",
+            TypeId = NodeTypeId.Event_OnDrop,
+            DisplayName = "Al Soltar",
             Description = "Se ejecuta cuando el jugador suelta el objeto",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "GameObject" },
+            Subgroup = NodeSubgroup.Objetos,
+            OwnerTypes = NodeOwnerType.GameObject,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnUse",
-            DisplayName = "Objetos: Al Usar",
+            TypeId = NodeTypeId.Event_OnUse,
+            DisplayName = "Al Usar",
             Description = "Se ejecuta cuando el jugador usa el objeto",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "GameObject" },
+            Subgroup = NodeSubgroup.Objetos,
+            OwnerTypes = NodeOwnerType.GameObject,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnGive",
-            DisplayName = "Objetos: Al Dar",
+            TypeId = NodeTypeId.Event_OnGive,
+            DisplayName = "Al Dar",
             Description = "Se ejecuta cuando el jugador da el objeto a un NPC",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "GameObject" },
+            Subgroup = NodeSubgroup.Objetos,
+            OwnerTypes = NodeOwnerType.GameObject,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnExamine",
-            DisplayName = "Objetos: Al Examinar",
+            TypeId = NodeTypeId.Event_OnExamine,
+            DisplayName = "Al Examinar",
             Description = "Se ejecuta cuando el jugador examina el objeto",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "GameObject" },
+            Subgroup = NodeSubgroup.Objetos,
+            OwnerTypes = NodeOwnerType.GameObject,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnContainerOpen",
-            DisplayName = "Objetos: Al Abrir Contenedor",
+            TypeId = NodeTypeId.Event_OnContainerOpen,
+            DisplayName = "Al Abrir Contenedor",
             Description = "Se ejecuta cuando el jugador abre el contenedor",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "GameObject" },
+            Subgroup = NodeSubgroup.Objetos,
+            OwnerTypes = NodeOwnerType.GameObject,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnContainerClose",
-            DisplayName = "Objetos: Al Cerrar Contenedor",
+            TypeId = NodeTypeId.Event_OnContainerClose,
+            DisplayName = "Al Cerrar Contenedor",
             Description = "Se ejecuta cuando el jugador cierra el contenedor",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "GameObject" },
+            Subgroup = NodeSubgroup.Objetos,
+            OwnerTypes = NodeOwnerType.GameObject,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         // === CONSUMABLE EVENTS ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnEat",
-            DisplayName = "Necesidades: Al Comer",
+            TypeId = NodeTypeId.Event_OnEat,
+            DisplayName = "Al Comer",
             Description = "Se ejecuta cuando el jugador come este objeto",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "GameObject" },
-            RequiredFeature = "BasicNeeds",
+            Subgroup = NodeSubgroup.Necesidades,
+            OwnerTypes = NodeOwnerType.GameObject,
+            RequiredFeature = RequiredFeature.BasicNeeds,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -522,12 +570,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnDrink",
-            DisplayName = "Necesidades: Al Beber",
+            TypeId = NodeTypeId.Event_OnDrink,
+            DisplayName = "Al Beber",
             Description = "Se ejecuta cuando el jugador bebe este objeto",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "GameObject" },
-            RequiredFeature = "BasicNeeds",
+            Subgroup = NodeSubgroup.Necesidades,
+            OwnerTypes = NodeOwnerType.GameObject,
+            RequiredFeature = RequiredFeature.BasicNeeds,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -538,12 +587,13 @@ public static class NodeTypeRegistry
         // === EVENTOS DE SUEÑO ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnSleep",
-            DisplayName = "Necesidades: Al Dormir",
+            TypeId = NodeTypeId.Event_OnSleep,
+            DisplayName = "Al Dormir",
             Description = "Se ejecuta cuando el jugador comienza a dormir",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
-            RequiredFeature = "BasicNeeds",
+            Subgroup = NodeSubgroup.Necesidades,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.BasicNeeds,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -553,12 +603,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnWakeUp",
-            DisplayName = "Necesidades: Al Despertar",
+            TypeId = NodeTypeId.Event_OnWakeUp,
+            DisplayName = "Al Despertar",
             Description = "Se ejecuta cuando el jugador despierta normalmente",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
-            RequiredFeature = "BasicNeeds",
+            Subgroup = NodeSubgroup.Necesidades,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.BasicNeeds,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -568,12 +619,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnWakeUpStartled",
-            DisplayName = "Necesidades: Al Despertar Sobresaltado",
+            TypeId = NodeTypeId.Event_OnWakeUpStartled,
+            DisplayName = "Al Despertar Sobresaltado",
             Description = "Se ejecuta cuando el jugador despierta abruptamente (NPC entró, necesidad alta)",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
-            RequiredFeature = "BasicNeeds",
+            Subgroup = NodeSubgroup.Necesidades,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.BasicNeeds,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -584,41 +636,45 @@ public static class NodeTypeRegistry
         // === QUEST EVENTS ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnQuestStart",
-            DisplayName = "Juego: Al Iniciar Misión",
+            TypeId = NodeTypeId.Event_OnQuestStart,
+            DisplayName = "Al Iniciar Misión",
             Description = "Se ejecuta cuando se inicia la misión",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Quest", "Game" },
+            Subgroup = NodeSubgroup.Juego,
+            OwnerTypes = NodeOwnerType.Quest | NodeOwnerType.Game,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnQuestComplete",
-            DisplayName = "Juego: Al Completar Misión",
+            TypeId = NodeTypeId.Event_OnQuestComplete,
+            DisplayName = "Al Completar Misión",
             Description = "Se ejecuta cuando se completa la misión",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Quest", "Game" },
+            Subgroup = NodeSubgroup.Juego,
+            OwnerTypes = NodeOwnerType.Quest | NodeOwnerType.Game,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnQuestFail",
-            DisplayName = "Juego: Al Fallar Misión",
+            TypeId = NodeTypeId.Event_OnQuestFail,
+            DisplayName = "Al Fallar Misión",
             Description = "Se ejecuta cuando se falla la misión",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Quest", "Game" },
+            Subgroup = NodeSubgroup.Juego,
+            OwnerTypes = NodeOwnerType.Quest | NodeOwnerType.Game,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnObjectiveComplete",
-            DisplayName = "Juego: Al Completar Objetivo",
+            TypeId = NodeTypeId.Event_OnObjectiveComplete,
+            DisplayName = "Al Completar Objetivo",
             Description = "Se ejecuta cuando se completa un objetivo de la misión",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Quest", "Game" },
+            Subgroup = NodeSubgroup.Juego,
+            OwnerTypes = NodeOwnerType.Quest | NodeOwnerType.Game,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -629,23 +685,25 @@ public static class NodeTypeRegistry
         // === PLAYER STATE EVENTS ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnPlayerDeath",
-            DisplayName = "Jugador: Al Morir",
+            TypeId = NodeTypeId.Event_OnPlayerDeath,
+            DisplayName = "Al Morir",
             Description = "Se ejecuta cuando el jugador muere (salud llega a 0)",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
         });
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnHealthLow",
-            DisplayName = "Jugador: Al Bajar Salud",
+            TypeId = NodeTypeId.Event_OnHealthLow,
+            DisplayName = "Al Bajar Salud",
             Description = "Se ejecuta cuando la salud baja de un umbral (por defecto 25%)",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -659,12 +717,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnHealthCritical",
-            DisplayName = "Jugador: Al Salud Crítica",
+            TypeId = NodeTypeId.Event_OnHealthCritical,
+            DisplayName = "Al Salud Crítica",
             Description = "Se ejecuta cuando la salud llega a nivel crítico (por defecto 10%)",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -678,12 +737,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnHungerHigh",
-            DisplayName = "Necesidades: Al Tener Hambre",
+            TypeId = NodeTypeId.Event_OnHungerHigh,
+            DisplayName = "Al Tener Hambre",
             Description = "Se ejecuta cuando el hambre supera un umbral",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
-            RequiredFeature = "BasicNeeds",
+            Subgroup = NodeSubgroup.Necesidades,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.BasicNeeds,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -697,12 +757,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnThirstHigh",
-            DisplayName = "Necesidades: Al Tener Sed",
+            TypeId = NodeTypeId.Event_OnThirstHigh,
+            DisplayName = "Al Tener Sed",
             Description = "Se ejecuta cuando la sed supera un umbral",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
-            RequiredFeature = "BasicNeeds",
+            Subgroup = NodeSubgroup.Necesidades,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.BasicNeeds,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -716,12 +777,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnEnergyLow",
-            DisplayName = "Jugador: Al Estar Cansado",
+            TypeId = NodeTypeId.Event_OnEnergyLow,
+            DisplayName = "Al Estar Cansado",
             Description = "Se ejecuta cuando la energía baja de un umbral",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -735,12 +797,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnSleepHigh",
-            DisplayName = "Necesidades: Al Necesitar Dormir",
+            TypeId = NodeTypeId.Event_OnSleepHigh,
+            DisplayName = "Al Necesitar Dormir",
             Description = "Se ejecuta cuando el nivel de cansancio supera un umbral",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
-            RequiredFeature = "BasicNeeds",
+            Subgroup = NodeSubgroup.Necesidades,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.BasicNeeds,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -754,12 +817,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnSanityLow",
-            DisplayName = "Jugador: Al Perder Cordura",
+            TypeId = NodeTypeId.Event_OnSanityLow,
+            DisplayName = "Al Perder Cordura",
             Description = "Se ejecuta cuando la cordura baja de un umbral",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -773,12 +837,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnManaLow",
-            DisplayName = "Jugador: Al Quedar Sin Mana",
+            TypeId = NodeTypeId.Event_OnManaLow,
+            DisplayName = "Al Quedar Sin Mana",
             Description = "Se ejecuta cuando el mana baja de un umbral",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -792,11 +857,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnStateThreshold",
-            DisplayName = "Jugador: Al Cruzar Umbral de Estado",
+            TypeId = NodeTypeId.Event_OnStateThreshold,
+            DisplayName = "Al Cruzar Umbral de Estado",
             Description = "Se ejecuta cuando cualquier estado cruza un umbral (genérico)",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -815,12 +881,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnModifierApplied",
-            DisplayName = "Jugador: Al Aplicar Modificador",
+            TypeId = NodeTypeId.Event_OnModifierApplied,
+            DisplayName = "Al Aplicar Modificador",
             Description = "Se ejecuta cuando se aplica un modificador al jugador",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -830,12 +897,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnModifierExpired",
-            DisplayName = "Jugador: Al Expirar Modificador",
+            TypeId = NodeTypeId.Event_OnModifierExpired,
+            DisplayName = "Al Expirar Modificador",
             Description = "Se ejecuta cuando un modificador expira",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -846,11 +914,12 @@ public static class NodeTypeRegistry
         // === MONEY EVENTS ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnMoneyGained",
-            DisplayName = "Dinero: Al Ganar",
+            TypeId = NodeTypeId.Event_OnMoneyGained,
+            DisplayName = "Al Ganar",
             Description = "Se ejecuta cuando el jugador gana dinero",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -860,11 +929,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnMoneyLost",
-            DisplayName = "Dinero: Al Perder",
+            TypeId = NodeTypeId.Event_OnMoneyLost,
+            DisplayName = "Al Perder",
             Description = "Se ejecuta cuando el jugador pierde dinero",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -874,11 +944,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnMoneyThreshold",
-            DisplayName = "Dinero: Al Cruzar Umbral",
+            TypeId = NodeTypeId.Event_OnMoneyThreshold,
+            DisplayName = "Al Cruzar Umbral",
             Description = "Se ejecuta cuando el dinero cruza un umbral",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -895,11 +966,12 @@ public static class NodeTypeRegistry
         // === EVENTO DE CAMBIO DE PROPIEDAD ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Event_OnPropertyChanged",
-            DisplayName = "Juego: Al Cambiar Propiedad",
+            TypeId = NodeTypeId.Event_OnPropertyChanged,
+            DisplayName = "Al Cambiar Propiedad",
             Description = "Se ejecuta cuando cambia el valor de una propiedad de una entidad",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Game", "*" },
+            Subgroup = NodeSubgroup.Juego,
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.All,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -925,11 +997,12 @@ public static class NodeTypeRegistry
         // === SUBGRUPO: JUEGO ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_HasItem",
-            DisplayName = "Juego: Tiene Objeto",
+            TypeId = NodeTypeId.Condition_HasItem,
+            DisplayName = "Tiene Objeto",
             Description = "Verifica si el jugador tiene un objeto en su inventario",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            Subgroup = NodeSubgroup.Juego,
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -947,11 +1020,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsInRoom",
-            DisplayName = "Juego: Está en Sala",
+            TypeId = NodeTypeId.Condition_IsInRoom,
+            DisplayName = "Está en Sala",
             Description = "Verifica si el jugador esta en una sala especifica",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            Subgroup = NodeSubgroup.Juego,
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -969,11 +1043,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsQuestStatus",
-            DisplayName = "Juego: Estado de Misión",
+            TypeId = NodeTypeId.Condition_IsQuestStatus,
+            DisplayName = "Estado de Misión",
             Description = "Verifica el estado de una mision",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -992,11 +1067,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsMainQuest",
-            DisplayName = "Juego: Es Misión Principal",
+            TypeId = NodeTypeId.Condition_IsMainQuest,
+            DisplayName = "Es Misión Principal",
             Description = "Verifica si una mision es principal o secundaria",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1014,11 +1090,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_HasFlag",
-            DisplayName = "Juego: Tiene Flag",
+            TypeId = NodeTypeId.Condition_HasFlag,
+            DisplayName = "Tiene Flag",
             Description = "Verifica si un flag esta activo",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1036,11 +1113,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_CompareCounter",
-            DisplayName = "Juego: Comparar Contador",
+            TypeId = NodeTypeId.Condition_CompareCounter,
+            DisplayName = "Comparar Contador",
             Description = "Compara el valor de un contador",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1060,11 +1138,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsTimeOfDay",
-            DisplayName = "Juego: Es Hora del Día",
+            TypeId = NodeTypeId.Condition_IsTimeOfDay,
+            DisplayName = "Es Hora del Día",
             Description = "Verifica la hora del juego",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1082,11 +1161,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsDoorOpen",
-            DisplayName = "Juego: Puerta Abierta",
+            TypeId = NodeTypeId.Condition_IsDoorOpen,
+            DisplayName = "Puerta Abierta",
             Description = "Verifica si una puerta esta abierta",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1104,11 +1184,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsDoorVisible",
-            DisplayName = "Juego: Puerta Visible",
+            TypeId = NodeTypeId.Condition_IsDoorVisible,
+            DisplayName = "Puerta Visible",
             Description = "Verifica si una puerta es visible para el jugador (considera Visible y requisitos de misiones)",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1126,11 +1207,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsNpcVisible",
-            DisplayName = "Juego: NPC Visible",
+            TypeId = NodeTypeId.Condition_IsNpcVisible,
+            DisplayName = "NPC Visible",
             Description = "Verifica si un NPC es visible",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1148,11 +1230,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsObjectVisible",
-            DisplayName = "Juego: Objeto Visible",
+            TypeId = NodeTypeId.Condition_IsObjectVisible,
+            DisplayName = "Objeto Visible",
             Description = "Verifica si un objeto es visible",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[]
             {
@@ -1167,11 +1250,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsObjectTakeable",
-            DisplayName = "Juego: Objeto Cogible",
+            TypeId = NodeTypeId.Condition_IsObjectTakeable,
+            DisplayName = "Objeto Cogible",
             Description = "Verifica si un objeto se puede coger",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[]
             {
@@ -1186,11 +1270,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsContainerOpen",
-            DisplayName = "Juego: Contenedor Abierto",
+            TypeId = NodeTypeId.Condition_IsContainerOpen,
+            DisplayName = "Contenedor Abierto",
             Description = "Verifica si un contenedor está abierto",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[]
             {
@@ -1205,11 +1290,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsContainerLocked",
-            DisplayName = "Juego: Contenedor Bloqueado",
+            TypeId = NodeTypeId.Condition_IsContainerLocked,
+            DisplayName = "Contenedor Bloqueado",
             Description = "Verifica si un contenedor está bloqueado",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[]
             {
@@ -1224,11 +1310,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsWeather",
-            DisplayName = "Juego: Es Clima",
+            TypeId = NodeTypeId.Condition_IsWeather,
+            DisplayName = "Es Clima",
             Description = "Verifica si el clima actual es el especificado",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[]
             {
@@ -1243,11 +1330,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_ObjectInContainer",
-            DisplayName = "Juego: Objeto en Contenedor",
+            TypeId = NodeTypeId.Condition_ObjectInContainer,
+            DisplayName = "Objeto en Contenedor",
             Description = "Verifica si un objeto está dentro de un contenedor",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[]
             {
@@ -1263,11 +1351,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_ObjectInRoom",
-            DisplayName = "Juego: Objeto en Sala",
+            TypeId = NodeTypeId.Condition_ObjectInRoom,
+            DisplayName = "Objeto en Sala",
             Description = "Verifica si un objeto está en una sala específica",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[]
             {
@@ -1283,11 +1372,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_NpcInRoom",
-            DisplayName = "Juego: NPC en Sala",
+            TypeId = NodeTypeId.Condition_NpcInRoom,
+            DisplayName = "NPC en Sala",
             Description = "Verifica si un NPC está en una sala específica",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[]
             {
@@ -1303,11 +1393,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsPatrolling",
-            DisplayName = "Juego: NPC Patrullando",
+            TypeId = NodeTypeId.Condition_IsPatrolling,
+            DisplayName = "NPC Patrullando",
             Description = "Verifica si un NPC está patrullando",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1325,11 +1416,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsFollowingPlayer",
-            DisplayName = "Juego: NPC Siguiendo",
+            TypeId = NodeTypeId.Condition_IsFollowingPlayer,
+            DisplayName = "NPC Siguiendo",
             Description = "Verifica si un NPC está siguiendo al jugador",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1348,11 +1440,12 @@ public static class NodeTypeRegistry
         // === SUBGRUPO: OPERADORES ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_Random",
-            DisplayName = "Operadores: Probabilidad",
+            TypeId = NodeTypeId.Condition_Random,
+            DisplayName = "Probabilidad",
             Description = "Se cumple con una probabilidad dada",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1371,12 +1464,13 @@ public static class NodeTypeRegistry
         // === SUBGRUPO: ESTADOS DEL JUGADOR ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_PlayerStateAbove",
-            DisplayName = "Estado: Mayor Que",
+            TypeId = NodeTypeId.Condition_PlayerStateAbove,
+            DisplayName = "Mayor Que",
             Description = "Verifica si un estado del jugador está por encima de un umbral",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1397,12 +1491,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_PlayerStateBelow",
-            DisplayName = "Estado: Menor Que",
+            TypeId = NodeTypeId.Condition_PlayerStateBelow,
+            DisplayName = "Menor Que",
             Description = "Verifica si un estado del jugador está por debajo de un umbral",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1423,12 +1518,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_PlayerStateEquals",
-            DisplayName = "Estado: Igual A",
+            TypeId = NodeTypeId.Condition_PlayerStateEquals,
+            DisplayName = "Igual A",
             Description = "Verifica si un estado del jugador es igual a un valor",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1449,12 +1545,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_PlayerStateBetween",
-            DisplayName = "Estado: Entre Valores",
+            TypeId = NodeTypeId.Condition_PlayerStateBetween,
+            DisplayName = "Entre Valores",
             Description = "Verifica si un estado del jugador está entre dos valores",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1476,12 +1573,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_HasModifier",
-            DisplayName = "Estado: Tiene Modificador",
+            TypeId = NodeTypeId.Condition_HasModifier,
+            DisplayName = "Tiene Modificador",
             Description = "Verifica si el jugador tiene un modificador activo por nombre",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1499,12 +1597,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_HasModifierForState",
-            DisplayName = "Estado: Tiene Modificador de Tipo",
+            TypeId = NodeTypeId.Condition_HasModifierForState,
+            DisplayName = "Tiene Modificador de Tipo",
             Description = "Verifica si el jugador tiene un modificador activo que afecte a un estado específico",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1524,11 +1623,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsPlayerAlive",
-            DisplayName = "Estado: Jugador Vivo",
+            TypeId = NodeTypeId.Condition_IsPlayerAlive,
+            DisplayName = "Jugador Vivo",
             Description = "Verifica si el jugador está vivo (salud > 0)",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1543,12 +1643,13 @@ public static class NodeTypeRegistry
         // === NPC COMBAT CONDITIONS ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsNpcAlive",
-            DisplayName = "Combate: NPC Vivo",
+            TypeId = NodeTypeId.Condition_IsNpcAlive,
+            DisplayName = "NPC Vivo",
             Description = "Verifica si el NPC está vivo (salud > 0)",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1566,12 +1667,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_NpcHealthBelow",
-            DisplayName = "Combate: Salud NPC Baja",
+            TypeId = NodeTypeId.Condition_NpcHealthBelow,
+            DisplayName = "Salud NPC Baja",
             Description = "Verifica si la salud del NPC está por debajo de un umbral",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1590,12 +1692,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsInCombat",
-            DisplayName = "Combate: En Combate",
+            TypeId = NodeTypeId.Condition_IsInCombat,
+            DisplayName = "En Combate",
             Description = "Verifica si hay un combate activo",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1610,12 +1713,13 @@ public static class NodeTypeRegistry
         // === SUBGRUPO: COMBATE ADICIONAL ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_PlayerHealthBelow",
-            DisplayName = "Combate: Salud Jugador Baja",
+            TypeId = NodeTypeId.Condition_PlayerHealthBelow,
+            DisplayName = "Salud Jugador Baja",
             Description = "Verifica si la salud del jugador está por debajo de un porcentaje",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1633,12 +1737,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_PlayerHealthAbove",
-            DisplayName = "Combate: Salud Jugador Alta",
+            TypeId = NodeTypeId.Condition_PlayerHealthAbove,
+            DisplayName = "Salud Jugador Alta",
             Description = "Verifica si la salud del jugador está por encima de un porcentaje",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1656,12 +1761,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_PlayerHasWeaponType",
-            DisplayName = "Combate: Tiene Tipo de Arma",
+            TypeId = NodeTypeId.Condition_PlayerHasWeaponType,
+            DisplayName = "Tiene Tipo de Arma",
             Description = "Verifica si el jugador tiene equipada un arma del tipo especificado",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1679,12 +1785,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_PlayerHasArmor",
-            DisplayName = "Combate: Tiene Armadura",
+            TypeId = NodeTypeId.Condition_PlayerHasArmor,
+            DisplayName = "Tiene Armadura",
             Description = "Verifica si el jugador tiene armadura equipada",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1698,12 +1805,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsCombatRound",
-            DisplayName = "Combate: Es Ronda X",
+            TypeId = NodeTypeId.Condition_IsCombatRound,
+            DisplayName = "Es Ronda X",
             Description = "Verifica si es la ronda especificada del combate",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1722,11 +1830,12 @@ public static class NodeTypeRegistry
         // === SUBGRUPO: COMERCIO ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsInTrade",
-            DisplayName = "Comercio: En Comercio",
+            TypeId = NodeTypeId.Condition_IsInTrade,
+            DisplayName = "En Comercio",
             Description = "Verifica si hay un comercio activo",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1740,11 +1849,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_PlayerHasMoney",
-            DisplayName = "Comercio: Jugador Tiene Dinero",
+            TypeId = NodeTypeId.Condition_PlayerHasMoney,
+            DisplayName = "Jugador Tiene Dinero",
             Description = "Verifica si el jugador tiene al menos X cantidad de dinero",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1762,11 +1872,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_NpcHasMoney",
-            DisplayName = "Comercio: NPC Tiene Dinero",
+            TypeId = NodeTypeId.Condition_NpcHasMoney,
+            DisplayName = "NPC Tiene Dinero",
             Description = "Verifica si el NPC tiene al menos X cantidad de dinero",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1785,11 +1896,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_NpcHasInfiniteMoney",
-            DisplayName = "Comercio: NPC Tiene Dinero Infinito",
+            TypeId = NodeTypeId.Condition_NpcHasInfiniteMoney,
+            DisplayName = "NPC Tiene Dinero Infinito",
             Description = "Verifica si el NPC tiene dinero infinito",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1807,11 +1919,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_PlayerOwnsItem",
-            DisplayName = "Comercio: Jugador Posee Items",
+            TypeId = NodeTypeId.Condition_PlayerOwnsItem,
+            DisplayName = "Jugador Posee Items",
             Description = "Verifica si el jugador tiene al menos X unidades de un objeto",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1831,11 +1944,12 @@ public static class NodeTypeRegistry
         // === COMPARACIÓN GENÉRICA DE PROPIEDADES ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_CompareProperty",
-            DisplayName = "Operadores: Comparar Propiedad",
+            TypeId = NodeTypeId.Condition_CompareProperty,
+            DisplayName = "Comparar Propiedad",
             Description = "Compara el valor de una propiedad de cualquier entidad",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1866,11 +1980,12 @@ public static class NodeTypeRegistry
     {
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_ShowMessage",
-            DisplayName = "Juego: Mostrar Mensaje",
+            TypeId = NodeTypeId.Action_ShowMessage,
+            DisplayName = "Mostrar Mensaje",
             Description = "Muestra un mensaje al jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1887,11 +2002,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_GiveItem",
-            DisplayName = "Jugador: Dar Objeto",
+            TypeId = NodeTypeId.Action_GiveItem,
+            DisplayName = "Dar Objeto",
             Description = "Da un objeto al jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1908,11 +2024,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_RemoveItem",
-            DisplayName = "Jugador: Quitar Objeto",
+            TypeId = NodeTypeId.Action_RemoveItem,
+            DisplayName = "Quitar Objeto",
             Description = "Quita un objeto del inventario del jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1929,11 +2046,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_TeleportPlayer",
-            DisplayName = "Jugador: Teletransportar",
+            TypeId = NodeTypeId.Action_TeleportPlayer,
+            DisplayName = "Teletransportar",
             Description = "Mueve al jugador a otra sala",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -1951,11 +2069,12 @@ public static class NodeTypeRegistry
         // === ROOM ACTIONS ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetRoomIllumination",
-            DisplayName = "Iluminación: Sala",
+            TypeId = NodeTypeId.Action_SetRoomIllumination,
+            DisplayName = "Sala",
             Description = "Enciende o apaga la iluminación de una sala",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Iluminacion,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -1967,11 +2086,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetRoomMusic",
-            DisplayName = "Juego: Música de Sala",
+            TypeId = NodeTypeId.Action_SetRoomMusic,
+            DisplayName = "Música de Sala",
             Description = "Cambia la música de una sala",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -1983,11 +2103,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetRoomDescription",
-            DisplayName = "Juego: Descripción Sala",
+            TypeId = NodeTypeId.Action_SetRoomDescription,
+            DisplayName = "Descripción Sala",
             Description = "Cambia la descripción de una sala",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -2000,11 +2121,12 @@ public static class NodeTypeRegistry
         // === GAME STATE ACTIONS ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetWeather",
-            DisplayName = "Juego: Cambiar Clima",
+            TypeId = NodeTypeId.Action_SetWeather,
+            DisplayName = "Cambiar Clima",
             Description = "Cambia el clima del juego",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -2015,11 +2137,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetGameHour",
-            DisplayName = "Juego: Establecer Hora",
+            TypeId = NodeTypeId.Action_SetGameHour,
+            DisplayName = "Establecer Hora",
             Description = "Establece la hora del juego",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -2030,11 +2153,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_AdvanceTime",
-            DisplayName = "Juego: Avanzar Tiempo",
+            TypeId = NodeTypeId.Action_AdvanceTime,
+            DisplayName = "Avanzar Tiempo",
             Description = "Avanza el tiempo del juego",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -2045,11 +2169,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_MoveNpc",
-            DisplayName = "NPC: Mover",
+            TypeId = NodeTypeId.Action_MoveNpc,
+            DisplayName = "Mover",
             Description = "Mueve un NPC a otra sala",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.NPC,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2067,11 +2192,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetFlag",
-            DisplayName = "Juego: Establecer Flag",
+            TypeId = NodeTypeId.Action_SetFlag,
+            DisplayName = "Establecer Flag",
             Description = "Activa o desactiva un flag",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2089,11 +2215,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetCounter",
-            DisplayName = "Juego: Establecer Contador",
+            TypeId = NodeTypeId.Action_SetCounter,
+            DisplayName = "Establecer Contador",
             Description = "Establece el valor de un contador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2111,11 +2238,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_IncrementCounter",
-            DisplayName = "Juego: Incrementar Contador",
+            TypeId = NodeTypeId.Action_IncrementCounter,
+            DisplayName = "Incrementar Contador",
             Description = "Incrementa o decrementa un contador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2133,11 +2261,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_PlaySound",
-            DisplayName = "Juego: Reproducir Sonido",
+            TypeId = NodeTypeId.Action_PlaySound,
+            DisplayName = "Reproducir Sonido",
             Description = "Reproduce un efecto de sonido",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2154,11 +2283,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_StartQuest",
-            DisplayName = "Juego: Iniciar Misión",
+            TypeId = NodeTypeId.Action_StartQuest,
+            DisplayName = "Iniciar Misión",
             Description = "Inicia una mision",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2175,11 +2305,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_CompleteQuest",
-            DisplayName = "Juego: Completar Misión",
+            TypeId = NodeTypeId.Action_CompleteQuest,
+            DisplayName = "Completar Misión",
             Description = "Marca una mision como completada",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2196,11 +2327,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_FailQuest",
-            DisplayName = "Juego: Fallar Misión",
+            TypeId = NodeTypeId.Action_FailQuest,
+            DisplayName = "Fallar Misión",
             Description = "Marca una mision como fallida",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2217,11 +2349,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetQuestStatus",
-            DisplayName = "Juego: Cambiar Estado Misión",
+            TypeId = NodeTypeId.Action_SetQuestStatus,
+            DisplayName = "Cambiar Estado Misión",
             Description = "Cambia el estado de una mision a cualquier valor",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2239,11 +2372,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_AdvanceObjective",
-            DisplayName = "Juego: Avanzar Objetivo",
+            TypeId = NodeTypeId.Action_AdvanceObjective,
+            DisplayName = "Avanzar Objetivo",
             Description = "Avanza al siguiente objetivo de una mision",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2260,11 +2394,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_OpenDoor",
-            DisplayName = "Juego: Abrir Puerta",
+            TypeId = NodeTypeId.Action_OpenDoor,
+            DisplayName = "Abrir Puerta",
             Description = "Abre una puerta",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2281,11 +2416,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_CloseDoor",
-            DisplayName = "Juego: Cerrar Puerta",
+            TypeId = NodeTypeId.Action_CloseDoor,
+            DisplayName = "Cerrar Puerta",
             Description = "Cierra una puerta",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2302,11 +2438,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_LockDoor",
-            DisplayName = "Juego: Bloquear Puerta",
+            TypeId = NodeTypeId.Action_LockDoor,
+            DisplayName = "Bloquear Puerta",
             Description = "Bloquea una puerta",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2323,11 +2460,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_UnlockDoor",
-            DisplayName = "Juego: Desbloquear Puerta",
+            TypeId = NodeTypeId.Action_UnlockDoor,
+            DisplayName = "Desbloquear Puerta",
             Description = "Desbloquea una puerta",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2344,11 +2482,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetDoorVisible",
-            DisplayName = "Juego: Visibilidad Puerta",
+            TypeId = NodeTypeId.Action_SetDoorVisible,
+            DisplayName = "Visibilidad Puerta",
             Description = "Muestra u oculta una puerta y sus salidas asociadas",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2366,11 +2505,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetNpcVisible",
-            DisplayName = "NPC: Visibilidad",
+            TypeId = NodeTypeId.Action_SetNpcVisible,
+            DisplayName = "Visibilidad",
             Description = "Muestra u oculta un NPC",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.NPC,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2388,11 +2528,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetObjectVisible",
-            DisplayName = "Objetos: Visibilidad",
+            TypeId = NodeTypeId.Action_SetObjectVisible,
+            DisplayName = "Visibilidad",
             Description = "Muestra u oculta un objeto",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Objetos,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2410,11 +2551,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetObjectTakeable",
-            DisplayName = "Objetos: Cogible",
+            TypeId = NodeTypeId.Action_SetObjectTakeable,
+            DisplayName = "Cogible",
             Description = "Permite o impide coger un objeto",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Objetos,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -2426,11 +2568,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_OpenContainer",
-            DisplayName = "Objetos: Abrir Contenedor",
+            TypeId = NodeTypeId.Action_OpenContainer,
+            DisplayName = "Abrir Contenedor",
             Description = "Abre un contenedor",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Objetos,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -2441,11 +2584,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_CloseContainer",
-            DisplayName = "Objetos: Cerrar Contenedor",
+            TypeId = NodeTypeId.Action_CloseContainer,
+            DisplayName = "Cerrar Contenedor",
             Description = "Cierra un contenedor",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Objetos,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -2456,11 +2600,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_LockContainer",
-            DisplayName = "Objetos: Bloquear Contenedor",
+            TypeId = NodeTypeId.Action_LockContainer,
+            DisplayName = "Bloquear Contenedor",
             Description = "Bloquea un contenedor",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Objetos,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -2471,11 +2616,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_UnlockContainer",
-            DisplayName = "Objetos: Desbloquear Contenedor",
+            TypeId = NodeTypeId.Action_UnlockContainer,
+            DisplayName = "Desbloquear Contenedor",
             Description = "Desbloquea un contenedor",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Objetos,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -2486,11 +2632,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetContentsVisible",
-            DisplayName = "Objetos: Visibilidad Contenido",
+            TypeId = NodeTypeId.Action_SetContentsVisible,
+            DisplayName = "Visibilidad Contenido",
             Description = "Muestra u oculta el contenido de un contenedor",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Objetos,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -2502,11 +2649,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetObjectPrice",
-            DisplayName = "Objetos: Precio",
+            TypeId = NodeTypeId.Action_SetObjectPrice,
+            DisplayName = "Precio",
             Description = "Establece el precio de un objeto",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Objetos,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -2518,11 +2666,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetObjectDurability",
-            DisplayName = "Objetos: Durabilidad",
+            TypeId = NodeTypeId.Action_SetObjectDurability,
+            DisplayName = "Durabilidad",
             Description = "Establece la durabilidad actual de un objeto",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Objetos,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -2534,11 +2683,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_MoveObjectToRoom",
-            DisplayName = "Objetos: Mover a Sala",
+            TypeId = NodeTypeId.Action_MoveObjectToRoom,
+            DisplayName = "Mover a Sala",
             Description = "Mueve un objeto a una sala específica",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Objetos,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -2550,11 +2700,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_PutObjectInContainer",
-            DisplayName = "Objetos: Poner en Contenedor",
+            TypeId = NodeTypeId.Action_PutObjectInContainer,
+            DisplayName = "Poner en Contenedor",
             Description = "Pone un objeto dentro de un contenedor",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Objetos,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -2566,11 +2717,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_RemoveObjectFromContainer",
-            DisplayName = "Objetos: Sacar de Contenedor",
+            TypeId = NodeTypeId.Action_RemoveObjectFromContainer,
+            DisplayName = "Sacar de Contenedor",
             Description = "Saca un objeto de un contenedor",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Objetos,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -2584,11 +2736,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetObjectLit",
-            DisplayName = "Iluminación: Encender/Apagar Objeto",
+            TypeId = NodeTypeId.Action_SetObjectLit,
+            DisplayName = "Encender/Apagar Objeto",
             Description = "Enciende o apaga un objeto luminoso",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Iluminacion,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2606,11 +2759,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetLightTurns",
-            DisplayName = "Iluminación: Turnos de Luz",
+            TypeId = NodeTypeId.Action_SetLightTurns,
+            DisplayName = "Turnos de Luz",
             Description = "Establece los turnos de luz restantes de un objeto luminoso (-1 = infinito)",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Iluminacion,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2628,11 +2782,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsObjectLit",
-            DisplayName = "Iluminación: Objeto Encendido",
+            TypeId = NodeTypeId.Condition_IsObjectLit,
+            DisplayName = "Objeto Encendido",
             Description = "Comprueba si un objeto luminoso está encendido",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Iluminacion,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2650,11 +2805,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Condition_IsRoomLit",
-            DisplayName = "Iluminación: Sala Iluminada",
+            TypeId = NodeTypeId.Condition_IsRoomLit,
+            DisplayName = "Sala Iluminada",
             Description = "Comprueba si la sala actual está iluminada (por la sala misma o por fuentes de luz)",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Iluminacion,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2669,11 +2825,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_AddMoney",
-            DisplayName = "Dinero: Dar Oro",
+            TypeId = NodeTypeId.Action_AddMoney,
+            DisplayName = "Dar Oro",
             Description = "Da oro al jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Dinero,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2690,11 +2847,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_RemoveMoney",
-            DisplayName = "Dinero: Quitar Oro",
+            TypeId = NodeTypeId.Action_RemoveMoney,
+            DisplayName = "Quitar Oro",
             Description = "Quita oro al jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Dinero,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2712,11 +2870,12 @@ public static class NodeTypeRegistry
         // === NPC: PATRULLA ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_StartPatrol",
-            DisplayName = "NPC: Rutas: Iniciar Patrulla",
+            TypeId = NodeTypeId.Action_StartPatrol,
+            DisplayName = "Iniciar Patrulla",
             Description = "Hace que un NPC comience a patrullar su ruta definida",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.NPC,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2733,11 +2892,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_StopPatrol",
-            DisplayName = "NPC: Rutas: Detener Patrulla",
+            TypeId = NodeTypeId.Action_StopPatrol,
+            DisplayName = "Detener Patrulla",
             Description = "Detiene la patrulla de un NPC",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.NPC,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2754,11 +2914,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_PatrolStep",
-            DisplayName = "NPC: Rutas: Paso de Patrulla",
+            TypeId = NodeTypeId.Action_PatrolStep,
+            DisplayName = "Paso de Patrulla",
             Description = "Mueve manualmente un NPC al siguiente punto de su ruta",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.NPC,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2775,11 +2936,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetPatrolMode",
-            DisplayName = "NPC: Rutas: Modo de Patrulla",
+            TypeId = NodeTypeId.Action_SetPatrolMode,
+            DisplayName = "Modo de Patrulla",
             Description = "Configura el modo de movimiento de patrulla (por turnos o por tiempo)",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.NPC,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2800,11 +2962,12 @@ public static class NodeTypeRegistry
         // === NPC: SEGUIR JUGADOR ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_FollowPlayer",
-            DisplayName = "NPC: Rutas: Seguir Jugador",
+            TypeId = NodeTypeId.Action_FollowPlayer,
+            DisplayName = "Seguir Jugador",
             Description = "Hace que un NPC siga al jugador cuando cambie de sala",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.NPC,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2822,11 +2985,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_StopFollowing",
-            DisplayName = "NPC: Rutas: Dejar de Seguir",
+            TypeId = NodeTypeId.Action_StopFollowing,
+            DisplayName = "Dejar de Seguir",
             Description = "Hace que un NPC deje de seguir al jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.NPC,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2843,11 +3007,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetFollowMode",
-            DisplayName = "NPC: Rutas: Modo de Seguimiento",
+            TypeId = NodeTypeId.Action_SetFollowMode,
+            DisplayName = "Modo de Seguimiento",
             Description = "Configura el modo de movimiento de seguimiento (por turnos o por tiempo)",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.NPC,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2868,11 +3033,12 @@ public static class NodeTypeRegistry
         // === ESTADOS DEL JUGADOR ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetPlayerState",
-            DisplayName = "Jugador: Establecer Estado",
+            TypeId = NodeTypeId.Action_SetPlayerState,
+            DisplayName = "Establecer Estado",
             Description = "Establece el valor de un estado del jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2892,11 +3058,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_ModifyPlayerState",
-            DisplayName = "Jugador: Modificar Estado",
+            TypeId = NodeTypeId.Action_ModifyPlayerState,
+            DisplayName = "Modificar Estado",
             Description = "Añade o resta al valor de un estado del jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2916,12 +3083,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_HealPlayer",
-            DisplayName = "Jugador: Curar",
+            TypeId = NodeTypeId.Action_HealPlayer,
+            DisplayName = "Curar",
             Description = "Restaura salud al jugador (sin exceder el máximo)",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2938,12 +3106,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_DamagePlayer",
-            DisplayName = "Jugador: Dañar",
+            TypeId = NodeTypeId.Action_DamagePlayer,
+            DisplayName = "Dañar",
             Description = "Inflige daño al jugador (reduce salud)",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2961,12 +3130,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_RestoreMana",
-            DisplayName = "Jugador: Restaurar Mana",
+            TypeId = NodeTypeId.Action_RestoreMana,
+            DisplayName = "Restaurar Mana",
             Description = "Restaura mana al jugador (sin exceder el máximo)",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -2983,12 +3153,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_ConsumeMana",
-            DisplayName = "Jugador: Consumir Mana",
+            TypeId = NodeTypeId.Action_ConsumeMana,
+            DisplayName = "Consumir Mana",
             Description = "Consume mana del jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3007,12 +3178,13 @@ public static class NodeTypeRegistry
         // === NPC COMBAT ACTIONS ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_StartCombat",
-            DisplayName = "Combate: Iniciar",
+            TypeId = NodeTypeId.Action_StartCombat,
+            DisplayName = "Iniciar",
             Description = "Inicia un combate con el NPC especificado",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3029,12 +3201,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_DamageNpc",
-            DisplayName = "Combate: Dañar NPC",
+            TypeId = NodeTypeId.Action_DamageNpc,
+            DisplayName = "Dañar NPC",
             Description = "Causa daño a un NPC (reduce su salud)",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3053,12 +3226,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_HealNpc",
-            DisplayName = "Combate: Curar NPC",
+            TypeId = NodeTypeId.Action_HealNpc,
+            DisplayName = "Curar NPC",
             Description = "Restaura salud de un NPC",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3076,12 +3250,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetNpcMaxHealth",
-            DisplayName = "Combate: Salud Máxima NPC",
+            TypeId = NodeTypeId.Action_SetNpcMaxHealth,
+            DisplayName = "Salud Máxima NPC",
             Description = "Establece la salud máxima de un NPC",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -3093,12 +3268,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_ReviveNpc",
-            DisplayName = "Combate: Revivir NPC",
+            TypeId = NodeTypeId.Action_ReviveNpc,
+            DisplayName = "Revivir NPC",
             Description = "Revive un NPC muerto",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -3110,12 +3286,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_KillNpc",
-            DisplayName = "Combate: Matar NPC",
+            TypeId = NodeTypeId.Action_KillNpc,
+            DisplayName = "Matar NPC",
             Description = "Mata instantáneamente un NPC",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -3126,11 +3303,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetPatrolRoute",
-            DisplayName = "NPC: Rutas: Ruta de Patrulla",
+            TypeId = NodeTypeId.Action_SetPatrolRoute,
+            DisplayName = "Ruta de Patrulla",
             Description = "Establece la ruta de patrulla de un NPC",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.NPC,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -3142,11 +3320,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_AddItemToNpcInventory",
-            DisplayName = "NPC: Dar Item",
+            TypeId = NodeTypeId.Action_AddItemToNpcInventory,
+            DisplayName = "Dar Item",
             Description = "Añade un objeto al inventario de un NPC",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.NPC,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -3158,11 +3337,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_RemoveItemFromNpcInventory",
-            DisplayName = "NPC: Quitar Item",
+            TypeId = NodeTypeId.Action_RemoveItemFromNpcInventory,
+            DisplayName = "Quitar Item",
             Description = "Quita un objeto del inventario de un NPC",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.NPC,
             InputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } },
             Properties = new[]
@@ -3174,12 +3354,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetPlayerMaxHealth",
-            DisplayName = "Combate: Establecer Salud Máxima",
+            TypeId = NodeTypeId.Action_SetPlayerMaxHealth,
+            DisplayName = "Establecer Salud Máxima",
             Description = "Establece la salud máxima del jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3196,12 +3377,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetNpcAttack",
-            DisplayName = "Combate: Cambiar Ataque NPC",
+            TypeId = NodeTypeId.Action_SetNpcAttack,
+            DisplayName = "Cambiar Ataque NPC",
             Description = "Cambia el valor de ataque de un NPC",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3219,12 +3401,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetNpcDefense",
-            DisplayName = "Combate: Cambiar Defensa NPC",
+            TypeId = NodeTypeId.Action_SetNpcDefense,
+            DisplayName = "Cambiar Defensa NPC",
             Description = "Cambia el valor de defensa de un NPC",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3242,12 +3425,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_EndCombatVictory",
-            DisplayName = "Combate: Forzar Victoria",
+            TypeId = NodeTypeId.Action_EndCombatVictory,
+            DisplayName = "Forzar Victoria",
             Description = "Termina el combate actual con victoria del jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3260,12 +3444,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_EndCombatDefeat",
-            DisplayName = "Combate: Forzar Derrota",
+            TypeId = NodeTypeId.Action_EndCombatDefeat,
+            DisplayName = "Forzar Derrota",
             Description = "Termina el combate actual con derrota del jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3278,12 +3463,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_ForceFlee",
-            DisplayName = "Combate: Forzar Huida",
+            TypeId = NodeTypeId.Action_ForceFlee,
+            DisplayName = "Forzar Huida",
             Description = "Fuerza la huida del combate actual",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Combate,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3297,11 +3483,12 @@ public static class NodeTypeRegistry
         // === TRADE ACTIONS ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_OpenTrade",
-            DisplayName = "Comercio: Abrir",
+            TypeId = NodeTypeId.Action_OpenTrade,
+            DisplayName = "Abrir",
             Description = "Abre una sesión de comercio con el NPC especificado",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3318,11 +3505,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_CloseTrade",
-            DisplayName = "Comercio: Cerrar",
+            TypeId = NodeTypeId.Action_CloseTrade,
+            DisplayName = "Cerrar",
             Description = "Cierra la sesión de comercio actual",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3335,11 +3523,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_AddPlayerMoney",
-            DisplayName = "Dinero: Dar al Jugador",
+            TypeId = NodeTypeId.Action_AddPlayerMoney,
+            DisplayName = "Dar al Jugador",
             Description = "Añade dinero al jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Dinero,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3356,11 +3545,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_RemovePlayerMoney",
-            DisplayName = "Dinero: Quitar al Jugador",
+            TypeId = NodeTypeId.Action_RemovePlayerMoney,
+            DisplayName = "Quitar al Jugador",
             Description = "Quita dinero al jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Dinero,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3378,11 +3568,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetNpcMoney",
-            DisplayName = "Dinero: Establecer a NPC",
+            TypeId = NodeTypeId.Action_SetNpcMoney,
+            DisplayName = "Establecer a NPC",
             Description = "Establece el dinero del NPC (-1 para infinito)",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Dinero,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3400,11 +3591,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_AddNpcItem",
-            DisplayName = "Comercio: Añadir Item a NPC",
+            TypeId = NodeTypeId.Action_AddNpcItem,
+            DisplayName = "Añadir Item a NPC",
             Description = "Añade un item al inventario de la tienda del NPC",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3422,11 +3614,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_RemoveNpcItem",
-            DisplayName = "Comercio: Quitar Item de NPC",
+            TypeId = NodeTypeId.Action_RemoveNpcItem,
+            DisplayName = "Quitar Item de NPC",
             Description = "Quita un item del inventario de la tienda del NPC",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3444,11 +3637,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetBuyMultiplier",
-            DisplayName = "Comercio: Cambiar Multiplicador Compra",
+            TypeId = NodeTypeId.Action_SetBuyMultiplier,
+            DisplayName = "Cambiar Multiplicador Compra",
             Description = "Cambia el multiplicador de compra del NPC (lo que paga al jugador)",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3466,11 +3660,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetSellMultiplier",
-            DisplayName = "Comercio: Cambiar Multiplicador Venta",
+            TypeId = NodeTypeId.Action_SetSellMultiplier,
+            DisplayName = "Cambiar Multiplicador Venta",
             Description = "Cambia el multiplicador de venta del NPC (lo que cobra al jugador)",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            Subgroup = NodeSubgroup.Dinero,
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3489,12 +3684,13 @@ public static class NodeTypeRegistry
         // === HABILIDADES DE COMBATE ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_AddAbility",
-            DisplayName = "Habilidad: Añadir al Jugador",
+            TypeId = NodeTypeId.Action_AddAbility,
+            DisplayName = "Añadir al Jugador",
             Description = "Otorga una habilidad de combate al jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3511,12 +3707,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_RemoveAbility",
-            DisplayName = "Habilidad: Quitar al Jugador",
+            TypeId = NodeTypeId.Action_RemoveAbility,
+            DisplayName = "Quitar al Jugador",
             Description = "Quita una habilidad de combate del jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3533,12 +3730,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_AddAbilityToNpc",
-            DisplayName = "Habilidad: Añadir a NPC",
+            TypeId = NodeTypeId.Action_AddAbilityToNpc,
+            DisplayName = "Añadir a NPC",
             Description = "Otorga una habilidad de combate a un NPC",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3556,12 +3754,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_RemoveAbilityFromNpc",
-            DisplayName = "Habilidad: Quitar a NPC",
+            TypeId = NodeTypeId.Action_RemoveAbilityFromNpc,
+            DisplayName = "Quitar a NPC",
             Description = "Quita una habilidad de combate de un NPC",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3579,12 +3778,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_FeedPlayer",
-            DisplayName = "Necesidades: Alimentar Jugador",
+            TypeId = NodeTypeId.Action_FeedPlayer,
+            DisplayName = "Alimentar Jugador",
             Description = "Reduce el hambre del jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "BasicNeeds",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Necesidades,
+            RequiredFeature = RequiredFeature.BasicNeeds,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3601,12 +3801,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_HydratePlayer",
-            DisplayName = "Necesidades: Hidratar Jugador",
+            TypeId = NodeTypeId.Action_HydratePlayer,
+            DisplayName = "Hidratar Jugador",
             Description = "Reduce la sed del jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "BasicNeeds",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Necesidades,
+            RequiredFeature = RequiredFeature.BasicNeeds,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3623,12 +3824,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_RestPlayer",
-            DisplayName = "Necesidades: Descansar Jugador",
+            TypeId = NodeTypeId.Action_RestPlayer,
+            DisplayName = "Descansar Jugador",
             Description = "Reduce el cansancio del jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "BasicNeeds",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Necesidades,
+            RequiredFeature = RequiredFeature.BasicNeeds,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3646,12 +3848,13 @@ public static class NodeTypeRegistry
         // === VELOCIDAD DE NECESIDADES ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetNeedRate",
-            DisplayName = "Necesidades: Cambiar Velocidad",
+            TypeId = NodeTypeId.Action_SetNeedRate,
+            DisplayName = "Cambiar Velocidad",
             Description = "Cambia la velocidad de incremento de una necesidad (hambre, sed o sueño)",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "BasicNeeds",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Necesidades,
+            RequiredFeature = RequiredFeature.BasicNeeds,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3671,11 +3874,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_RestoreAllStats",
-            DisplayName = "Jugador: Restaurar Todo",
+            TypeId = NodeTypeId.Action_RestoreAllStats,
+            DisplayName = "Restaurar Todo",
             Description = "Restaura todos los estados del jugador a sus valores máximos/óptimos",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3689,12 +3893,13 @@ public static class NodeTypeRegistry
         // === MODIFICADORES TEMPORALES ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_ApplyModifier",
-            DisplayName = "Modificador: Aplicar",
+            TypeId = NodeTypeId.Action_ApplyModifier,
+            DisplayName = "Aplicar",
             Description = "Aplica un modificador temporal a un estado del jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3719,12 +3924,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_RemoveModifier",
-            DisplayName = "Modificador: Eliminar por Nombre",
+            TypeId = NodeTypeId.Action_RemoveModifier,
+            DisplayName = "Eliminar por Nombre",
             Description = "Elimina un modificador temporal específico por nombre",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3741,12 +3947,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_RemoveModifiersByState",
-            DisplayName = "Modificador: Eliminar por Estado",
+            TypeId = NodeTypeId.Action_RemoveModifiersByState,
+            DisplayName = "Eliminar por Estado",
             Description = "Elimina todos los modificadores que afectan a un estado específico",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3765,12 +3972,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_RemoveAllModifiers",
-            DisplayName = "Modificador: Eliminar Todos",
+            TypeId = NodeTypeId.Action_RemoveAllModifiers,
+            DisplayName = "Eliminar Todos",
             Description = "Elimina todos los modificadores temporales activos",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3783,12 +3991,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_ProcessModifiers",
-            DisplayName = "Modificador: Procesar Tick",
+            TypeId = NodeTypeId.Action_ProcessModifiers,
+            DisplayName = "Procesar Tick",
             Description = "Procesa todos los modificadores activos (aplica efectos recurrentes y elimina expirados)",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3802,11 +4011,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_StartConversation",
-            DisplayName = "Juego: Iniciar Conversación",
+            TypeId = NodeTypeId.Action_StartConversation,
+            DisplayName = "Iniciar Conversación",
             Description = "Inicia la conversación con un NPC",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3824,11 +4034,12 @@ public static class NodeTypeRegistry
         // === ACCESO GENÉRICO A PROPIEDADES ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_SetProperty",
-            DisplayName = "Operadores: Establecer Propiedad",
+            TypeId = NodeTypeId.Action_SetProperty,
+            DisplayName = "Establecer Propiedad",
             Description = "Establece el valor de una propiedad de cualquier entidad",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3849,11 +4060,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Action_ModifyProperty",
-            DisplayName = "Operadores: Modificar Propiedad Numérica",
+            TypeId = NodeTypeId.Action_ModifyProperty,
+            DisplayName = "Modificar Propiedad Numérica",
             Description = "Modifica el valor numérico de una propiedad (suma, resta, multiplica o divide)",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3883,11 +4095,11 @@ public static class NodeTypeRegistry
     {
         Register(new NodeTypeDefinition
         {
-            TypeId = "Flow_Branch",
+            TypeId = NodeTypeId.Flow_Branch,
             DisplayName = "Bifurcacion",
             Description = "Bifurca el flujo segun una condicion (usar con nodos de condicion)",
             Category = NodeCategory.Flow,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" },
@@ -3902,11 +4114,11 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Flow_Sequence",
+            TypeId = NodeTypeId.Flow_Sequence,
             DisplayName = "Secuencia",
             Description = "Ejecuta multiples salidas en orden",
             Category = NodeCategory.Flow,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3921,11 +4133,11 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Flow_Delay",
+            TypeId = NodeTypeId.Flow_Delay,
             DisplayName = "Esperar",
             Description = "Espera un tiempo antes de continuar",
             Category = NodeCategory.Flow,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3942,11 +4154,11 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Flow_RandomBranch",
+            TypeId = NodeTypeId.Flow_RandomBranch,
             DisplayName = "Rama Aleatoria",
             Description = "Elige una salida aleatoriamente",
             Category = NodeCategory.Flow,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -3969,11 +4181,12 @@ public static class NodeTypeRegistry
         // === SUBGRUPO: JUEGO ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetGameHour",
-            DisplayName = "Juego: Hora",
+            TypeId = NodeTypeId.Variable_GetGameHour,
+            DisplayName = "Hora",
             Description = "Obtiene la hora actual del juego",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -3983,11 +4196,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerMoney",
-            DisplayName = "Juego: Oro del Jugador",
+            TypeId = NodeTypeId.Variable_GetPlayerMoney,
+            DisplayName = "Oro del Jugador",
             Description = "Obtiene el dinero actual del jugador",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -3997,11 +4211,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetCurrentRoom",
-            DisplayName = "Juego: Sala Actual",
+            TypeId = NodeTypeId.Variable_GetCurrentRoom,
+            DisplayName = "Sala Actual",
             Description = "Obtiene la sala actual del jugador",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4011,11 +4226,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetCurrentWeather",
-            DisplayName = "Juego: Clima Actual",
+            TypeId = NodeTypeId.Variable_GetCurrentWeather,
+            DisplayName = "Clima Actual",
             Description = "Obtiene el clima actual del juego",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4026,11 +4242,12 @@ public static class NodeTypeRegistry
         // === SUBGRUPO: JUGADOR ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerStrength",
-            DisplayName = "Jugador: Fuerza",
+            TypeId = NodeTypeId.Variable_GetPlayerStrength,
+            DisplayName = "Fuerza",
             Description = "Obtiene la fuerza del jugador",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4040,11 +4257,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerConstitution",
-            DisplayName = "Jugador: Constitución",
+            TypeId = NodeTypeId.Variable_GetPlayerConstitution,
+            DisplayName = "Constitución",
             Description = "Obtiene la constitución del jugador",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4054,11 +4272,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerIntelligence",
-            DisplayName = "Jugador: Inteligencia",
+            TypeId = NodeTypeId.Variable_GetPlayerIntelligence,
+            DisplayName = "Inteligencia",
             Description = "Obtiene la inteligencia del jugador",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4068,11 +4287,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerDexterity",
-            DisplayName = "Jugador: Destreza",
+            TypeId = NodeTypeId.Variable_GetPlayerDexterity,
+            DisplayName = "Destreza",
             Description = "Obtiene la destreza del jugador",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4082,11 +4302,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerCharisma",
-            DisplayName = "Jugador: Carisma",
+            TypeId = NodeTypeId.Variable_GetPlayerCharisma,
+            DisplayName = "Carisma",
             Description = "Obtiene el carisma del jugador",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4096,11 +4317,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerWeight",
-            DisplayName = "Jugador: Peso",
+            TypeId = NodeTypeId.Variable_GetPlayerWeight,
+            DisplayName = "Peso",
             Description = "Obtiene el peso del jugador",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4110,11 +4332,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerAge",
-            DisplayName = "Jugador: Edad",
+            TypeId = NodeTypeId.Variable_GetPlayerAge,
+            DisplayName = "Edad",
             Description = "Obtiene la edad del jugador",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4124,11 +4347,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerHeight",
-            DisplayName = "Jugador: Altura",
+            TypeId = NodeTypeId.Variable_GetPlayerHeight,
+            DisplayName = "Altura",
             Description = "Obtiene la altura del jugador",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4138,11 +4362,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerInitialMoney",
-            DisplayName = "Jugador: Dinero Inicial",
+            TypeId = NodeTypeId.Variable_GetPlayerInitialMoney,
+            DisplayName = "Dinero Inicial",
             Description = "Obtiene el dinero inicial configurado para el jugador",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Jugador,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4153,11 +4378,12 @@ public static class NodeTypeRegistry
         // === SUBGRUPO: OPERADORES ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetFlag",
-            DisplayName = "Operadores: Obtener Flag",
+            TypeId = NodeTypeId.Variable_GetFlag,
+            DisplayName = "Obtener Flag",
             Description = "Obtiene el valor de un flag",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4171,11 +4397,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetCounter",
-            DisplayName = "Operadores: Obtener Contador",
+            TypeId = NodeTypeId.Variable_GetCounter,
+            DisplayName = "Obtener Contador",
             Description = "Obtiene el valor de un contador",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4189,11 +4416,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_ConstantInt",
-            DisplayName = "Operadores: Entero Constante",
+            TypeId = NodeTypeId.Variable_ConstantInt,
+            DisplayName = "Entero Constante",
             Description = "Un valor entero constante",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4207,11 +4435,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_ConstantBool",
-            DisplayName = "Operadores: Booleano Constante",
+            TypeId = NodeTypeId.Variable_ConstantBool,
+            DisplayName = "Booleano Constante",
             Description = "Un valor booleano constante (verdadero/falso)",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4226,12 +4455,13 @@ public static class NodeTypeRegistry
         // === SUBGRUPO: ESTADOS DINÁMICOS DEL JUGADOR ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerHealth",
-            DisplayName = "Estado: Salud",
+            TypeId = NodeTypeId.Variable_GetPlayerHealth,
+            DisplayName = "Salud",
             Description = "Obtiene la salud actual del jugador (0-100)",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4241,12 +4471,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerMaxHealth",
-            DisplayName = "Estado: Salud Máxima",
+            TypeId = NodeTypeId.Variable_GetPlayerMaxHealth,
+            DisplayName = "Salud Máxima",
             Description = "Obtiene la salud máxima del jugador",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4256,12 +4487,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerHunger",
-            DisplayName = "Estado: Hambre",
+            TypeId = NodeTypeId.Variable_GetPlayerHunger,
+            DisplayName = "Hambre",
             Description = "Obtiene el nivel de hambre del jugador (0=lleno, 100=muriendo)",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "BasicNeeds",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.BasicNeeds,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4271,12 +4503,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerThirst",
-            DisplayName = "Estado: Sed",
+            TypeId = NodeTypeId.Variable_GetPlayerThirst,
+            DisplayName = "Sed",
             Description = "Obtiene el nivel de sed del jugador (0=hidratado, 100=deshidratado)",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "BasicNeeds",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.BasicNeeds,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4286,12 +4519,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerEnergy",
-            DisplayName = "Estado: Energía",
+            TypeId = NodeTypeId.Variable_GetPlayerEnergy,
+            DisplayName = "Energía",
             Description = "Obtiene el nivel de energía del jugador (0=exhausto, 100=descansado)",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4301,12 +4535,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerSleep",
-            DisplayName = "Estado: Sueño",
+            TypeId = NodeTypeId.Variable_GetPlayerSleep,
+            DisplayName = "Sueño",
             Description = "Obtiene el nivel de sueño/cansancio del jugador (0=descansado, 100=agotado)",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "BasicNeeds",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.BasicNeeds,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4317,12 +4552,13 @@ public static class NodeTypeRegistry
         // === VELOCIDAD DE NECESIDADES ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetNeedRate",
-            DisplayName = "Necesidades: Obtener Velocidad",
+            TypeId = NodeTypeId.Variable_GetNeedRate,
+            DisplayName = "Obtener Velocidad",
             Description = "Obtiene la velocidad de incremento de una necesidad (0=Lento, 1=Normal, 2=Rápido)",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "BasicNeeds",
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Necesidades,
+            RequiredFeature = RequiredFeature.BasicNeeds,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4337,12 +4573,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerSanity",
-            DisplayName = "Estado: Cordura",
+            TypeId = NodeTypeId.Variable_GetPlayerSanity,
+            DisplayName = "Cordura",
             Description = "Obtiene el nivel de cordura del jugador (0=locura, 100=cuerdo)",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4352,12 +4589,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerMana",
-            DisplayName = "Estado: Mana",
+            TypeId = NodeTypeId.Variable_GetPlayerMana,
+            DisplayName = "Mana",
             Description = "Obtiene el nivel de mana del jugador (0-100)",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4367,12 +4605,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerMaxMana",
-            DisplayName = "Estado: Mana Máximo",
+            TypeId = NodeTypeId.Variable_GetPlayerMaxMana,
+            DisplayName = "Mana Máximo",
             Description = "Obtiene el mana máximo del jugador",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4382,12 +4621,13 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetPlayerState",
-            DisplayName = "Estado: Obtener Estado (Genérico)",
+            TypeId = NodeTypeId.Variable_GetPlayerState,
+            DisplayName = "Obtener Estado (Genérico)",
             Description = "Obtiene el valor de cualquier estado del jugador",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
-            RequiredFeature = "Combat",
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
+            RequiredFeature = RequiredFeature.Combat,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4403,11 +4643,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetActiveModifiersCount",
-            DisplayName = "Estado: Número de Modificadores",
+            TypeId = NodeTypeId.Variable_GetActiveModifiersCount,
+            DisplayName = "Número de Modificadores",
             Description = "Obtiene el número de modificadores temporales activos",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4417,11 +4658,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_HasModifier",
-            DisplayName = "Estado: Tiene Modificador",
+            TypeId = NodeTypeId.Variable_HasModifier,
+            DisplayName = "Tiene Modificador",
             Description = "Verifica si el jugador tiene un modificador activo por nombre",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            Subgroup = NodeSubgroup.Jugador,
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4436,11 +4678,12 @@ public static class NodeTypeRegistry
         // === ACCESO GENÉRICO A PROPIEDADES ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Variable_GetProperty",
-            DisplayName = "Operadores: Obtener Propiedad",
+            TypeId = NodeTypeId.Variable_GetProperty,
+            DisplayName = "Obtener Propiedad",
             Description = "Obtiene el valor de cualquier propiedad de una entidad",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = Array.Empty<NodePort>(),
             OutputPorts = new[]
             {
@@ -4465,11 +4708,12 @@ public static class NodeTypeRegistry
         // === SUBGRUPO: OPERADORES ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Compare_Int",
-            DisplayName = "Operadores: Comparar Enteros",
+            TypeId = NodeTypeId.Compare_Int,
+            DisplayName = "Comparar Enteros",
             Description = "Compara dos valores enteros y produce un resultado booleano",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "A", PortType = PortType.Data, DataType = "int", Label = "A" },
@@ -4488,11 +4732,12 @@ public static class NodeTypeRegistry
         // === SUBGRUPO: JUEGO ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Compare_PlayerMoney",
-            DisplayName = "Juego: Comparar Oro",
+            TypeId = NodeTypeId.Compare_PlayerMoney,
+            DisplayName = "Comparar Oro",
             Description = "Compara el oro del jugador con un valor",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "CompareValue", PortType = PortType.Data, DataType = "int", Label = "Comparar con" }
@@ -4509,11 +4754,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Compare_Counter",
-            DisplayName = "Juego: Comparar Contador (Data)",
+            TypeId = NodeTypeId.Compare_Counter,
+            DisplayName = "Comparar Contador (Data)",
             Description = "Compara un contador con un valor (entrada de datos)",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Juego,
             InputPorts = new[]
             {
                 new NodePort { Name = "CompareValue", PortType = PortType.Data, DataType = "int", Label = "Comparar con" }
@@ -4538,11 +4784,12 @@ public static class NodeTypeRegistry
     {
         Register(new NodeTypeDefinition
         {
-            TypeId = "Math_Add",
-            DisplayName = "Operadores: Sumar",
+            TypeId = NodeTypeId.Math_Add,
+            DisplayName = "Sumar",
             Description = "Suma dos valores enteros",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "A", PortType = PortType.Data, DataType = "int", Label = "A" },
@@ -4556,11 +4803,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Math_Subtract",
-            DisplayName = "Operadores: Restar",
+            TypeId = NodeTypeId.Math_Subtract,
+            DisplayName = "Restar",
             Description = "Resta dos valores enteros (A - B)",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "A", PortType = PortType.Data, DataType = "int", Label = "A" },
@@ -4574,11 +4822,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Math_Multiply",
-            DisplayName = "Operadores: Multiplicar",
+            TypeId = NodeTypeId.Math_Multiply,
+            DisplayName = "Multiplicar",
             Description = "Multiplica dos valores enteros",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "A", PortType = PortType.Data, DataType = "int", Label = "A" },
@@ -4592,11 +4841,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Math_Divide",
-            DisplayName = "Operadores: Dividir",
+            TypeId = NodeTypeId.Math_Divide,
+            DisplayName = "Dividir",
             Description = "Divide dos valores enteros (A / B)",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "A", PortType = PortType.Data, DataType = "int", Label = "A" },
@@ -4610,11 +4860,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Math_Modulo",
-            DisplayName = "Operadores: Módulo",
+            TypeId = NodeTypeId.Math_Modulo,
+            DisplayName = "Módulo",
             Description = "Obtiene el resto de la division (A % B)",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "A", PortType = PortType.Data, DataType = "int", Label = "A" },
@@ -4628,11 +4879,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Math_Negate",
-            DisplayName = "Operadores: Negar",
+            TypeId = NodeTypeId.Math_Negate,
+            DisplayName = "Negar",
             Description = "Cambia el signo de un valor entero",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "Value", PortType = PortType.Data, DataType = "int", Label = "Valor" }
@@ -4645,11 +4897,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Math_Abs",
-            DisplayName = "Operadores: Valor Absoluto",
+            TypeId = NodeTypeId.Math_Abs,
+            DisplayName = "Valor Absoluto",
             Description = "Obtiene el valor absoluto de un entero",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "Value", PortType = PortType.Data, DataType = "int", Label = "Valor" }
@@ -4662,11 +4915,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Math_Min",
-            DisplayName = "Operadores: Mínimo",
+            TypeId = NodeTypeId.Math_Min,
+            DisplayName = "Mínimo",
             Description = "Obtiene el menor de dos valores",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "A", PortType = PortType.Data, DataType = "int", Label = "A" },
@@ -4680,11 +4934,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Math_Max",
-            DisplayName = "Operadores: Máximo",
+            TypeId = NodeTypeId.Math_Max,
+            DisplayName = "Máximo",
             Description = "Obtiene el mayor de dos valores",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "A", PortType = PortType.Data, DataType = "int", Label = "A" },
@@ -4698,11 +4953,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Math_Clamp",
-            DisplayName = "Operadores: Limitar",
+            TypeId = NodeTypeId.Math_Clamp,
+            DisplayName = "Limitar",
             Description = "Limita un valor entre un minimo y un maximo",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "Value", PortType = PortType.Data, DataType = "int", Label = "Valor" },
@@ -4717,11 +4973,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Math_Random",
-            DisplayName = "Operadores: Aleatorio",
+            TypeId = NodeTypeId.Math_Random,
+            DisplayName = "Aleatorio",
             Description = "Genera un numero aleatorio entre Min y Max (inclusive)",
             Category = NodeCategory.Variable,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "Min", PortType = PortType.Data, DataType = "int", Label = "Min" },
@@ -4743,11 +5000,12 @@ public static class NodeTypeRegistry
         // === SUBGRUPO: OPERADORES ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Logic_And",
-            DisplayName = "Operadores: Y (AND)",
+            TypeId = NodeTypeId.Logic_And,
+            DisplayName = "Y (AND)",
             Description = "Devuelve verdadero si ambas entradas son verdaderas",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "A", PortType = PortType.Data, DataType = "bool", Label = "A" },
@@ -4761,11 +5019,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Logic_Or",
-            DisplayName = "Operadores: O (OR)",
+            TypeId = NodeTypeId.Logic_Or,
+            DisplayName = "O (OR)",
             Description = "Devuelve verdadero si al menos una entrada es verdadera",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "A", PortType = PortType.Data, DataType = "bool", Label = "A" },
@@ -4779,11 +5038,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Logic_Not",
-            DisplayName = "Operadores: No (NOT)",
+            TypeId = NodeTypeId.Logic_Not,
+            DisplayName = "No (NOT)",
             Description = "Invierte el valor booleano",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "Value", PortType = PortType.Data, DataType = "bool", Label = "Valor" }
@@ -4796,11 +5056,12 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Logic_Xor",
-            DisplayName = "Operadores: O Exclusivo (XOR)",
+            TypeId = NodeTypeId.Logic_Xor,
+            DisplayName = "O Exclusivo (XOR)",
             Description = "Devuelve verdadero si exactamente una entrada es verdadera",
             Category = NodeCategory.Condition,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
+            Subgroup = NodeSubgroup.Operadores,
             InputPorts = new[]
             {
                 new NodePort { Name = "A", PortType = PortType.Data, DataType = "bool", Label = "A" },
@@ -4821,11 +5082,11 @@ public static class NodeTypeRegistry
     {
         Register(new NodeTypeDefinition
         {
-            TypeId = "Select_Int",
+            TypeId = NodeTypeId.Select_Int,
             DisplayName = "Seleccionar Entero",
             Description = "Selecciona entre dos valores enteros segun una condicion",
             Category = NodeCategory.Flow,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Condition", PortType = PortType.Data, DataType = "bool", Label = "Condicion" },
@@ -4840,11 +5101,11 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
-            TypeId = "Select_Bool",
+            TypeId = NodeTypeId.Select_Bool,
             DisplayName = "Seleccionar Booleano",
             Description = "Selecciona entre dos valores booleanos segun una condicion",
             Category = NodeCategory.Flow,
-            OwnerTypes = new[] { "*" },
+            OwnerTypes = NodeOwnerType.All,
             InputPorts = new[]
             {
                 new NodePort { Name = "Condition", PortType = PortType.Data, DataType = "bool", Label = "Condicion" },
@@ -4867,11 +5128,11 @@ public static class NodeTypeRegistry
         // === INICIO DE CONVERSACIÓN ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Conversation_Start",
+            TypeId = NodeTypeId.Conversation_Start,
             DisplayName = "Inicio de Conversación",
             Description = "Punto de entrada de una conversación con NPC",
             Category = NodeCategory.Dialogue,
-            OwnerTypes = new[] { "Npc" },
+            OwnerTypes = NodeOwnerType.Npc,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -4881,11 +5142,11 @@ public static class NodeTypeRegistry
         // === NPC DICE ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Conversation_NpcSay",
+            TypeId = NodeTypeId.Conversation_NpcSay,
             DisplayName = "NPC Dice",
             Description = "El NPC dice un texto al jugador",
             Category = NodeCategory.Dialogue,
-            OwnerTypes = new[] { "Npc" },
+            OwnerTypes = NodeOwnerType.Npc,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -4925,11 +5186,11 @@ public static class NodeTypeRegistry
         // === OPCIONES DEL JUGADOR ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Conversation_PlayerChoice",
+            TypeId = NodeTypeId.Conversation_PlayerChoice,
             DisplayName = "Opciones del Jugador",
             Description = "Presenta opciones de diálogo al jugador (hasta 4)",
             Category = NodeCategory.Dialogue,
-            OwnerTypes = new[] { "Npc" },
+            OwnerTypes = NodeOwnerType.Npc,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -4953,11 +5214,11 @@ public static class NodeTypeRegistry
         // === BIFURCACIÓN DE DIÁLOGO ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Conversation_Branch",
+            TypeId = NodeTypeId.Conversation_Branch,
             DisplayName = "Bifurcación de Diálogo",
             Description = "Elige un camino según una condición",
             Category = NodeCategory.Dialogue,
-            OwnerTypes = new[] { "Npc" },
+            OwnerTypes = NodeOwnerType.Npc,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -4995,11 +5256,11 @@ public static class NodeTypeRegistry
         // === FIN DE CONVERSACIÓN ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Conversation_End",
+            TypeId = NodeTypeId.Conversation_End,
             DisplayName = "Fin de Conversación",
             Description = "Termina la conversación y devuelve el control al juego",
             Category = NodeCategory.Dialogue,
-            OwnerTypes = new[] { "Npc" },
+            OwnerTypes = NodeOwnerType.Npc,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -5009,11 +5270,11 @@ public static class NodeTypeRegistry
         // === ACCIÓN EN CONVERSACIÓN ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Conversation_Action",
+            TypeId = NodeTypeId.Conversation_Action,
             DisplayName = "Ejecutar Acción",
             Description = "Ejecuta una acción dentro de la conversación",
             Category = NodeCategory.Dialogue,
-            OwnerTypes = new[] { "Npc" },
+            OwnerTypes = NodeOwnerType.Npc,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -5043,11 +5304,11 @@ public static class NodeTypeRegistry
         // === TIENDA ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Conversation_Shop",
+            TypeId = NodeTypeId.Conversation_Shop,
             DisplayName = "Abrir Tienda",
             Description = "Abre la interfaz de compra/venta con el NPC",
             Category = NodeCategory.Dialogue,
-            OwnerTypes = new[] { "Npc" },
+            OwnerTypes = NodeOwnerType.Npc,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -5068,11 +5329,11 @@ public static class NodeTypeRegistry
         // === COMPRAR OBJETO ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Conversation_BuyItem",
+            TypeId = NodeTypeId.Conversation_BuyItem,
             DisplayName = "Comprar Objeto",
             Description = "Permite comprar un objeto específico con precio fijo",
             Category = NodeCategory.Dialogue,
-            OwnerTypes = new[] { "Npc" },
+            OwnerTypes = NodeOwnerType.Npc,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }
@@ -5094,11 +5355,11 @@ public static class NodeTypeRegistry
         // === VENDER OBJETO ===
         Register(new NodeTypeDefinition
         {
-            TypeId = "Conversation_SellItem",
+            TypeId = NodeTypeId.Conversation_SellItem,
             DisplayName = "Vender Objeto",
             Description = "Permite vender un objeto específico al NPC",
             Category = NodeCategory.Dialogue,
-            OwnerTypes = new[] { "Npc" },
+            OwnerTypes = NodeOwnerType.Npc,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" }

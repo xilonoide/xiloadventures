@@ -101,19 +101,19 @@ public static class CryptoUtil
             return DefaultKey;
 
         var userKey = customKey.Trim();
-        
+
         // Si tiene más de 8 caracteres, cortamos
         if (userKey.Length > 8)
             userKey = userKey.Substring(0, 8);
 
         // Padding específico solicitado
-        const string padding = "XiloAdventuresXiloAdvent"; 
-        
+        const string padding = "XiloAdventuresXiloAdvent";
+
         // Concatenamos: clave_usuario + padding
         // Ejemplo: "12345678" + "XiloAdventuresXiloAdvent" = 32 chars
         // Si la clave es más corta, se rellenará con el principio del padding
         var combined = userKey;
-        
+
         // Rellenar hasta 32 bytes con el string de padding
         int needed = 32 - combined.Length;
         if (needed > 0)
@@ -132,7 +132,7 @@ public static class CryptoUtil
                 combined += padding.Substring(0, needed);
             }
         }
-        
+
         // Aseguramos longitud exacta de 32
         if (combined.Length > 32)
             combined = combined.Substring(0, 32);

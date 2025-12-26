@@ -298,54 +298,54 @@ public partial class MapPanel : Control
             }
 
 
-        // Selección de salidas (exits) haciendo click sobre la línea/etiqueta
-        // Solo si no hemos hecho hit sobre una sala: la sala tiene prioridad.
-        if (_mouseDownRoom == null)
-        {
-            var exitHit = HitTestExit(pos);
-            if (exitHit.HasValue)
+            // Selección de salidas (exits) haciendo click sobre la línea/etiqueta
+            // Solo si no hemos hecho hit sobre una sala: la sala tiene prioridad.
+            if (_mouseDownRoom == null)
             {
-                var (exitRoom, exitIndex) = exitHit.Value;
-                var exit = exitRoom.Exits?[exitIndex];
-
-                // Si la salida tiene una puerta asociada, seleccionar la puerta en el árbol
-                if (exit != null && !string.IsNullOrWhiteSpace(exit.DoorId) && _world?.Doors != null)
+                var exitHit = HitTestExit(pos);
+                if (exitHit.HasValue)
                 {
-                    var door = _world.Doors.FirstOrDefault(d =>
-                        string.Equals(d.Id, exit.DoorId, StringComparison.OrdinalIgnoreCase));
-                    if (door != null)
+                    var (exitRoom, exitIndex) = exitHit.Value;
+                    var exit = exitRoom.Exits?[exitIndex];
+
+                    // Si la salida tiene una puerta asociada, seleccionar la puerta en el árbol
+                    if (exit != null && !string.IsNullOrWhiteSpace(exit.DoorId) && _world?.Doors != null)
                     {
-                        DoorClicked?.Invoke(door);
-                        e.Handled = true;
-                        return;
+                        var door = _world.Doors.FirstOrDefault(d =>
+                            string.Equals(d.Id, exit.DoorId, StringComparison.OrdinalIgnoreCase));
+                        if (door != null)
+                        {
+                            DoorClicked?.Invoke(door);
+                            e.Handled = true;
+                            return;
+                        }
                     }
-                }
 
-                bool ctrlForSelection = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
-                var exitKey = (exitRoom.Id, exitIndex);
+                    bool ctrlForSelection = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+                    var exitKey = (exitRoom.Id, exitIndex);
 
-                if (ctrlForSelection)
-                {
-                    if (_selectedExits.Contains(exitKey))
+                    if (ctrlForSelection)
                     {
-                        _selectedExits.Remove(exitKey);
+                        if (_selectedExits.Contains(exitKey))
+                        {
+                            _selectedExits.Remove(exitKey);
+                        }
+                        else
+                        {
+                            _selectedExits.Add(exitKey);
+                        }
                     }
                     else
                     {
+                        _selectedRoomIds.Clear();
+                        _selectedExits.Clear();
                         _selectedExits.Add(exitKey);
                     }
-                }
-                else
-                {
-                    _selectedRoomIds.Clear();
-                    _selectedExits.Clear();
-                    _selectedExits.Add(exitKey);
-                }
 
-                InvalidateVisual();
-                return;
+                    InvalidateVisual();
+                    return;
+                }
             }
-        }
 
 
             // Si estamos editando una ruta de patrulla, los clicks en salas añaden/quitan de la ruta
@@ -782,114 +782,114 @@ public partial class MapPanel : Control
 
 
     protected override void OnKeyDown(KeyEventArgs e)
-{
-    base.OnKeyDown(e);
-
-    if (_world == null)
-        return;
-
-    // ESC -> Cancelar edición de salida en curso
-    if (e.Key == Key.Escape && _isEditingExit)
     {
-        _isEditingExit = false;
-        _editingExitRoom = null;
-        _editingExitIndex = -1;
-        _editingExitOriginalTarget = null;
-        _editingExitIsOrigin = false;
-        InvalidateVisual();
-        e.Handled = true;
-        return;
-    }
+        base.OnKeyDown(e);
 
-    // ESC -> Finalizar edición de ruta de patrulla
-    if (e.Key == Key.Escape && _isEditingPatrolRoute)
-    {
-        StopEditingPatrolRoute();
-        e.Handled = true;
-        return;
-    }
+        if (_world == null)
+            return;
 
-    // Ctrl + A -> seleccionar todas las salas y todas las salidas del mapa.
-    if (e.Key == Key.A && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
-    {
-        _selectedRoomIds.Clear();
-        _selectedExits.Clear();
-
-        foreach (var room in _world.Rooms)
+        // ESC -> Cancelar edición de salida en curso
+        if (e.Key == Key.Escape && _isEditingExit)
         {
-            if (room == null)
-                continue;
-
-            _selectedRoomIds.Add(room.Id);
-
-            if (room.Exits != null)
-            {
-                for (int i = 0; i < room.Exits.Count; i++)
-                {
-                    _selectedExits.Add((room.Id, i));
-                }
-            }
-        }
-
-        InvalidateVisual();
-        e.Handled = true;
-        return;
-    }
-
-    // Supr -> eliminar las salas o salidas seleccionadas del mapa.
-    if (e.Key == Key.Delete)
-    {
-        // Prioridad: si hay salas seleccionadas, eliminar salas
-        if (_selectedRoomIds.Count > 0)
-        {
-            // Notificar al WorldEditorWindow para que elimine las salas
-            RoomsDeleteRequested?.Invoke(_selectedRoomIds.ToList());
+            _isEditingExit = false;
+            _editingExitRoom = null;
+            _editingExitIndex = -1;
+            _editingExitOriginalTarget = null;
+            _editingExitIsOrigin = false;
+            InvalidateVisual();
             e.Handled = true;
             return;
         }
 
-        // Si no hay salas seleccionadas, eliminar salidas seleccionadas
-        if (_selectedExits.Count > 0)
+        // ESC -> Finalizar edición de ruta de patrulla
+        if (e.Key == Key.Escape && _isEditingPatrolRoute)
         {
-            // Agrupar por sala para eliminar sin desordenar índices.
-            var groups = _selectedExits
-                .GroupBy(se => se.roomId)
-                .ToList();
+            StopEditingPatrolRoute();
+            e.Handled = true;
+            return;
+        }
 
-            foreach (var group in groups)
+        // Ctrl + A -> seleccionar todas las salas y todas las salidas del mapa.
+        if (e.Key == Key.A && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            _selectedRoomIds.Clear();
+            _selectedExits.Clear();
+
+            foreach (var room in _world.Rooms)
             {
-                var room = _world.Rooms.FirstOrDefault(r => string.Equals(r.Id, group.Key, StringComparison.OrdinalIgnoreCase));
-                if (room?.Exits == null)
+                if (room == null)
                     continue;
 
-                // Eliminar empezando por los índices más altos.
-                var indices = group
-                    .Select(se => se.exitIndex)
-                    .Distinct()
-                    .OrderByDescending(i => i)
-                    .ToList();
+                _selectedRoomIds.Add(room.Id);
 
-                foreach (var index in indices)
+                if (room.Exits != null)
                 {
-                    if (index >= 0 && index < room.Exits.Count)
+                    for (int i = 0; i < room.Exits.Count; i++)
                     {
-                        room.Exits.RemoveAt(index);
+                        _selectedExits.Add((room.Id, i));
                     }
                 }
             }
 
-            _selectedExits.Clear();
-            MapEdited?.Invoke();
             InvalidateVisual();
             e.Handled = true;
+            return;
         }
 
-        return;
+        // Supr -> eliminar las salas o salidas seleccionadas del mapa.
+        if (e.Key == Key.Delete)
+        {
+            // Prioridad: si hay salas seleccionadas, eliminar salas
+            if (_selectedRoomIds.Count > 0)
+            {
+                // Notificar al WorldEditorWindow para que elimine las salas
+                RoomsDeleteRequested?.Invoke(_selectedRoomIds.ToList());
+                e.Handled = true;
+                return;
+            }
+
+            // Si no hay salas seleccionadas, eliminar salidas seleccionadas
+            if (_selectedExits.Count > 0)
+            {
+                // Agrupar por sala para eliminar sin desordenar índices.
+                var groups = _selectedExits
+                    .GroupBy(se => se.roomId)
+                    .ToList();
+
+                foreach (var group in groups)
+                {
+                    var room = _world.Rooms.FirstOrDefault(r => string.Equals(r.Id, group.Key, StringComparison.OrdinalIgnoreCase));
+                    if (room?.Exits == null)
+                        continue;
+
+                    // Eliminar empezando por los índices más altos.
+                    var indices = group
+                        .Select(se => se.exitIndex)
+                        .Distinct()
+                        .OrderByDescending(i => i)
+                        .ToList();
+
+                    foreach (var index in indices)
+                    {
+                        if (index >= 0 && index < room.Exits.Count)
+                        {
+                            room.Exits.RemoveAt(index);
+                        }
+                    }
+                }
+
+                _selectedExits.Clear();
+                MapEdited?.Invoke();
+                InvalidateVisual();
+                e.Handled = true;
+            }
+
+            return;
+        }
     }
-}
 
 
-protected override void OnMouseWheel(MouseWheelEventArgs e)
+    protected override void OnMouseWheel(MouseWheelEventArgs e)
     {
         base.OnMouseWheel(e);
 
@@ -1814,7 +1814,7 @@ protected override void OnMouseWheel(MouseWheelEventArgs e)
         InvalidateVisual();
     }
 
-    
+
     private static string GetSingleDirectionLabel(string? rawDirection)
     {
         if (string.IsNullOrWhiteSpace(rawDirection))
@@ -2396,8 +2396,8 @@ protected override void OnMouseWheel(MouseWheelEventArgs e)
     {
         // Redondea la posición al centro de la celda del grid más cercana
         // Las celdas están centradas en RoomBoxWidth/2, RoomBoxWidth*1.5, etc.
-        double cellX = Math.Round((position.X - RoomBoxWidth/2) / RoomBoxWidth) * RoomBoxWidth + RoomBoxWidth/2;
-        double cellY = Math.Round((position.Y - RoomBoxHeight/2) / RoomBoxHeight) * RoomBoxHeight + RoomBoxHeight/2;
+        double cellX = Math.Round((position.X - RoomBoxWidth / 2) / RoomBoxWidth) * RoomBoxWidth + RoomBoxWidth / 2;
+        double cellY = Math.Round((position.Y - RoomBoxHeight / 2) / RoomBoxHeight) * RoomBoxHeight + RoomBoxHeight / 2;
         return new Point(cellX, cellY);
     }
 

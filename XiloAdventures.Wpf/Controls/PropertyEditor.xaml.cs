@@ -942,8 +942,8 @@ public partial class PropertyEditor : UserControl
         if (obj is Door && (name == PN.KeyObjectId || name == PN.Visible || name == PN.RequiredQuests))
             return PropertyCategory.Comportamiento;
 
-        // Propiedades de conversación, comercio, patrulla, seguimiento y estado de NPC
-        if (obj is Npc && (name == PN.ConversationId || name == PN.IsShopkeeper || name == PN.ShopInventory
+        // Propiedades de comercio, patrulla, seguimiento y estado de NPC
+        if (obj is Npc && (name == PN.IsShopkeeper || name == PN.ShopInventory
             || name == PN.BuyPriceMultiplier || name == PN.SellPriceMultiplier
             || name == PN.IsPatrolling || name == PN.PatrolMovementMode || name == PN.PatrolSpeed || name == PN.PatrolTimeInterval
             || name == PN.IsFollowingPlayer || name == PN.FollowMovementMode || name == PN.FollowSpeed || name == PN.FollowTimeInterval
@@ -2642,90 +2642,90 @@ public partial class PropertyEditor : UserControl
                     // TextContent usa 120px (6 líneas), Description usa 160px
                     var multilineHeight = isTextContent ? 120 : (isLargeMultiline ? 160 : 0);
                     var tb = new TextBox
-                {
-                    Text = text,
-                    Margin = new Thickness(0, 2, 0, 0),
-                    AcceptsReturn = isLargeMultiline,
-                    TextWrapping = isLargeMultiline ? TextWrapping.Wrap : TextWrapping.NoWrap,
-                    VerticalScrollBarVisibility = isLargeMultiline ? ScrollBarVisibility.Auto : ScrollBarVisibility.Hidden,
-                    VerticalContentAlignment = isLargeMultiline ? VerticalAlignment.Top : VerticalAlignment.Center,
-                    MinHeight = multilineHeight
-                };
-                var originalText = text;
-                tb.LostFocus += (_, _) =>
-                {
-                    try
                     {
-                        if (_currentObject is not { } target) return;
-
-                        object? value = tb.Text;
-                        if (prop.PropertyType == typeof(string) &&
-                            obj is GameInfo &&
-                            string.Equals(prop.Name, "EncryptionKey", StringComparison.OrdinalIgnoreCase))
-                        {
-                            var trimmed = (tb.Text ?? string.Empty).Trim();
-                            if (!string.IsNullOrEmpty(trimmed))
-                            {
-                                var length = Encoding.UTF8.GetByteCount(trimmed);
-                                if (length != 8 && length != 32)
-                                {
-                                    new AlertWindow("La clave de cifrado debe ser de 8 caracteres", "Clave inválida")
-                                    {
-                                        Owner = Window.GetWindow(this)
-                                    }.ShowDialog();
-                                    tb.Text = originalText;
-                                    return;
-                                }
-                            }
-
-                            value = trimmed;
-                        }
-                        if (prop.PropertyType == typeof(int))
-                        {
-                            if (int.TryParse(tb.Text, out var i)) value = i;
-                        }
-                        else if (prop.PropertyType == typeof(double))
-                        {
-                            if (double.TryParse(tb.Text, out var d)) value = d;
-                        }
-                        else if (prop.PropertyType == typeof(List<string>))
-                        {
-                            var parts = (tb.Text ?? string.Empty).Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
-                            var listVal = new List<string>();
-                            foreach (var p in parts)
-                            {
-                                var s = p.Trim();
-                                if (!string.IsNullOrEmpty(s))
-                                    listVal.Add(s);
-                            }
-                            value = listVal;
-                        }
-
-                        prop.SetValue(target, value);
-                        PropertyEdited?.Invoke(target, prop.Name);
-                    }
-                    catch
-                    {
-                        // Ignorar errores de conversion
-                    }
-                };
-                // Para propiedades de texto (como Name), actualizamos en vivo al teclear
-                if (prop.PropertyType == typeof(string))
-                {
-                    tb.TextChanged += (_, _) =>
+                        Text = text,
+                        Margin = new Thickness(0, 2, 0, 0),
+                        AcceptsReturn = isLargeMultiline,
+                        TextWrapping = isLargeMultiline ? TextWrapping.Wrap : TextWrapping.NoWrap,
+                        VerticalScrollBarVisibility = isLargeMultiline ? ScrollBarVisibility.Auto : ScrollBarVisibility.Hidden,
+                        VerticalContentAlignment = isLargeMultiline ? VerticalAlignment.Top : VerticalAlignment.Center,
+                        MinHeight = multilineHeight
+                    };
+                    var originalText = text;
+                    tb.LostFocus += (_, _) =>
                     {
                         try
                         {
                             if (_currentObject is not { } target) return;
-                            prop.SetValue(target, tb.Text);
+
+                            object? value = tb.Text;
+                            if (prop.PropertyType == typeof(string) &&
+                                obj is GameInfo &&
+                                string.Equals(prop.Name, "EncryptionKey", StringComparison.OrdinalIgnoreCase))
+                            {
+                                var trimmed = (tb.Text ?? string.Empty).Trim();
+                                if (!string.IsNullOrEmpty(trimmed))
+                                {
+                                    var length = Encoding.UTF8.GetByteCount(trimmed);
+                                    if (length != 8 && length != 32)
+                                    {
+                                        new AlertWindow("La clave de cifrado debe ser de 8 caracteres", "Clave inválida")
+                                        {
+                                            Owner = Window.GetWindow(this)
+                                        }.ShowDialog();
+                                        tb.Text = originalText;
+                                        return;
+                                    }
+                                }
+
+                                value = trimmed;
+                            }
+                            if (prop.PropertyType == typeof(int))
+                            {
+                                if (int.TryParse(tb.Text, out var i)) value = i;
+                            }
+                            else if (prop.PropertyType == typeof(double))
+                            {
+                                if (double.TryParse(tb.Text, out var d)) value = d;
+                            }
+                            else if (prop.PropertyType == typeof(List<string>))
+                            {
+                                var parts = (tb.Text ?? string.Empty).Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+                                var listVal = new List<string>();
+                                foreach (var p in parts)
+                                {
+                                    var s = p.Trim();
+                                    if (!string.IsNullOrEmpty(s))
+                                        listVal.Add(s);
+                                }
+                                value = listVal;
+                            }
+
+                            prop.SetValue(target, value);
                             PropertyEdited?.Invoke(target, prop.Name);
                         }
                         catch
                         {
-                            // Ignorar errores
+                            // Ignorar errores de conversion
                         }
                     };
-                }
+                    // Para propiedades de texto (como Name), actualizamos en vivo al teclear
+                    if (prop.PropertyType == typeof(string))
+                    {
+                        tb.TextChanged += (_, _) =>
+                        {
+                            try
+                            {
+                                if (_currentObject is not { } target) return;
+                                prop.SetValue(target, tb.Text);
+                                PropertyEdited?.Invoke(target, prop.Name);
+                            }
+                            catch
+                            {
+                                // Ignorar errores
+                            }
+                        };
+                    }
 
                     editor = tb;
                 }
@@ -2887,7 +2887,6 @@ public partial class PropertyEditor : UserControl
         ["Npc.Tags"] = "Etiquetas",
         ["Npc.Visible"] = "Visible",
         ["Npc.Stats"] = "Estadísticas",
-        ["Npc.ConversationId"] = "Conversación",
         ["Npc.IsShopkeeper"] = "Es comerciante",
         ["Npc.ShopInventory"] = "Inventario de tienda",
         ["Npc.BuyPriceMultiplier"] = "Multiplicador compra",
@@ -2897,7 +2896,6 @@ public partial class PropertyEditor : UserControl
         ["Npc.IsFollowingPlayer"] = "Sigue al jugador",
         ["Npc.FollowSpeed"] = "Velocidad seguimiento",
         ["Npc.IsCorpse"] = "Es un cadáver",
-        ["ConversationId"] = "Conversación",
         ["IsShopkeeper"] = "Es comerciante",
         ["ShopInventory"] = "Inventario de tienda",
         ["BuyPriceMultiplier"] = "Multiplicador compra",

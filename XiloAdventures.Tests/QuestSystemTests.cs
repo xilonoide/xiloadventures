@@ -86,14 +86,14 @@ public class QuestSystemTests
                 new ScriptNode
                 {
                     Id = "event_enter",
-                    NodeType = "Event_OnEnter",
+                    NodeType = NodeTypeId.Event_OnEnter,
                     Category = NodeCategory.Event,
                     Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 },
                 new ScriptNode
                 {
                     Id = "action_complete",
-                    NodeType = "Action_CompleteQuest",
+                    NodeType = NodeTypeId.Action_CompleteQuest,
                     Category = NodeCategory.Action,
                     Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                     {
@@ -114,7 +114,7 @@ public class QuestSystemTests
         };
     }
 
-    private static ScriptDefinition CreateGameStartScript(string actionType, Dictionary<string, object?> actionProps)
+    private static ScriptDefinition CreateGameStartScript(NodeTypeId actionType, Dictionary<string, object?> actionProps)
     {
         return new ScriptDefinition
         {
@@ -126,7 +126,7 @@ public class QuestSystemTests
                 new ScriptNode
                 {
                     Id = "event_start",
-                    NodeType = "Event_OnGameStart",
+                    NodeType = NodeTypeId.Event_OnGameStart,
                     Category = NodeCategory.Event,
                     Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 },
@@ -151,7 +151,7 @@ public class QuestSystemTests
         };
     }
 
-    private static ScriptDefinition CreateRoomScript(string roomId, string actionType, Dictionary<string, object?> actionProps)
+    private static ScriptDefinition CreateRoomScript(string roomId, NodeTypeId actionType, Dictionary<string, object?> actionProps)
     {
         return new ScriptDefinition
         {
@@ -163,7 +163,7 @@ public class QuestSystemTests
                 new ScriptNode
                 {
                     Id = "event_enter",
-                    NodeType = "Event_OnEnter",
+                    NodeType = NodeTypeId.Event_OnEnter,
                     Category = NodeCategory.Event,
                     Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 },
@@ -267,10 +267,10 @@ public class QuestSystemTests
         {
             ["QuestId"] = "quest1"
         };
-        world.Scripts.Add(CreateGameStartScript("Action_StartQuest", actionProps));
+        world.Scripts.Add(CreateGameStartScript(NodeTypeId.Action_StartQuest, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_quests", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_quests", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(QuestStatus.InProgress, state.Quests["quest1"].Status);
     }
@@ -287,7 +287,7 @@ public class QuestSystemTests
         world.Scripts.Add(CreateCompleteQuestScript("quest1"));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Room", "room1", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room1", NodeTypeId.Event_OnEnter);
 
         Assert.Equal(QuestStatus.Completed, state.Quests["quest1"].Status);
     }
@@ -306,10 +306,10 @@ public class QuestSystemTests
         {
             ["QuestId"] = "quest1"
         };
-        world.Scripts.Add(CreateRoomScript("room1", "Action_FailQuest", actionProps));
+        world.Scripts.Add(CreateRoomScript("room1", NodeTypeId.Action_FailQuest, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Room", "room1", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room1", NodeTypeId.Event_OnEnter);
 
         Assert.Equal(QuestStatus.Failed, state.Quests["quest1"].Status);
     }
@@ -339,7 +339,7 @@ public class QuestSystemTests
         bool adventureCompletedFired = false;
         engine.OnAdventureCompleted += () => adventureCompletedFired = true;
 
-        await engine.TriggerEventAsync("Room", "room1", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room1", NodeTypeId.Event_OnEnter);
 
         Assert.True(adventureCompletedFired, "OnAdventureCompleted should fire when all main quests are completed");
     }
@@ -360,7 +360,7 @@ public class QuestSystemTests
         bool adventureCompletedFired = false;
         engine.OnAdventureCompleted += () => adventureCompletedFired = true;
 
-        await engine.TriggerEventAsync("Room", "room1", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room1", NodeTypeId.Event_OnEnter);
 
         Assert.False(adventureCompletedFired, "OnAdventureCompleted should not fire if some main quests are incomplete");
     }
@@ -381,7 +381,7 @@ public class QuestSystemTests
         bool adventureCompletedFired = false;
         engine.OnAdventureCompleted += () => adventureCompletedFired = true;
 
-        await engine.TriggerEventAsync("Room", "room1", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room1", NodeTypeId.Event_OnEnter);
 
         Assert.True(adventureCompletedFired, "OnAdventureCompleted should fire when all MAIN quests complete, ignoring side quests");
         Assert.Equal(QuestStatus.InProgress, state.Quests["side1"].Status);
@@ -402,7 +402,7 @@ public class QuestSystemTests
         bool adventureCompletedFired = false;
         engine.OnAdventureCompleted += () => adventureCompletedFired = true;
 
-        await engine.TriggerEventAsync("Room", "room1", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room1", NodeTypeId.Event_OnEnter);
 
         Assert.True(adventureCompletedFired);
     }
@@ -422,13 +422,13 @@ public class QuestSystemTests
         {
             ["QuestId"] = "side1"
         };
-        world.Scripts.Add(CreateRoomScript("room1", "Action_CompleteQuest", actionProps));
+        world.Scripts.Add(CreateRoomScript("room1", NodeTypeId.Action_CompleteQuest, actionProps));
 
         var engine = new ScriptEngine(world, state);
         bool adventureCompletedFired = false;
         engine.OnAdventureCompleted += () => adventureCompletedFired = true;
 
-        await engine.TriggerEventAsync("Room", "room1", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room1", NodeTypeId.Event_OnEnter);
 
         Assert.False(adventureCompletedFired, "OnAdventureCompleted should not fire when there are no main quests");
     }
@@ -453,12 +453,12 @@ public class QuestSystemTests
 
         // Trigger multiple times - event fires each time the action runs
         // since all main quests are complete
-        await engine.TriggerEventAsync("Room", "room1", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room1", NodeTypeId.Event_OnEnter);
         Assert.Equal(QuestStatus.Completed, state.Quests["main1"].Status);
         Assert.Equal(1, adventureCompletedCount);
 
         // Second trigger also fires the event (action runs again on already-completed quest)
-        await engine.TriggerEventAsync("Room", "room1", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room1", NodeTypeId.Event_OnEnter);
         Assert.Equal(2, adventureCompletedCount);
     }
 
@@ -506,13 +506,13 @@ public class QuestSystemTests
         {
             ["QuestId"] = "quest1"
         };
-        world.Scripts.Add(CreateGameStartScript("Action_StartQuest", actionProps));
+        world.Scripts.Add(CreateGameStartScript(NodeTypeId.Action_StartQuest, actionProps));
 
         var engine = new ScriptEngine(world, state);
         string? receivedMessage = null;
         engine.OnMessage += msg => receivedMessage = msg;
 
-        await engine.TriggerEventAsync("Game", "test_quests", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_quests", NodeTypeId.Event_OnGameStart);
 
         Assert.NotNull(receivedMessage);
         Assert.Contains("La Búsqueda del Tesoro", receivedMessage);
@@ -534,7 +534,7 @@ public class QuestSystemTests
         string? receivedMessage = null;
         engine.OnMessage += msg => receivedMessage = msg;
 
-        await engine.TriggerEventAsync("Room", "room1", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room1", NodeTypeId.Event_OnEnter);
 
         Assert.NotNull(receivedMessage);
         Assert.Contains("El Rescate", receivedMessage);
@@ -555,13 +555,13 @@ public class QuestSystemTests
         {
             ["QuestId"] = "quest1"
         };
-        world.Scripts.Add(CreateRoomScript("room1", "Action_FailQuest", actionProps));
+        world.Scripts.Add(CreateRoomScript("room1", NodeTypeId.Action_FailQuest, actionProps));
 
         var engine = new ScriptEngine(world, state);
         string? receivedMessage = null;
         engine.OnMessage += msg => receivedMessage = msg;
 
-        await engine.TriggerEventAsync("Room", "room1", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room1", NodeTypeId.Event_OnEnter);
 
         Assert.NotNull(receivedMessage);
         Assert.Contains("Misión Imposible", receivedMessage);
@@ -597,15 +597,15 @@ public class QuestSystemTests
         engine.OnAdventureCompleted += () => adventureCompletedCount++;
 
         // Complete quests in sequence
-        await engine.TriggerEventAsync("Room", "room1", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room1", NodeTypeId.Event_OnEnter);
         Assert.Equal(0, adventureCompletedCount);
         Assert.Equal(QuestStatus.Completed, state.Quests["main1"].Status);
 
-        await engine.TriggerEventAsync("Room", "room2", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room2", NodeTypeId.Event_OnEnter);
         Assert.Equal(0, adventureCompletedCount);
         Assert.Equal(QuestStatus.Completed, state.Quests["main2"].Status);
 
-        await engine.TriggerEventAsync("Room", "room3", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room3", NodeTypeId.Event_OnEnter);
         Assert.Equal(1, adventureCompletedCount);
         Assert.Equal(QuestStatus.Completed, state.Quests["main3"].Status);
     }
@@ -629,21 +629,21 @@ public class QuestSystemTests
         var side2Props = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["QuestId"] = "side2" };
         var main1Props = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["QuestId"] = "main1" };
 
-        world.Scripts.Add(CreateRoomScript("room1", "Action_CompleteQuest", side1Props));
-        world.Scripts.Add(CreateRoomScript("room2", "Action_CompleteQuest", side2Props));
-        world.Scripts.Add(CreateRoomScript("room3", "Action_CompleteQuest", main1Props));
+        world.Scripts.Add(CreateRoomScript("room1", NodeTypeId.Action_CompleteQuest, side1Props));
+        world.Scripts.Add(CreateRoomScript("room2", NodeTypeId.Action_CompleteQuest, side2Props));
+        world.Scripts.Add(CreateRoomScript("room3", NodeTypeId.Action_CompleteQuest, main1Props));
 
         var engine = new ScriptEngine(world, state);
         int adventureCompletedCount = 0;
         engine.OnAdventureCompleted += () => adventureCompletedCount++;
 
         // Complete side quests first
-        await engine.TriggerEventAsync("Room", "room1", "Event_OnEnter");
-        await engine.TriggerEventAsync("Room", "room2", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room1", NodeTypeId.Event_OnEnter);
+        await engine.TriggerEventAsync("Room", "room2", NodeTypeId.Event_OnEnter);
         Assert.Equal(0, adventureCompletedCount); // Side quests don't trigger adventure completion
 
         // Now complete main quest
-        await engine.TriggerEventAsync("Room", "room3", "Event_OnEnter");
+        await engine.TriggerEventAsync("Room", "room3", NodeTypeId.Event_OnEnter);
         Assert.Equal(1, adventureCompletedCount);
     }
 

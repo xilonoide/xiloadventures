@@ -14,7 +14,7 @@ public static partial class RandomMessages
         "{0} ya emite luz.",
         "La llama de {0} ya está viva.",
         "{0} ya ilumina el lugar.",
-        "Ya está encendido, no es necesario.",
+        "{0} ya está encendido, no es necesario.",
         "{0} ya brilla.",
         "La luz de {0} ya está activa.",
         "{0} ya está prendido."

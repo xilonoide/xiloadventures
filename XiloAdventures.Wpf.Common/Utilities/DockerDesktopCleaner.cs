@@ -56,8 +56,8 @@ public static class DockerDesktopCleaner
                 }
                 else
                 {
-                     steps.Add(new StepResult("Uninstall Docker Desktop", false,
-                        $"El desinstalador retornó código {code}. Output: {TrimForLog(stdout)} {TrimForLog(stderr)}"));
+                    steps.Add(new StepResult("Uninstall Docker Desktop", false,
+                       $"El desinstalador retornó código {code}. Output: {TrimForLog(stdout)} {TrimForLog(stderr)}"));
                 }
             }
             catch (Exception ex)

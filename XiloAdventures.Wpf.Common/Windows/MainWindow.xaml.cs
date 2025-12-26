@@ -1690,7 +1690,10 @@ public partial class MainWindow : Window
 
                     var line = new Line
                     {
-                        X1 = x1, Y1 = y1, X2 = x2, Y2 = y2,
+                        X1 = x1,
+                        Y1 = y1,
+                        X2 = x2,
+                        Y2 = y2,
                         Stroke = new SolidColorBrush(Color.FromRgb(80, 80, 80)),
                         StrokeThickness = 2
                     };
@@ -1803,7 +1806,7 @@ public partial class MainWindow : Window
                     break;
                 }
             }
-            foundCoords:;
+        foundCoords:;
         }
 
         // BFS para calcular posiciones de salas conectadas visitadas

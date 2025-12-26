@@ -15,7 +15,7 @@ public class ScriptEngine
 {
     private readonly GameState _gameState;
     private readonly WorldModel _world;
-    private readonly Dictionary<string, Func<ScriptNode, ScriptContext, Task>> _nodeHandlers;
+    private readonly Dictionary<NodeTypeId, Func<ScriptNode, ScriptContext, Task>> _nodeHandlers;
     private readonly Random _random = new();
     private readonly bool _isDebugMode;
 
@@ -98,6 +98,12 @@ public class ScriptEngine
     }
 
     /// <summary>
+    /// Ejecuta todos los scripts asociados a un evento específico (usando NodeTypeId).
+    /// </summary>
+    public Task TriggerEventAsync(string ownerType, string ownerId, NodeTypeId eventType)
+        => TriggerEventAsync(ownerType, ownerId, eventType.ToString());
+
+    /// <summary>
     /// Ejecuta un nodo de acción individual (para pruebas desde el editor).
     /// </summary>
     public async Task ExecuteSingleNodeAsync(ScriptNode node)
@@ -118,8 +124,10 @@ public class ScriptEngine
     /// </summary>
     private async Task ExecuteEventAsync(ScriptDefinition script, string eventType)
     {
-        var eventNode = script.Nodes.FirstOrDefault(n =>
-            string.Equals(n.NodeType, eventType, StringComparison.OrdinalIgnoreCase));
+        if (!Enum.TryParse<NodeTypeId>(eventType, true, out var nodeTypeId))
+            return;
+
+        var eventNode = script.Nodes.FirstOrDefault(n => n.NodeType == nodeTypeId);
         if (eventNode == null) return;
 
         var context = new ScriptContext(script, _gameState, _world);
@@ -211,86 +219,86 @@ public class ScriptEngine
     /// <summary>
     /// Registra todos los handlers de nodos.
     /// </summary>
-    private Dictionary<string, Func<ScriptNode, ScriptContext, Task>> RegisterNodeHandlers()
+    private Dictionary<NodeTypeId, Func<ScriptNode, ScriptContext, Task>> RegisterNodeHandlers()
     {
-        return new Dictionary<string, Func<ScriptNode, ScriptContext, Task>>(StringComparer.OrdinalIgnoreCase)
+        return new Dictionary<NodeTypeId, Func<ScriptNode, ScriptContext, Task>>()
         {
             // === EVENTOS (no hacen nada, solo son entry points) ===
             // Game Events
-            ["Event_OnGameStart"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnGameEnd"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_EveryMinute"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_EveryHour"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnTurnStart"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnWeatherChange"] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnGameStart] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnGameEnd] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_EveryMinute] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_EveryHour] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnTurnStart] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnWeatherChange] = async (node, ctx) => { await Task.CompletedTask; },
             // Room Events
-            ["Event_OnEnter"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnExit"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnLook"] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnEnter] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnExit] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnLook] = async (node, ctx) => { await Task.CompletedTask; },
             // Door Events
-            ["Event_OnDoorOpen"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnDoorClose"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnDoorLock"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnDoorUnlock"] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnDoorOpen] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnDoorClose] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnDoorLock] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnDoorUnlock] = async (node, ctx) => { await Task.CompletedTask; },
             // NPC Events
-            ["Event_OnTalk"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnNpcAttack"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnNpcDeath"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnNpcSee"] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnTalk] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnNpcAttack] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnNpcDeath] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnNpcSee] = async (node, ctx) => { await Task.CompletedTask; },
             // Combat Events
-            ["Event_OnCombatStart"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnCombatVictory"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnCombatDefeat"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnCombatFlee"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnPlayerAttack"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnNpcTurn"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnPlayerDefend"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnCriticalHit"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnMiss"] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnCombatStart] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnCombatVictory] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnCombatDefeat] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnCombatFlee] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnPlayerAttack] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnNpcTurn] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnPlayerDefend] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnCriticalHit] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnMiss] = async (node, ctx) => { await Task.CompletedTask; },
             // Trade Events
-            ["Event_OnTradeStart"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnTradeEnd"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnItemBought"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnItemSold"] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnTradeStart] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnTradeEnd] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnItemBought] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnItemSold] = async (node, ctx) => { await Task.CompletedTask; },
             // Object Events
-            ["Event_OnTake"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnDrop"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnUse"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnExamine"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnGive"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnContainerOpen"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnContainerClose"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnEat"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnDrink"] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnTake] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnDrop] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnUse] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnExamine] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnGive] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnContainerOpen] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnContainerClose] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnEat] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnDrink] = async (node, ctx) => { await Task.CompletedTask; },
             // Quest Events
-            ["Event_OnQuestStart"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnQuestComplete"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnQuestFail"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnObjectiveComplete"] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnQuestStart] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnQuestComplete] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnQuestFail] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnObjectiveComplete] = async (node, ctx) => { await Task.CompletedTask; },
             // Sleep Events
-            ["Event_OnSleep"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnWakeUp"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnWakeUpStartled"] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnSleep] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnWakeUp] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnWakeUpStartled] = async (node, ctx) => { await Task.CompletedTask; },
             // Player State Events
-            ["Event_OnPlayerDeath"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnHealthLow"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnHealthCritical"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnHungerHigh"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnThirstHigh"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnEnergyLow"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnSleepHigh"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnSanityLow"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnManaLow"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnStateThreshold"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnModifierApplied"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnModifierExpired"] = async (node, ctx) => { await Task.CompletedTask; },
-            // Gold Events
-            ["Event_OnGoldGained"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnGoldLost"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnGoldThreshold"] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnPlayerDeath] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnHealthLow] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnHealthCritical] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnHungerHigh] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnThirstHigh] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnEnergyLow] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnSleepHigh] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnSanityLow] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnManaLow] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnStateThreshold] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnModifierApplied] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnModifierExpired] = async (node, ctx) => { await Task.CompletedTask; },
+            // Money Events
+            [NodeTypeId.Event_OnMoneyGained] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnMoneyLost] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnMoneyThreshold] = async (node, ctx) => { await Task.CompletedTask; },
 
             // === CONDICIONES ===
-            ["Condition_HasItem"] = async (node, ctx) =>
+            [NodeTypeId.Condition_HasItem] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var hasItem = !string.IsNullOrEmpty(objectId) &&
@@ -301,7 +309,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_IsInRoom"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsInRoom] = async (node, ctx) =>
             {
                 var roomId = GetPropertyValue<string>(node, "RoomId", "");
                 var isInRoom = string.Equals(ctx.GameState.CurrentRoomId, roomId, StringComparison.OrdinalIgnoreCase);
@@ -309,7 +317,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_IsQuestStatus"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsQuestStatus] = async (node, ctx) =>
             {
                 var questId = GetPropertyValue<string>(node, "QuestId", "") ?? "";
                 var statusStr = GetPropertyValue<string>(node, "Status", "NotStarted");
@@ -326,7 +334,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_IsMainQuest"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsMainQuest] = async (node, ctx) =>
             {
                 var questId = GetPropertyValue<string>(node, "QuestId", "") ?? "";
                 var quest = ctx.World.Quests.FirstOrDefault(q =>
@@ -336,7 +344,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_HasFlag"] = async (node, ctx) =>
+            [NodeTypeId.Condition_HasFlag] = async (node, ctx) =>
             {
                 var flagName = GetPropertyValue<string>(node, "FlagName", "");
                 var hasFlag = !string.IsNullOrEmpty(flagName) &&
@@ -345,7 +353,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_CompareCounter"] = async (node, ctx) =>
+            [NodeTypeId.Condition_CompareCounter] = async (node, ctx) =>
             {
                 var counterName = GetPropertyValue<string>(node, "CounterName", "") ?? "";
                 var op = GetPropertyValue<string>(node, "Operator", "==");
@@ -368,7 +376,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_IsTimeOfDay"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsTimeOfDay] = async (node, ctx) =>
             {
                 var timeRange = GetPropertyValue<string>(node, "TimeRange", "");
                 var hour = ctx.GameState.GameTime.Hour;
@@ -386,7 +394,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_IsDoorOpen"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsDoorOpen] = async (node, ctx) =>
             {
                 var doorId = GetPropertyValue<string>(node, "DoorId", "");
                 var door = ctx.GameState.Doors.FirstOrDefault(d =>
@@ -396,7 +404,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_IsDoorVisible"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsDoorVisible] = async (node, ctx) =>
             {
                 var doorId = GetPropertyValue<string>(node, "DoorId", "");
                 var door = ctx.GameState.Doors.FirstOrDefault(d =>
@@ -433,7 +441,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_IsNpcVisible"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsNpcVisible] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var npc = ctx.GameState.Npcs.FirstOrDefault(n =>
@@ -443,7 +451,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_IsObjectVisible"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsObjectVisible] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var obj = ctx.GameState.Objects.FirstOrDefault(o =>
@@ -453,7 +461,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_IsObjectTakeable"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsObjectTakeable] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var obj = ctx.GameState.Objects.FirstOrDefault(o =>
@@ -463,7 +471,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_IsContainerOpen"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsContainerOpen] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var obj = ctx.GameState.Objects.FirstOrDefault(o =>
@@ -473,7 +481,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_IsContainerLocked"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsContainerLocked] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var obj = ctx.GameState.Objects.FirstOrDefault(o =>
@@ -483,7 +491,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_IsWeather"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsWeather] = async (node, ctx) =>
             {
                 var weatherStr = GetPropertyValue<string>(node, "Weather", "Despejado");
                 var isMatch = Enum.TryParse<WeatherType>(weatherStr, out var weather) &&
@@ -492,7 +500,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_ObjectInContainer"] = async (node, ctx) =>
+            [NodeTypeId.Condition_ObjectInContainer] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var containerId = GetPropertyValue<string>(node, "ContainerId", "");
@@ -508,7 +516,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_ObjectInRoom"] = async (node, ctx) =>
+            [NodeTypeId.Condition_ObjectInRoom] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var roomId = GetPropertyValue<string>(node, "RoomId", "");
@@ -523,7 +531,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_NpcInRoom"] = async (node, ctx) =>
+            [NodeTypeId.Condition_NpcInRoom] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var roomId = GetPropertyValue<string>(node, "RoomId", "");
@@ -539,7 +547,7 @@ public class ScriptEngine
             },
 
             // === CONDICIONES DE ILUMINACIÓN ===
-            ["Condition_IsObjectLit"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsObjectLit] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var obj = ctx.GameState.Objects.FirstOrDefault(o =>
@@ -549,7 +557,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_IsRoomLit"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsRoomLit] = async (node, ctx) =>
             {
                 var room = ctx.GameState.Rooms.FirstOrDefault(r =>
                     string.Equals(r.Id, ctx.GameState.CurrentRoomId, StringComparison.OrdinalIgnoreCase));
@@ -630,7 +638,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_IsPatrolling"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsPatrolling] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var npc = ctx.GameState.Npcs.FirstOrDefault(n =>
@@ -640,7 +648,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_IsFollowingPlayer"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsFollowingPlayer] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var npc = ctx.GameState.Npcs.FirstOrDefault(n =>
@@ -650,7 +658,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_Random"] = async (node, ctx) =>
+            [NodeTypeId.Condition_Random] = async (node, ctx) =>
             {
                 var probability = GetPropertyValue<int>(node, "Probability", 50);
                 var roll = _random.Next(100);
@@ -659,7 +667,7 @@ public class ScriptEngine
             },
 
             // === CONDICIONES DE COMBATE ===
-            ["Condition_IsNpcAlive"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsNpcAlive] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var npc = ctx.GameState.Npcs.FirstOrDefault(n =>
@@ -669,7 +677,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_NpcHealthBelow"] = async (node, ctx) =>
+            [NodeTypeId.Condition_NpcHealthBelow] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var threshold = GetPropertyValue<int>(node, "Threshold", 50);
@@ -680,7 +688,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_IsInCombat"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsInCombat] = async (node, ctx) =>
             {
                 var isInCombat = ctx.GameState.ActiveCombat?.IsActive ?? false;
                 ctx.NextOutputPort = isInCombat ? "True" : "False";
@@ -688,7 +696,7 @@ public class ScriptEngine
             },
 
             // === CONDICIONES DE COMBATE ADICIONALES ===
-            ["Condition_PlayerHealthBelow"] = async (node, ctx) =>
+            [NodeTypeId.Condition_PlayerHealthBelow] = async (node, ctx) =>
             {
                 var threshold = GetPropertyValue<int>(node, "Threshold", 50);
                 var player = ctx.GameState.Player;
@@ -699,7 +707,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_PlayerHealthAbove"] = async (node, ctx) =>
+            [NodeTypeId.Condition_PlayerHealthAbove] = async (node, ctx) =>
             {
                 var threshold = GetPropertyValue<int>(node, "Threshold", 50);
                 var player = ctx.GameState.Player;
@@ -710,7 +718,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_PlayerHasWeaponType"] = async (node, ctx) =>
+            [NodeTypeId.Condition_PlayerHasWeaponType] = async (node, ctx) =>
             {
                 var damageTypeStr = GetPropertyValue<string>(node, "DamageType", "Physical");
                 var expectedType = Enum.TryParse<DamageType>(damageTypeStr, out var dt) ? dt : DamageType.Physical;
@@ -727,14 +735,14 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_PlayerHasArmor"] = async (node, ctx) =>
+            [NodeTypeId.Condition_PlayerHasArmor] = async (node, ctx) =>
             {
                 var hasArmor = !string.IsNullOrEmpty(ctx.GameState.Player.EquippedArmorId);
                 ctx.NextOutputPort = hasArmor ? "True" : "False";
                 await Task.CompletedTask;
             },
 
-            ["Condition_IsCombatRound"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsCombatRound] = async (node, ctx) =>
             {
                 var expectedRound = GetPropertyValue<int>(node, "Round", 1);
                 var currentRound = ctx.GameState.ActiveCombat?.RoundNumber ?? 0;
@@ -743,7 +751,7 @@ public class ScriptEngine
             },
 
             // === CONDICIONES DE COMERCIO ===
-            ["Condition_IsInTrade"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsInTrade] = async (node, ctx) =>
             {
                 // Trade state is managed externally by TradeEngine, not in GameState
                 // This condition returns false by default - can be extended if trade state is added to GameState
@@ -751,7 +759,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_PlayerHasMoney"] = async (node, ctx) =>
+            [NodeTypeId.Condition_PlayerHasMoney] = async (node, ctx) =>
             {
                 var amount = GetPropertyValue<int>(node, "Amount", 100);
                 var hasEnough = ctx.GameState.Player.Money >= amount;
@@ -759,7 +767,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_NpcHasMoney"] = async (node, ctx) =>
+            [NodeTypeId.Condition_NpcHasMoney] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var amount = GetPropertyValue<int>(node, "Amount", 100);
@@ -771,7 +779,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_NpcHasInfiniteMoney"] = async (node, ctx) =>
+            [NodeTypeId.Condition_NpcHasInfiniteMoney] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var npc = ctx.GameState.Npcs.FirstOrDefault(n =>
@@ -781,7 +789,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Condition_PlayerOwnsItem"] = async (node, ctx) =>
+            [NodeTypeId.Condition_PlayerOwnsItem] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var requiredQty = GetPropertyValue<int>(node, "Quantity", 1);
@@ -792,7 +800,7 @@ public class ScriptEngine
             },
 
             // === ACCIONES ===
-            ["Action_ShowMessage"] = async (node, ctx) =>
+            [NodeTypeId.Action_ShowMessage] = async (node, ctx) =>
             {
                 var message = GetPropertyValue<string>(node, "Message", "");
                 if (!string.IsNullOrEmpty(message))
@@ -802,7 +810,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_GiveItem"] = async (node, ctx) =>
+            [NodeTypeId.Action_GiveItem] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 if (!string.IsNullOrEmpty(objectId) &&
@@ -826,7 +834,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_RemoveItem"] = async (node, ctx) =>
+            [NodeTypeId.Action_RemoveItem] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 if (!string.IsNullOrEmpty(objectId))
@@ -837,7 +845,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_TeleportPlayer"] = async (node, ctx) =>
+            [NodeTypeId.Action_TeleportPlayer] = async (node, ctx) =>
             {
                 var roomId = GetPropertyValue<string>(node, "RoomId", "");
                 if (!string.IsNullOrEmpty(roomId))
@@ -848,7 +856,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetRoomIllumination"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetRoomIllumination] = async (node, ctx) =>
             {
                 var roomId = GetPropertyValue<string>(node, "RoomId", "");
                 var illuminated = GetPropertyValue<bool>(node, "IsIlluminated", true);
@@ -862,7 +870,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetRoomMusic"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetRoomMusic] = async (node, ctx) =>
             {
                 var roomId = GetPropertyValue<string>(node, "RoomId", "");
                 var musicId = GetPropertyValue<string>(node, "MusicId", "");
@@ -877,7 +885,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetRoomDescription"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetRoomDescription] = async (node, ctx) =>
             {
                 var roomId = GetPropertyValue<string>(node, "RoomId", "");
                 var description = GetPropertyValue<string>(node, "Description", "");
@@ -892,7 +900,7 @@ public class ScriptEngine
             },
 
             // === GAME STATE HANDLERS ===
-            ["Action_SetWeather"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetWeather] = async (node, ctx) =>
             {
                 var weatherStr = GetPropertyValue<string>(node, "Weather", "Despejado");
                 if (Enum.TryParse<WeatherType>(weatherStr, out var weather))
@@ -902,7 +910,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetGameHour"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetGameHour] = async (node, ctx) =>
             {
                 var hour = GetPropertyValue<int>(node, "Hour", 12);
                 var clampedHour = Math.Clamp(hour, 0, 23);
@@ -913,14 +921,14 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_AdvanceTime"] = async (node, ctx) =>
+            [NodeTypeId.Action_AdvanceTime] = async (node, ctx) =>
             {
                 var hours = GetPropertyValue<int>(node, "Hours", 1);
                 ctx.GameState.GameTime = ctx.GameState.GameTime.AddHours(hours);
                 await Task.CompletedTask;
             },
 
-            ["Action_MoveNpc"] = async (node, ctx) =>
+            [NodeTypeId.Action_MoveNpc] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var roomId = GetPropertyValue<string>(node, "RoomId", "");
@@ -951,7 +959,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetFlag"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetFlag] = async (node, ctx) =>
             {
                 var flagName = GetPropertyValue<string>(node, "FlagName", "");
                 var value = GetPropertyValue<bool>(node, "Value", true);
@@ -963,7 +971,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetCounter"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetCounter] = async (node, ctx) =>
             {
                 var counterName = GetPropertyValue<string>(node, "CounterName", "");
                 var value = GetPropertyValue<int>(node, "Value", 0);
@@ -975,7 +983,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_IncrementCounter"] = async (node, ctx) =>
+            [NodeTypeId.Action_IncrementCounter] = async (node, ctx) =>
             {
                 var counterName = GetPropertyValue<string>(node, "CounterName", "");
                 var amount = GetPropertyValue<int>(node, "Amount", 1);
@@ -988,7 +996,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_PlaySound"] = async (node, ctx) =>
+            [NodeTypeId.Action_PlaySound] = async (node, ctx) =>
             {
                 var soundId = GetPropertyValue<string>(node, "SoundId", "");
                 if (!string.IsNullOrEmpty(soundId))
@@ -998,7 +1006,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_StartQuest"] = async (node, ctx) =>
+            [NodeTypeId.Action_StartQuest] = async (node, ctx) =>
             {
                 var questId = GetPropertyValue<string>(node, "QuestId", "");
                 if (!string.IsNullOrEmpty(questId))
@@ -1019,7 +1027,7 @@ public class ScriptEngine
                 }
             },
 
-            ["Action_CompleteQuest"] = async (node, ctx) =>
+            [NodeTypeId.Action_CompleteQuest] = async (node, ctx) =>
             {
                 var questId = GetPropertyValue<string>(node, "QuestId", "");
                 if (!string.IsNullOrEmpty(questId) && ctx.GameState.Quests.TryGetValue(questId, out var state))
@@ -1048,7 +1056,7 @@ public class ScriptEngine
                 }
             },
 
-            ["Action_FailQuest"] = async (node, ctx) =>
+            [NodeTypeId.Action_FailQuest] = async (node, ctx) =>
             {
                 var questId = GetPropertyValue<string>(node, "QuestId", "");
                 if (!string.IsNullOrEmpty(questId) && ctx.GameState.Quests.TryGetValue(questId, out var state))
@@ -1064,7 +1072,7 @@ public class ScriptEngine
                 }
             },
 
-            ["Action_SetQuestStatus"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetQuestStatus] = async (node, ctx) =>
             {
                 var questId = GetPropertyValue<string>(node, "QuestId", "");
                 var statusStr = GetPropertyValue<string>(node, "Status", "InProgress");
@@ -1122,7 +1130,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_AdvanceObjective"] = async (node, ctx) =>
+            [NodeTypeId.Action_AdvanceObjective] = async (node, ctx) =>
             {
                 var questId = GetPropertyValue<string>(node, "QuestId", "");
                 if (!string.IsNullOrEmpty(questId) && ctx.GameState.Quests.TryGetValue(questId, out var state))
@@ -1140,7 +1148,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_OpenDoor"] = async (node, ctx) =>
+            [NodeTypeId.Action_OpenDoor] = async (node, ctx) =>
             {
                 var doorId = GetPropertyValue<string>(node, "DoorId", "");
                 var door = ctx.GameState.Doors.FirstOrDefault(d =>
@@ -1152,7 +1160,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_CloseDoor"] = async (node, ctx) =>
+            [NodeTypeId.Action_CloseDoor] = async (node, ctx) =>
             {
                 var doorId = GetPropertyValue<string>(node, "DoorId", "");
                 var door = ctx.GameState.Doors.FirstOrDefault(d =>
@@ -1164,7 +1172,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_LockDoor"] = async (node, ctx) =>
+            [NodeTypeId.Action_LockDoor] = async (node, ctx) =>
             {
                 var doorId = GetPropertyValue<string>(node, "DoorId", "");
                 var door = ctx.GameState.Doors.FirstOrDefault(d =>
@@ -1176,7 +1184,7 @@ public class ScriptEngine
                 }
             },
 
-            ["Action_UnlockDoor"] = async (node, ctx) =>
+            [NodeTypeId.Action_UnlockDoor] = async (node, ctx) =>
             {
                 var doorId = GetPropertyValue<string>(node, "DoorId", "");
                 var door = ctx.GameState.Doors.FirstOrDefault(d =>
@@ -1188,7 +1196,7 @@ public class ScriptEngine
                 }
             },
 
-            ["Action_SetDoorVisible"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetDoorVisible] = async (node, ctx) =>
             {
                 var doorId = GetPropertyValue<string>(node, "DoorId", "");
                 var visible = GetPropertyValue<bool>(node, "Visible", true);
@@ -1202,7 +1210,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetNpcVisible"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetNpcVisible] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var visible = GetPropertyValue<bool>(node, "Visible", true);
@@ -1216,7 +1224,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetObjectVisible"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetObjectVisible] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var visible = GetPropertyValue<bool>(node, "Visible", true);
@@ -1230,7 +1238,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetObjectTakeable"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetObjectTakeable] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var canTake = GetPropertyValue<bool>(node, "CanTake", true);
@@ -1244,7 +1252,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_OpenContainer"] = async (node, ctx) =>
+            [NodeTypeId.Action_OpenContainer] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var obj = ctx.GameState.Objects.FirstOrDefault(o =>
@@ -1256,7 +1264,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_CloseContainer"] = async (node, ctx) =>
+            [NodeTypeId.Action_CloseContainer] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var obj = ctx.GameState.Objects.FirstOrDefault(o =>
@@ -1268,7 +1276,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_LockContainer"] = async (node, ctx) =>
+            [NodeTypeId.Action_LockContainer] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var obj = ctx.GameState.Objects.FirstOrDefault(o =>
@@ -1280,7 +1288,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_UnlockContainer"] = async (node, ctx) =>
+            [NodeTypeId.Action_UnlockContainer] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var obj = ctx.GameState.Objects.FirstOrDefault(o =>
@@ -1292,7 +1300,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetContentsVisible"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetContentsVisible] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var visible = GetPropertyValue<bool>(node, "Visible", true);
@@ -1306,7 +1314,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetObjectPrice"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetObjectPrice] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var price = GetPropertyValue<int>(node, "Price", 0);
@@ -1320,7 +1328,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetObjectDurability"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetObjectDurability] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var durability = GetPropertyValue<int>(node, "Durability", 100);
@@ -1334,7 +1342,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_MoveObjectToRoom"] = async (node, ctx) =>
+            [NodeTypeId.Action_MoveObjectToRoom] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var roomId = GetPropertyValue<string>(node, "RoomId", "");
@@ -1369,7 +1377,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_PutObjectInContainer"] = async (node, ctx) =>
+            [NodeTypeId.Action_PutObjectInContainer] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var containerId = GetPropertyValue<string>(node, "ContainerId", "");
@@ -1404,7 +1412,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_RemoveObjectFromContainer"] = async (node, ctx) =>
+            [NodeTypeId.Action_RemoveObjectFromContainer] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var containerId = GetPropertyValue<string>(node, "ContainerId", "");
@@ -1421,7 +1429,7 @@ public class ScriptEngine
             },
 
             // === LIGHT SOURCE HANDLERS ===
-            ["Action_SetObjectLit"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetObjectLit] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var isLit = GetPropertyValue<bool>(node, "IsLit", true);
@@ -1435,7 +1443,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetLightTurns"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetLightTurns] = async (node, ctx) =>
             {
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
                 var turns = GetPropertyValue<int>(node, "Turns", -1);
@@ -1449,7 +1457,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_AddMoney"] = async (node, ctx) =>
+            [NodeTypeId.Action_AddMoney] = async (node, ctx) =>
             {
                 var amount = GetPropertyValue<int>(node, "Amount", 0);
                 ctx.GameState.Player.Money += amount;
@@ -1459,7 +1467,7 @@ public class ScriptEngine
                 }
             },
 
-            ["Action_RemoveMoney"] = async (node, ctx) =>
+            [NodeTypeId.Action_RemoveMoney] = async (node, ctx) =>
             {
                 var amount = GetPropertyValue<int>(node, "Amount", 0);
                 var hadMoney = ctx.GameState.Player.Money;
@@ -1471,7 +1479,7 @@ public class ScriptEngine
             },
 
             // === NPC PATROL HANDLERS ===
-            ["Action_StartPatrol"] = async (node, ctx) =>
+            [NodeTypeId.Action_StartPatrol] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var npc = ctx.GameState.Npcs.FirstOrDefault(n =>
@@ -1484,7 +1492,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_StopPatrol"] = async (node, ctx) =>
+            [NodeTypeId.Action_StopPatrol] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var npc = ctx.GameState.Npcs.FirstOrDefault(n =>
@@ -1496,7 +1504,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_PatrolStep"] = async (node, ctx) =>
+            [NodeTypeId.Action_PatrolStep] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var npc = ctx.GameState.Npcs.FirstOrDefault(n =>
@@ -1539,7 +1547,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetPatrolMode"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetPatrolMode] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var modeStr = GetPropertyValue<string>(node, "Mode", "Turns");
@@ -1561,7 +1569,7 @@ public class ScriptEngine
             },
 
             // === NPC FOLLOW HANDLERS ===
-            ["Action_FollowPlayer"] = async (node, ctx) =>
+            [NodeTypeId.Action_FollowPlayer] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var speed = GetPropertyValue<int>(node, "Speed", 1);
@@ -1576,7 +1584,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_StopFollowing"] = async (node, ctx) =>
+            [NodeTypeId.Action_StopFollowing] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var npc = ctx.GameState.Npcs.FirstOrDefault(n =>
@@ -1588,7 +1596,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetFollowMode"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetFollowMode] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var modeStr = GetPropertyValue<string>(node, "Mode", "Turns");
@@ -1609,7 +1617,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_StartConversation"] = async (node, ctx) =>
+            [NodeTypeId.Action_StartConversation] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 if (!string.IsNullOrEmpty(npcId))
@@ -1620,7 +1628,7 @@ public class ScriptEngine
             },
 
             // === CONTROL DE FLUJO ===
-            ["Flow_Branch"] = async (node, ctx) =>
+            [NodeTypeId.Flow_Branch] = async (node, ctx) =>
             {
                 // La condición se obtiene de un puerto de datos conectado
                 // Por ahora, usamos True por defecto
@@ -1628,7 +1636,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Flow_Sequence"] = async (node, ctx) =>
+            [NodeTypeId.Flow_Sequence] = async (node, ctx) =>
             {
                 // Ejecutar cada salida en orden
                 for (int i = 0; i < 3; i++)
@@ -1652,13 +1660,13 @@ public class ScriptEngine
                 ctx.NextOutputPort = null;
             },
 
-            ["Flow_Delay"] = async (node, ctx) =>
+            [NodeTypeId.Flow_Delay] = async (node, ctx) =>
             {
                 var seconds = GetPropertyValue<float>(node, "Seconds", 1.0f);
                 await Task.Delay(TimeSpan.FromSeconds(seconds));
             },
 
-            ["Flow_RandomBranch"] = async (node, ctx) =>
+            [NodeTypeId.Flow_RandomBranch] = async (node, ctx) =>
             {
                 var randomOutput = _random.Next(3);
                 ctx.NextOutputPort = $"Out{randomOutput}";
@@ -1666,91 +1674,91 @@ public class ScriptEngine
             },
 
             // === VARIABLES ===
-            ["Variable_GetFlag"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetFlag] = async (node, ctx) =>
             {
                 // Las variables no afectan el flujo directamente
                 await Task.CompletedTask;
             },
 
-            ["Variable_GetCounter"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetCounter] = async (node, ctx) =>
             {
                 await Task.CompletedTask;
             },
 
-            ["Variable_GetCurrentRoom"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetCurrentRoom] = async (node, ctx) =>
             {
                 await Task.CompletedTask;
             },
 
-            ["Variable_GetGameHour"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetGameHour] = async (node, ctx) =>
             {
                 await Task.CompletedTask;
             },
 
-            ["Variable_GetPlayerMoney"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetPlayerMoney] = async (node, ctx) =>
             {
                 await Task.CompletedTask;
             },
 
             // === VARIABLES DE ESTADOS DINÁMICOS ===
-            ["Variable_GetPlayerHealth"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetPlayerHealth] = async (node, ctx) =>
             {
                 ctx.SetOutputValue(node.Id, "Value", ctx.GameState.Player.DynamicStats.Health);
                 await Task.CompletedTask;
             },
-            ["Variable_GetPlayerMaxHealth"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetPlayerMaxHealth] = async (node, ctx) =>
             {
                 ctx.SetOutputValue(node.Id, "Value", ctx.GameState.Player.DynamicStats.MaxHealth);
                 await Task.CompletedTask;
             },
-            ["Variable_GetPlayerHunger"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetPlayerHunger] = async (node, ctx) =>
             {
                 ctx.SetOutputValue(node.Id, "Value", ctx.GameState.Player.DynamicStats.Hunger);
                 await Task.CompletedTask;
             },
-            ["Variable_GetPlayerThirst"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetPlayerThirst] = async (node, ctx) =>
             {
                 ctx.SetOutputValue(node.Id, "Value", ctx.GameState.Player.DynamicStats.Thirst);
                 await Task.CompletedTask;
             },
-            ["Variable_GetPlayerEnergy"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetPlayerEnergy] = async (node, ctx) =>
             {
                 ctx.SetOutputValue(node.Id, "Value", ctx.GameState.Player.DynamicStats.Energy);
                 await Task.CompletedTask;
             },
-            ["Variable_GetPlayerSleep"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetPlayerSleep] = async (node, ctx) =>
             {
                 ctx.SetOutputValue(node.Id, "Value", ctx.GameState.Player.DynamicStats.Sleep);
                 await Task.CompletedTask;
             },
-            ["Variable_GetPlayerSanity"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetPlayerSanity] = async (node, ctx) =>
             {
                 ctx.SetOutputValue(node.Id, "Value", ctx.GameState.Player.DynamicStats.Sanity);
                 await Task.CompletedTask;
             },
-            ["Variable_GetPlayerMana"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetPlayerMana] = async (node, ctx) =>
             {
                 ctx.SetOutputValue(node.Id, "Value", ctx.GameState.Player.DynamicStats.Mana);
                 await Task.CompletedTask;
             },
-            ["Variable_GetPlayerMaxMana"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetPlayerMaxMana] = async (node, ctx) =>
             {
                 ctx.SetOutputValue(node.Id, "Value", ctx.GameState.Player.DynamicStats.MaxMana);
                 await Task.CompletedTask;
             },
-            ["Variable_GetPlayerState"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetPlayerState] = async (node, ctx) =>
             {
                 var stateType = GetPropertyValue<string>(node, "StateType", "Health");
                 var value = GetPlayerStateValue(ctx.GameState, stateType ?? "Health");
                 ctx.SetOutputValue(node.Id, "Value", value);
                 await Task.CompletedTask;
             },
-            ["Variable_GetActiveModifiersCount"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetActiveModifiersCount] = async (node, ctx) =>
             {
                 ctx.SetOutputValue(node.Id, "Value", ctx.GameState.ActiveModifiers.Count(m => !m.IsExpired));
                 await Task.CompletedTask;
             },
-            ["Variable_HasModifier"] = async (node, ctx) =>
+            [NodeTypeId.Variable_HasModifier] = async (node, ctx) =>
             {
                 var name = GetPropertyValue<string>(node, "ModifierName", "");
                 var hasIt = ctx.GameState.ActiveModifiers.Any(m =>
@@ -1760,7 +1768,7 @@ public class ScriptEngine
             },
 
             // === CONDICIONES DE ESTADOS ===
-            ["Condition_PlayerStateAbove"] = async (node, ctx) =>
+            [NodeTypeId.Condition_PlayerStateAbove] = async (node, ctx) =>
             {
                 var stateType = GetPropertyValue<string>(node, "StateType", "Health");
                 var threshold = GetPropertyValue<int>(node, "Threshold", 50);
@@ -1768,7 +1776,7 @@ public class ScriptEngine
                 ctx.NextOutputPort = value > threshold ? "True" : "False";
                 await Task.CompletedTask;
             },
-            ["Condition_PlayerStateBelow"] = async (node, ctx) =>
+            [NodeTypeId.Condition_PlayerStateBelow] = async (node, ctx) =>
             {
                 var stateType = GetPropertyValue<string>(node, "StateType", "Health");
                 var threshold = GetPropertyValue<int>(node, "Threshold", 25);
@@ -1776,7 +1784,7 @@ public class ScriptEngine
                 ctx.NextOutputPort = value < threshold ? "True" : "False";
                 await Task.CompletedTask;
             },
-            ["Condition_PlayerStateEquals"] = async (node, ctx) =>
+            [NodeTypeId.Condition_PlayerStateEquals] = async (node, ctx) =>
             {
                 var stateType = GetPropertyValue<string>(node, "StateType", "Health");
                 var targetValue = GetPropertyValue<int>(node, "Value", 100);
@@ -1784,7 +1792,7 @@ public class ScriptEngine
                 ctx.NextOutputPort = value == targetValue ? "True" : "False";
                 await Task.CompletedTask;
             },
-            ["Condition_PlayerStateBetween"] = async (node, ctx) =>
+            [NodeTypeId.Condition_PlayerStateBetween] = async (node, ctx) =>
             {
                 var stateType = GetPropertyValue<string>(node, "StateType", "Health");
                 var minValue = GetPropertyValue<int>(node, "MinValue", 25);
@@ -1793,7 +1801,7 @@ public class ScriptEngine
                 ctx.NextOutputPort = value >= minValue && value <= maxValue ? "True" : "False";
                 await Task.CompletedTask;
             },
-            ["Condition_HasModifier"] = async (node, ctx) =>
+            [NodeTypeId.Condition_HasModifier] = async (node, ctx) =>
             {
                 var name = GetPropertyValue<string>(node, "ModifierName", "");
                 var hasIt = ctx.GameState.ActiveModifiers.Any(m =>
@@ -1801,7 +1809,7 @@ public class ScriptEngine
                 ctx.NextOutputPort = hasIt ? "True" : "False";
                 await Task.CompletedTask;
             },
-            ["Condition_HasModifierForState"] = async (node, ctx) =>
+            [NodeTypeId.Condition_HasModifierForState] = async (node, ctx) =>
             {
                 var stateType = GetPropertyValue<string>(node, "StateType", "Health");
                 if (Enum.TryParse<PlayerStateType>(stateType, out var st))
@@ -1815,21 +1823,21 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Condition_IsPlayerAlive"] = async (node, ctx) =>
+            [NodeTypeId.Condition_IsPlayerAlive] = async (node, ctx) =>
             {
                 ctx.NextOutputPort = ctx.GameState.Player.DynamicStats.Health > 0 ? "True" : "False";
                 await Task.CompletedTask;
             },
 
             // === ACCIONES DE ESTADOS ===
-            ["Action_SetPlayerState"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetPlayerState] = async (node, ctx) =>
             {
                 var stateType = GetPropertyValue<string>(node, "StateType", "Health");
                 var value = GetPropertyValue<int>(node, "Value", 100);
                 SetPlayerStateValue(ctx.GameState, stateType ?? "Health", value);
                 await Task.CompletedTask;
             },
-            ["Action_ModifyPlayerState"] = async (node, ctx) =>
+            [NodeTypeId.Action_ModifyPlayerState] = async (node, ctx) =>
             {
                 var stateType = GetPropertyValue<string>(node, "StateType", "Health");
                 var amount = GetPropertyValue<int>(node, "Amount", 10);
@@ -1837,14 +1845,14 @@ public class ScriptEngine
                 SetPlayerStateValue(ctx.GameState, stateType ?? "Health", current + amount);
                 await Task.CompletedTask;
             },
-            ["Action_HealPlayer"] = async (node, ctx) =>
+            [NodeTypeId.Action_HealPlayer] = async (node, ctx) =>
             {
                 var amount = GetPropertyValue<int>(node, "Amount", 25);
                 var stats = ctx.GameState.Player.DynamicStats;
                 stats.Health = Math.Min(stats.MaxHealth, stats.Health + amount);
                 await Task.CompletedTask;
             },
-            ["Action_DamagePlayer"] = async (node, ctx) =>
+            [NodeTypeId.Action_DamagePlayer] = async (node, ctx) =>
             {
                 var amount = GetPropertyValue<int>(node, "Amount", 10);
                 var stats = ctx.GameState.Player.DynamicStats;
@@ -1856,14 +1864,14 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_RestoreMana"] = async (node, ctx) =>
+            [NodeTypeId.Action_RestoreMana] = async (node, ctx) =>
             {
                 var amount = GetPropertyValue<int>(node, "Amount", 25);
                 var stats = ctx.GameState.Player.DynamicStats;
                 stats.Mana = Math.Min(stats.MaxMana, stats.Mana + amount);
                 await Task.CompletedTask;
             },
-            ["Action_ConsumeMana"] = async (node, ctx) =>
+            [NodeTypeId.Action_ConsumeMana] = async (node, ctx) =>
             {
                 var amount = GetPropertyValue<int>(node, "Amount", 10);
                 var stats = ctx.GameState.Player.DynamicStats;
@@ -1879,7 +1887,7 @@ public class ScriptEngine
             },
 
             // === NPC COMBAT ACTIONS ===
-            ["Action_StartCombat"] = async (node, ctx) =>
+            [NodeTypeId.Action_StartCombat] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 if (!string.IsNullOrEmpty(npcId))
@@ -1892,7 +1900,7 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_DamageNpc"] = async (node, ctx) =>
+            [NodeTypeId.Action_DamageNpc] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var amount = GetPropertyValue<int>(node, "Amount", 10);
@@ -1910,7 +1918,7 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_HealNpc"] = async (node, ctx) =>
+            [NodeTypeId.Action_HealNpc] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var amount = GetPropertyValue<int>(node, "Amount", 10);
@@ -1922,7 +1930,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetNpcMaxHealth"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetNpcMaxHealth] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var maxHealth = GetPropertyValue<int>(node, "MaxHealth", 100);
@@ -1937,7 +1945,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_ReviveNpc"] = async (node, ctx) =>
+            [NodeTypeId.Action_ReviveNpc] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var healthPercent = GetPropertyValue<int>(node, "HealthPercent", 100);
@@ -1953,7 +1961,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_KillNpc"] = async (node, ctx) =>
+            [NodeTypeId.Action_KillNpc] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var npc = ctx.GameState.Npcs.FirstOrDefault(n =>
@@ -1966,7 +1974,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetPatrolRoute"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetPatrolRoute] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var routeStr = GetPropertyValue<string>(node, "Route", "");
@@ -1985,7 +1993,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_AddItemToNpcInventory"] = async (node, ctx) =>
+            [NodeTypeId.Action_AddItemToNpcInventory] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
@@ -2002,7 +2010,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_RemoveItemFromNpcInventory"] = async (node, ctx) =>
+            [NodeTypeId.Action_RemoveItemFromNpcInventory] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
@@ -2018,7 +2026,7 @@ public class ScriptEngine
             },
 
             // === ACCIONES DE COMBATE ADICIONALES ===
-            ["Action_SetPlayerMaxHealth"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetPlayerMaxHealth] = async (node, ctx) =>
             {
                 var maxHealth = GetPropertyValue<int>(node, "MaxHealth", 100);
                 ctx.GameState.Player.DynamicStats.MaxHealth = maxHealth;
@@ -2026,7 +2034,7 @@ public class ScriptEngine
                     ctx.GameState.Player.DynamicStats.Health = maxHealth;
                 await Task.CompletedTask;
             },
-            ["Action_SetNpcAttack"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetNpcAttack] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var attack = GetPropertyValue<int>(node, "Attack", 10);
@@ -2039,7 +2047,7 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_SetNpcDefense"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetNpcDefense] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var defense = GetPropertyValue<int>(node, "Defense", 5);
@@ -2052,7 +2060,7 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_EndCombatVictory"] = async (node, ctx) =>
+            [NodeTypeId.Action_EndCombatVictory] = async (node, ctx) =>
             {
                 if (ctx.GameState.ActiveCombat?.IsActive == true)
                 {
@@ -2061,7 +2069,7 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_EndCombatDefeat"] = async (node, ctx) =>
+            [NodeTypeId.Action_EndCombatDefeat] = async (node, ctx) =>
             {
                 if (ctx.GameState.ActiveCombat?.IsActive == true)
                 {
@@ -2070,7 +2078,7 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_ForceFlee"] = async (node, ctx) =>
+            [NodeTypeId.Action_ForceFlee] = async (node, ctx) =>
             {
                 if (ctx.GameState.ActiveCombat?.IsActive == true)
                 {
@@ -2081,7 +2089,7 @@ public class ScriptEngine
             },
 
             // === ACCIONES DE COMERCIO ===
-            ["Action_OpenTrade"] = async (node, ctx) =>
+            [NodeTypeId.Action_OpenTrade] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var npc = ctx.GameState.Npcs.FirstOrDefault(n =>
@@ -2093,13 +2101,13 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_CloseTrade"] = async (node, ctx) =>
+            [NodeTypeId.Action_CloseTrade] = async (node, ctx) =>
             {
                 // Trade close is handled externally by TradeEngine/TradeWindow
                 // This action just signals intent - actual close happens in UI layer
                 await Task.CompletedTask;
             },
-            ["Action_AddPlayerMoney"] = async (node, ctx) =>
+            [NodeTypeId.Action_AddPlayerMoney] = async (node, ctx) =>
             {
                 var amount = GetPropertyValue<int>(node, "Amount", 100);
                 ctx.GameState.Player.Money += amount;
@@ -2108,7 +2116,7 @@ public class ScriptEngine
                     await TriggerEventAsync("Game", ctx.World.Game?.Id ?? "game", "Event_OnMoneyGained");
                 }
             },
-            ["Action_RemovePlayerMoney"] = async (node, ctx) =>
+            [NodeTypeId.Action_RemovePlayerMoney] = async (node, ctx) =>
             {
                 var amount = GetPropertyValue<int>(node, "Amount", 100);
                 if (ctx.GameState.Player.Money >= amount)
@@ -2121,7 +2129,7 @@ public class ScriptEngine
                     ctx.NextOutputPort = "OnInsufficient";
                 }
             },
-            ["Action_SetNpcMoney"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetNpcMoney] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var money = GetPropertyValue<int>(node, "Money", -1);
@@ -2133,7 +2141,7 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_AddNpcItem"] = async (node, ctx) =>
+            [NodeTypeId.Action_AddNpcItem] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
@@ -2147,7 +2155,7 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_RemoveNpcItem"] = async (node, ctx) =>
+            [NodeTypeId.Action_RemoveNpcItem] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var objectId = GetPropertyValue<string>(node, "ObjectId", "");
@@ -2160,7 +2168,7 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_SetBuyMultiplier"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetBuyMultiplier] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var multiplier = GetPropertyValue<double>(node, "Multiplier", 0.5);
@@ -2172,7 +2180,7 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_SetSellMultiplier"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetSellMultiplier] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var multiplier = GetPropertyValue<double>(node, "Multiplier", 1.0);
@@ -2186,7 +2194,7 @@ public class ScriptEngine
             },
 
             // === HABILIDADES DE COMBATE ===
-            ["Action_AddAbility"] = async (node, ctx) =>
+            [NodeTypeId.Action_AddAbility] = async (node, ctx) =>
             {
                 var abilityId = GetPropertyValue<string>(node, "AbilityId", "");
                 if (!string.IsNullOrEmpty(abilityId) && !ctx.GameState.Player.AbilityIds.Contains(abilityId))
@@ -2195,7 +2203,7 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_RemoveAbility"] = async (node, ctx) =>
+            [NodeTypeId.Action_RemoveAbility] = async (node, ctx) =>
             {
                 var abilityId = GetPropertyValue<string>(node, "AbilityId", "");
                 if (!string.IsNullOrEmpty(abilityId))
@@ -2204,7 +2212,7 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_AddAbilityToNpc"] = async (node, ctx) =>
+            [NodeTypeId.Action_AddAbilityToNpc] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var abilityId = GetPropertyValue<string>(node, "AbilityId", "");
@@ -2215,7 +2223,7 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_RemoveAbilityFromNpc"] = async (node, ctx) =>
+            [NodeTypeId.Action_RemoveAbilityFromNpc] = async (node, ctx) =>
             {
                 var npcId = GetPropertyValue<string>(node, "NpcId", "");
                 var abilityId = GetPropertyValue<string>(node, "AbilityId", "");
@@ -2227,28 +2235,28 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_FeedPlayer"] = async (node, ctx) =>
+            [NodeTypeId.Action_FeedPlayer] = async (node, ctx) =>
             {
                 var amount = GetPropertyValue<int>(node, "Amount", 25);
                 var stats = ctx.GameState.Player.DynamicStats;
                 stats.Hunger = Math.Max(0, stats.Hunger - amount);
                 await Task.CompletedTask;
             },
-            ["Action_HydratePlayer"] = async (node, ctx) =>
+            [NodeTypeId.Action_HydratePlayer] = async (node, ctx) =>
             {
                 var amount = GetPropertyValue<int>(node, "Amount", 25);
                 var stats = ctx.GameState.Player.DynamicStats;
                 stats.Thirst = Math.Max(0, stats.Thirst - amount);
                 await Task.CompletedTask;
             },
-            ["Action_RestPlayer"] = async (node, ctx) =>
+            [NodeTypeId.Action_RestPlayer] = async (node, ctx) =>
             {
                 var amount = GetPropertyValue<int>(node, "Amount", 50);
                 var stats = ctx.GameState.Player.DynamicStats;
                 stats.Energy = Math.Min(100, stats.Energy + amount);
                 await Task.CompletedTask;
             },
-            ["Action_RestoreAllStats"] = async (node, ctx) =>
+            [NodeTypeId.Action_RestoreAllStats] = async (node, ctx) =>
             {
                 var stats = ctx.GameState.Player.DynamicStats;
                 stats.Health = stats.MaxHealth;
@@ -2261,7 +2269,7 @@ public class ScriptEngine
             },
 
             // === MODIFICADORES TEMPORALES ===
-            ["Action_ApplyModifier"] = async (node, ctx) =>
+            [NodeTypeId.Action_ApplyModifier] = async (node, ctx) =>
             {
                 var name = GetPropertyValue<string>(node, "ModifierName", "");
                 var stateTypeStr = GetPropertyValue<string>(node, "StateType", "Health");
@@ -2295,7 +2303,7 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_RemoveModifier"] = async (node, ctx) =>
+            [NodeTypeId.Action_RemoveModifier] = async (node, ctx) =>
             {
                 var name = GetPropertyValue<string>(node, "ModifierName", "");
                 if (!string.IsNullOrEmpty(name))
@@ -2306,7 +2314,7 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_RemoveModifiersByState"] = async (node, ctx) =>
+            [NodeTypeId.Action_RemoveModifiersByState] = async (node, ctx) =>
             {
                 var stateTypeStr = GetPropertyValue<string>(node, "StateType", "Health");
                 if (Enum.TryParse<PlayerStateType>(stateTypeStr, out var stateType))
@@ -2316,13 +2324,13 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Action_RemoveAllModifiers"] = async (node, ctx) =>
+            [NodeTypeId.Action_RemoveAllModifiers] = async (node, ctx) =>
             {
                 ctx.GameState.ActiveModifiers.Clear();
                 DebugMessage("[Debug] Todos los modificadores eliminados");
                 await Task.CompletedTask;
             },
-            ["Action_ProcessModifiers"] = async (node, ctx) =>
+            [NodeTypeId.Action_ProcessModifiers] = async (node, ctx) =>
             {
                 var playerDied = false;
                 var expiredModifiers = new List<TemporaryModifier>();
@@ -2371,43 +2379,43 @@ public class ScriptEngine
             },
 
             // === EVENTOS DE ESTADOS (entry points) ===
-            ["Event_OnPlayerDeath"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnHealthLow"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnHealthCritical"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnHungerHigh"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnThirstHigh"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnEnergyLow"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnSleepHigh"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnSleep"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnWakeUp"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnWakeUpStartled"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnEat"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnDrink"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnSanityLow"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnManaLow"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnStateThreshold"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnModifierApplied"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnModifierExpired"] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnPlayerDeath] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnHealthLow] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnHealthCritical] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnHungerHigh] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnThirstHigh] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnEnergyLow] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnSleepHigh] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnSleep] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnWakeUp] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnWakeUpStartled] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnEat] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnDrink] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnSanityLow] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnManaLow] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnStateThreshold] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnModifierApplied] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnModifierExpired] = async (node, ctx) => { await Task.CompletedTask; },
 
             // === EVENTOS DE COMBATE (entry points) ===
-            ["Event_OnCombatStart"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnCombatVictory"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnCombatDefeat"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnCombatFlee"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnPlayerAttack"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnNpcTurn"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnPlayerDefend"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnCriticalHit"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnMiss"] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnCombatStart] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnCombatVictory] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnCombatDefeat] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnCombatFlee] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnPlayerAttack] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnNpcTurn] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnPlayerDefend] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnCriticalHit] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnMiss] = async (node, ctx) => { await Task.CompletedTask; },
 
             // === EVENTOS DE COMERCIO (entry points) ===
-            ["Event_OnTradeStart"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnTradeEnd"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnItemBought"] = async (node, ctx) => { await Task.CompletedTask; },
-            ["Event_OnItemSold"] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnTradeStart] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnTradeEnd] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnItemBought] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnItemSold] = async (node, ctx) => { await Task.CompletedTask; },
 
             // === VELOCIDAD DE NECESIDADES ===
-            ["Action_SetNeedRate"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetNeedRate] = async (node, ctx) =>
             {
                 var needType = GetPropertyValue<string>(node, "NeedType", "Hunger");
                 var rateStr = GetPropertyValue<string>(node, "Rate", "Normal");
@@ -2430,7 +2438,7 @@ public class ScriptEngine
                 }
                 await Task.CompletedTask;
             },
-            ["Variable_GetNeedRate"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetNeedRate] = async (node, ctx) =>
             {
                 var needType = GetPropertyValue<string>(node, "NeedType", "Hunger");
                 var rate = needType switch
@@ -2445,7 +2453,7 @@ public class ScriptEngine
             },
 
             // === ACCESO GENÉRICO A PROPIEDADES ===
-            ["Condition_CompareProperty"] = async (node, ctx) =>
+            [NodeTypeId.Condition_CompareProperty] = async (node, ctx) =>
             {
                 var entityType = GetPropertyValue<string>(node, "EntityType", "");
                 var entityId = GetPropertyValue<string>(node, "EntityId", "");
@@ -2460,7 +2468,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_SetProperty"] = async (node, ctx) =>
+            [NodeTypeId.Action_SetProperty] = async (node, ctx) =>
             {
                 var entityType = GetPropertyValue<string>(node, "EntityType", "");
                 var entityId = GetPropertyValue<string>(node, "EntityId", "");
@@ -2484,7 +2492,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Action_ModifyProperty"] = async (node, ctx) =>
+            [NodeTypeId.Action_ModifyProperty] = async (node, ctx) =>
             {
                 var entityType = GetPropertyValue<string>(node, "EntityType", "");
                 var entityId = GetPropertyValue<string>(node, "EntityId", "");
@@ -2519,7 +2527,7 @@ public class ScriptEngine
                 await Task.CompletedTask;
             },
 
-            ["Variable_GetProperty"] = async (node, ctx) =>
+            [NodeTypeId.Variable_GetProperty] = async (node, ctx) =>
             {
                 var entityType = GetPropertyValue<string>(node, "EntityType", "");
                 var entityId = GetPropertyValue<string>(node, "EntityId", "");
@@ -2531,7 +2539,7 @@ public class ScriptEngine
             },
 
             // Evento de cambio de propiedad (entry point)
-            ["Event_OnPropertyChanged"] = async (node, ctx) => { await Task.CompletedTask; }
+            [NodeTypeId.Event_OnPropertyChanged] = async (node, ctx) => { await Task.CompletedTask; }
         };
     }
 
@@ -2543,7 +2551,7 @@ public class ScriptEngine
         // Buscar scripts que tengan Event_OnPropertyChanged para este tipo de entidad y propiedad
         var scripts = _world.Scripts.Where(s =>
             s.Nodes.Any(n =>
-                n.NodeType == "Event_OnPropertyChanged" &&
+                n.NodeType == NodeTypeId.Event_OnPropertyChanged &&
                 string.Equals(n.Properties.TryGetValue("EntityType", out var et) ? et?.ToString() : "", entityType, StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(n.Properties.TryGetValue("PropertyName", out var pn) ? pn?.ToString() : "", propertyName, StringComparison.OrdinalIgnoreCase)
             )).ToList();
@@ -2551,7 +2559,7 @@ public class ScriptEngine
         foreach (var script in scripts)
         {
             var eventNode = script.Nodes.FirstOrDefault(n =>
-                n.NodeType == "Event_OnPropertyChanged" &&
+                n.NodeType == NodeTypeId.Event_OnPropertyChanged &&
                 string.Equals(n.Properties.TryGetValue("EntityType", out var et) ? et?.ToString() : "", entityType, StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(n.Properties.TryGetValue("PropertyName", out var pn) ? pn?.ToString() : "", propertyName, StringComparison.OrdinalIgnoreCase));
 

@@ -3,6 +3,8 @@ using System.IO;
 using XiloAdventures.Wpf.Common.Ui;
 using Xunit;
 
+using XiloAdventures.Engine.Models.Enums;
+
 namespace XiloAdventures.Tests;
 
 public class UiSettingsManagerTests

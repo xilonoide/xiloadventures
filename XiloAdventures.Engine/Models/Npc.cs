@@ -31,14 +31,6 @@ public class Npc
     /// </summary>
     public string? RoomId { get; set; }
 
-    /// <summary>
-    /// ID de la conversación principal del NPC.
-    /// Obsoleto: las conversaciones ahora se editan en el script del NPC.
-    /// </summary>
-    [Browsable(false)]
-    [Obsolete("Use scripts instead of ConversationId")]
-    public string? ConversationId { get; set; }
-
     #region Shop Properties
 
     /// <summary>
@@ -206,47 +198,4 @@ public class Npc
     /// Controla si el jugador puede ver / interactuar con el NPC en la sala.
     /// </summary>
     public bool Visible { get; set; } = true;
-}
-
-/// <summary>
-/// Estadísticas de combate para NPCs.
-/// </summary>
-public class CombatStats
-{
-    /// <summary>
-    /// Fuerza (afecta daño físico).
-    /// </summary>
-    public int Strength { get; set; } = 5;
-
-    /// <summary>
-    /// Destreza (afecta precisión y evasión).
-    /// </summary>
-    public int Dexterity { get; set; } = 5;
-
-    /// <summary>
-    /// Inteligencia (afecta daño mágico).
-    /// </summary>
-    public int Intelligence { get; set; } = 5;
-
-    /// <summary>
-    /// Salud máxima del NPC.
-    /// </summary>
-    public int MaxHealth { get; set; } = 10;
-
-    /// <summary>
-    /// Salud actual del NPC.
-    /// </summary>
-    public int CurrentHealth { get; set; } = 10;
-}
-
-/// <summary>
-/// Representa un objeto en el inventario de tienda de un NPC.
-/// </summary>
-public class ShopItem
-{
-    /// <summary>ID del objeto que se vende.</summary>
-    public string ObjectId { get; set; } = string.Empty;
-
-    /// <summary>Cantidad disponible. -1 = infinito.</summary>
-    public int Quantity { get; set; } = -1;
 }

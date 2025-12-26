@@ -135,7 +135,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Condition_PlayerHasMoney",
+            NodeType = NodeTypeId.Condition_PlayerHasMoney,
             Properties = new Dictionary<string, object?>
             {
                 ["Amount"] = 300
@@ -160,7 +160,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Condition_PlayerHasMoney",
+            NodeType = NodeTypeId.Condition_PlayerHasMoney,
             Properties = new Dictionary<string, object?>
             {
                 ["Amount"] = 300
@@ -183,7 +183,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Condition_NpcHasMoney",
+            NodeType = NodeTypeId.Condition_NpcHasMoney,
             Properties = new Dictionary<string, object?>
             {
                 ["NpcId"] = "merchant",
@@ -207,7 +207,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Condition_NpcHasInfiniteMoney",
+            NodeType = NodeTypeId.Condition_NpcHasInfiniteMoney,
             Properties = new Dictionary<string, object?>
             {
                 ["NpcId"] = "merchant"
@@ -231,7 +231,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Condition_PlayerOwnsItem",
+            NodeType = NodeTypeId.Condition_PlayerOwnsItem,
             Properties = new Dictionary<string, object?>
             {
                 ["ObjectId"] = "potion",
@@ -258,7 +258,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Action_AddPlayerMoney",
+            NodeType = NodeTypeId.Action_AddPlayerMoney,
             Properties = new Dictionary<string, object?>
             {
                 ["Amount"] = 50
@@ -283,7 +283,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Action_RemovePlayerMoney",
+            NodeType = NodeTypeId.Action_RemovePlayerMoney,
             Properties = new Dictionary<string, object?>
             {
                 ["Amount"] = 30
@@ -308,7 +308,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Action_RemovePlayerMoney",
+            NodeType = NodeTypeId.Action_RemovePlayerMoney,
             Properties = new Dictionary<string, object?>
             {
                 ["Amount"] = 100
@@ -334,7 +334,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Action_SetNpcMoney",
+            NodeType = NodeTypeId.Action_SetNpcMoney,
             Properties = new Dictionary<string, object?>
             {
                 ["NpcId"] = "merchant",
@@ -361,7 +361,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Action_SetNpcMoney",
+            NodeType = NodeTypeId.Action_SetNpcMoney,
             Properties = new Dictionary<string, object?>
             {
                 ["NpcId"] = "merchant",
@@ -387,7 +387,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Action_AddNpcItem",
+            NodeType = NodeTypeId.Action_AddNpcItem,
             Properties = new Dictionary<string, object?>
             {
                 ["NpcId"] = "merchant",
@@ -414,7 +414,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Action_RemoveNpcItem",
+            NodeType = NodeTypeId.Action_RemoveNpcItem,
             Properties = new Dictionary<string, object?>
             {
                 ["NpcId"] = "merchant",
@@ -440,7 +440,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Action_SetBuyMultiplier",
+            NodeType = NodeTypeId.Action_SetBuyMultiplier,
             Properties = new Dictionary<string, object?>
             {
                 ["NpcId"] = "merchant",
@@ -466,7 +466,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Action_SetSellMultiplier",
+            NodeType = NodeTypeId.Action_SetSellMultiplier,
             Properties = new Dictionary<string, object?>
             {
                 ["NpcId"] = "merchant",
@@ -497,7 +497,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Condition_PlayerHealthBelow",
+            NodeType = NodeTypeId.Condition_PlayerHealthBelow,
             Properties = new Dictionary<string, object?>
             {
                 ["Threshold"] = 50
@@ -520,7 +520,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Condition_PlayerHealthAbove",
+            NodeType = NodeTypeId.Condition_PlayerHealthAbove,
             Properties = new Dictionary<string, object?>
             {
                 ["Threshold"] = 50
@@ -542,7 +542,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Condition_PlayerHasArmor",
+            NodeType = NodeTypeId.Condition_PlayerHasArmor,
             Properties = new Dictionary<string, object?>()
         };
 
@@ -561,7 +561,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Condition_PlayerHasWeaponType",
+            NodeType = NodeTypeId.Condition_PlayerHasWeaponType,
             Properties = new Dictionary<string, object?>
             {
                 ["DamageType"] = "Magical"
@@ -586,7 +586,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Action_SetPlayerMaxHealth",
+            NodeType = NodeTypeId.Action_SetPlayerMaxHealth,
             Properties = new Dictionary<string, object?>
             {
                 ["MaxHealth"] = 150
@@ -612,7 +612,7 @@ public class ScriptEngineTradeTests
         var node = new ScriptNode
         {
             Id = "test_node",
-            NodeType = "Action_SetPlayerMaxHealth",
+            NodeType = NodeTypeId.Action_SetPlayerMaxHealth,
             Properties = new Dictionary<string, object?>
             {
                 ["MaxHealth"] = 50

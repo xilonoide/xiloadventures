@@ -61,13 +61,3 @@ public class Door
     /// </summary>
     public List<QuestRequirement> RequiredQuests { get; set; } = new();
 }
-
-/// <summary>
-/// Lado desde el que se puede accionar la puerta.
-/// </summary>
-public enum DoorOpenSide
-{
-    Both = 0,
-    FromAOnly = 1,
-    FromBOnly = 2
-}

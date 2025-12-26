@@ -54,8 +54,8 @@ public class PlayerStateNodeTests
     }
 
     private static ScriptDefinition CreateScript(
-        string eventType,
-        string actionType,
+        NodeTypeId eventType,
+        NodeTypeId actionType,
         Dictionary<string, object?>? actionProps = null)
     {
         return new ScriptDefinition
@@ -94,7 +94,7 @@ public class PlayerStateNodeTests
     }
 
     private static ScriptDefinition CreateConditionScript(
-        string conditionType,
+        NodeTypeId conditionType,
         Dictionary<string, object?>? conditionProps = null)
     {
         return new ScriptDefinition
@@ -107,7 +107,7 @@ public class PlayerStateNodeTests
                 new ScriptNode
                 {
                     Id = "event_node",
-                    NodeType = "Event_OnGameStart",
+                    NodeType = NodeTypeId.Event_OnGameStart,
                     Category = NodeCategory.Event,
                     Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 },
@@ -121,7 +121,7 @@ public class PlayerStateNodeTests
                 new ScriptNode
                 {
                     Id = "action_true",
-                    NodeType = "Action_SetFlag",
+                    NodeType = NodeTypeId.Action_SetFlag,
                     Category = NodeCategory.Action,
                     Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                     {
@@ -132,7 +132,7 @@ public class PlayerStateNodeTests
                 new ScriptNode
                 {
                     Id = "action_false",
-                    NodeType = "Action_SetFlag",
+                    NodeType = NodeTypeId.Action_SetFlag,
                     Category = NodeCategory.Action,
                     Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                     {
@@ -184,10 +184,10 @@ public class PlayerStateNodeTests
             ["Amount"] = 30
         };
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_HealPlayer", actionProps));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_HealPlayer, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(80, state.Player.DynamicStats.Health);
     }
@@ -204,10 +204,10 @@ public class PlayerStateNodeTests
             ["Amount"] = 50
         };
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_HealPlayer", actionProps));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_HealPlayer, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(100, state.Player.DynamicStats.Health);
     }
@@ -227,10 +227,10 @@ public class PlayerStateNodeTests
             ["Amount"] = 25
         };
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_DamagePlayer", actionProps));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_DamagePlayer, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(75, state.Player.DynamicStats.Health);
     }
@@ -246,10 +246,10 @@ public class PlayerStateNodeTests
             ["Amount"] = 50
         };
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_DamagePlayer", actionProps));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_DamagePlayer, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(0, state.Player.DynamicStats.Health);
     }
@@ -265,13 +265,13 @@ public class PlayerStateNodeTests
             ["Amount"] = 20
         };
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_DamagePlayer", actionProps));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_DamagePlayer, actionProps));
 
         var engine = new ScriptEngine(world, state);
         string? receivedMessage = null;
         engine.OnMessage += msg => receivedMessage = msg;
 
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Contains("muerto", receivedMessage ?? "", StringComparison.OrdinalIgnoreCase);
     }
@@ -297,10 +297,10 @@ public class PlayerStateNodeTests
             ["Value"] = value
         };
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_SetPlayerState", actionProps));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_SetPlayerState, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         var actualValue = stateType switch
         {
@@ -332,10 +332,10 @@ public class PlayerStateNodeTests
             ["Amount"] = 25
         };
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_ModifyPlayerState", actionProps));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_ModifyPlayerState, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(75, state.Player.DynamicStats.Energy);
     }
@@ -352,10 +352,10 @@ public class PlayerStateNodeTests
             ["Amount"] = -30
         };
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_ModifyPlayerState", actionProps));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_ModifyPlayerState, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(70, state.Player.DynamicStats.Sanity);
     }
@@ -375,10 +375,10 @@ public class PlayerStateNodeTests
             ["Amount"] = 30
         };
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_FeedPlayer", actionProps));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_FeedPlayer, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(50, state.Player.DynamicStats.Hunger);
     }
@@ -394,10 +394,10 @@ public class PlayerStateNodeTests
             ["Amount"] = 50
         };
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_FeedPlayer", actionProps));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_FeedPlayer, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(0, state.Player.DynamicStats.Hunger);
     }
@@ -417,10 +417,10 @@ public class PlayerStateNodeTests
             ["Amount"] = 40
         };
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_HydratePlayer", actionProps));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_HydratePlayer, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(30, state.Player.DynamicStats.Thirst);
     }
@@ -440,10 +440,10 @@ public class PlayerStateNodeTests
             ["Amount"] = 50
         };
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_RestPlayer", actionProps));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_RestPlayer, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(80, state.Player.DynamicStats.Energy);
     }
@@ -464,10 +464,10 @@ public class PlayerStateNodeTests
             ["Amount"] = 30
         };
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_RestoreMana", actionProps));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_RestoreMana, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(50, state.Player.DynamicStats.Mana);
     }
@@ -487,10 +487,10 @@ public class PlayerStateNodeTests
             ["Amount"] = 20
         };
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_ConsumeMana", actionProps));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_ConsumeMana, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(30, state.Player.DynamicStats.Mana);
     }
@@ -512,10 +512,10 @@ public class PlayerStateNodeTests
         state.Player.DynamicStats.Energy = 20;
         state.Player.DynamicStats.Sanity = 40;
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_RestoreAllStats"));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_RestoreAllStats));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(100, state.Player.DynamicStats.Health);
         Assert.Equal(100, state.Player.DynamicStats.Mana);
@@ -541,10 +541,10 @@ public class PlayerStateNodeTests
             ["Threshold"] = 50
         };
 
-        world.Scripts.Add(CreateConditionScript("Condition_PlayerStateAbove", conditionProps));
+        world.Scripts.Add(CreateConditionScript(NodeTypeId.Condition_PlayerStateAbove, conditionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.True(state.Flags.ContainsKey("condition_true") && state.Flags["condition_true"]);
         Assert.False(state.Flags.ContainsKey("condition_false"));
@@ -562,10 +562,10 @@ public class PlayerStateNodeTests
             ["Threshold"] = 50
         };
 
-        world.Scripts.Add(CreateConditionScript("Condition_PlayerStateAbove", conditionProps));
+        world.Scripts.Add(CreateConditionScript(NodeTypeId.Condition_PlayerStateAbove, conditionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.True(state.Flags.ContainsKey("condition_false") && state.Flags["condition_false"]);
         Assert.False(state.Flags.ContainsKey("condition_true"));
@@ -587,10 +587,10 @@ public class PlayerStateNodeTests
             ["Threshold"] = 30
         };
 
-        world.Scripts.Add(CreateConditionScript("Condition_PlayerStateBelow", conditionProps));
+        world.Scripts.Add(CreateConditionScript(NodeTypeId.Condition_PlayerStateBelow, conditionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.True(state.Flags.ContainsKey("condition_true") && state.Flags["condition_true"]);
     }
@@ -605,10 +605,10 @@ public class PlayerStateNodeTests
         var (world, state) = CreateTestWorld();
         state.Player.DynamicStats.Health = 50;
 
-        world.Scripts.Add(CreateConditionScript("Condition_IsPlayerAlive"));
+        world.Scripts.Add(CreateConditionScript(NodeTypeId.Condition_IsPlayerAlive));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.True(state.Flags.ContainsKey("condition_true") && state.Flags["condition_true"]);
     }
@@ -619,10 +619,10 @@ public class PlayerStateNodeTests
         var (world, state) = CreateTestWorld();
         state.Player.DynamicStats.Health = 0;
 
-        world.Scripts.Add(CreateConditionScript("Condition_IsPlayerAlive"));
+        world.Scripts.Add(CreateConditionScript(NodeTypeId.Condition_IsPlayerAlive));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.True(state.Flags.ContainsKey("condition_false") && state.Flags["condition_false"]);
     }
@@ -646,10 +646,10 @@ public class PlayerStateNodeTests
             ["IsRecurring"] = true
         };
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_ApplyModifier", actionProps));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_ApplyModifier, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Single(state.ActiveModifiers);
         var modifier = state.ActiveModifiers[0];
@@ -678,10 +678,10 @@ public class PlayerStateNodeTests
             ["ModifierName"] = "Blessing"
         };
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_RemoveModifier", actionProps));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_RemoveModifier, actionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Empty(state.ActiveModifiers);
     }
@@ -694,10 +694,10 @@ public class PlayerStateNodeTests
         state.ActiveModifiers.Add(new TemporaryModifier { Name = "Mod2", StateType = PlayerStateType.Energy });
         state.ActiveModifiers.Add(new TemporaryModifier { Name = "Mod3", StateType = PlayerStateType.Sanity });
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_RemoveAllModifiers"));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_RemoveAllModifiers));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Empty(state.ActiveModifiers);
     }
@@ -717,10 +717,10 @@ public class PlayerStateNodeTests
             IsRecurring = true
         });
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_ProcessModifiers"));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_ProcessModifiers));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(90, state.Player.DynamicStats.Health);
         Assert.Equal(2, state.ActiveModifiers[0].RemainingDuration);
@@ -740,10 +740,10 @@ public class PlayerStateNodeTests
             IsRecurring = true
         });
 
-        world.Scripts.Add(CreateScript("Event_OnGameStart", "Action_ProcessModifiers"));
+        world.Scripts.Add(CreateScript(NodeTypeId.Event_OnGameStart, NodeTypeId.Action_ProcessModifiers));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.Empty(state.ActiveModifiers);
     }
@@ -764,10 +764,10 @@ public class PlayerStateNodeTests
             ["ModifierName"] = "Shield"
         };
 
-        world.Scripts.Add(CreateConditionScript("Condition_HasModifier", conditionProps));
+        world.Scripts.Add(CreateConditionScript(NodeTypeId.Condition_HasModifier, conditionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.True(state.Flags.ContainsKey("condition_true") && state.Flags["condition_true"]);
     }
@@ -782,10 +782,10 @@ public class PlayerStateNodeTests
             ["ModifierName"] = "NonExistent"
         };
 
-        world.Scripts.Add(CreateConditionScript("Condition_HasModifier", conditionProps));
+        world.Scripts.Add(CreateConditionScript(NodeTypeId.Condition_HasModifier, conditionProps));
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_player_states", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_player_states", NodeTypeId.Event_OnGameStart);
 
         Assert.True(state.Flags.ContainsKey("condition_false") && state.Flags["condition_false"]);
     }

@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Input;
 using XiloAdventures.Engine;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Wpf.Common.Windows;
 

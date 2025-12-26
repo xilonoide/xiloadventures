@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Xunit;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 
 namespace XiloAdventures.Tests;
 
@@ -92,7 +93,7 @@ public class ScriptModelsTests
                 new ScriptNode
                 {
                     Id = "event1",
-                    NodeType = "Event_OnGameStart",
+                    NodeType = NodeTypeId.Event_OnGameStart,
                     Category = NodeCategory.Event,
                     X = 100,
                     Y = 200
@@ -134,7 +135,7 @@ public class ScriptModelsTests
 
         Assert.NotNull(node.Id);
         Assert.NotEmpty(node.Id);
-        Assert.Equal(string.Empty, node.NodeType);
+        Assert.Equal(NodeTypeId.Event_OnGameStart, node.NodeType);  // First enum value is default
         Assert.Equal(NodeCategory.Event, node.Category);
         Assert.Equal(0, node.X);
         Assert.Equal(0, node.Y);
@@ -222,7 +223,7 @@ public class ScriptModelsTests
         var node = new ScriptNode
         {
             Id = "node_test",
-            NodeType = "Action_ShowMessage",
+            NodeType = NodeTypeId.Action_ShowMessage,
             Category = NodeCategory.Action,
             X = 100,
             Y = 200,
@@ -433,11 +434,12 @@ public class ScriptModelsTests
     [Fact]
     public void NodeCategory_DeserializesFromCamelCase()
     {
-        var json = "{\"Id\":\"test\",\"NodeType\":\"\",\"Category\":\"action\",\"X\":0,\"Y\":0}";
+        var json = "{\"Id\":\"test\",\"NodeType\":\"Action_ShowMessage\",\"Category\":\"action\",\"X\":0,\"Y\":0}";
         var node = JsonSerializer.Deserialize<ScriptNode>(json, JsonOptions);
 
         Assert.NotNull(node);
         Assert.Equal(NodeCategory.Action, node.Category);
+        Assert.Equal(NodeTypeId.Action_ShowMessage, node.NodeType);
     }
 
     #endregion
@@ -472,12 +474,12 @@ public class ScriptModelsTests
     {
         var typeDef = new NodeTypeDefinition();
 
-        Assert.Equal(string.Empty, typeDef.TypeId);
+        Assert.Equal(NodeTypeId.Event_OnGameStart, typeDef.TypeId);  // First enum value is default
         Assert.Equal(string.Empty, typeDef.DisplayName);
         Assert.Null(typeDef.Description);
         Assert.Equal(NodeCategory.Event, typeDef.Category);
-        Assert.NotNull(typeDef.OwnerTypes);
-        Assert.Empty(typeDef.OwnerTypes);
+        Assert.Equal(NodeOwnerType.None, typeDef.OwnerTypes);
+        Assert.Equal(RequiredFeature.None, typeDef.RequiredFeature);
         Assert.NotNull(typeDef.InputPorts);
         Assert.Empty(typeDef.InputPorts);
         Assert.NotNull(typeDef.OutputPorts);
@@ -491,11 +493,11 @@ public class ScriptModelsTests
     {
         var typeDef = new NodeTypeDefinition
         {
-            TypeId = "Action_ShowMessage",
+            TypeId = NodeTypeId.Action_ShowMessage,
             DisplayName = "Mostrar Mensaje",
             Description = "Muestra un mensaje al jugador",
             Category = NodeCategory.Action,
-            OwnerTypes = new[] { "Game", "Room", "Npc" },
+            OwnerTypes = NodeOwnerType.Game | NodeOwnerType.Room | NodeOwnerType.Npc,
             InputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution }
@@ -516,25 +518,30 @@ public class ScriptModelsTests
             }
         };
 
-        Assert.Equal("Action_ShowMessage", typeDef.TypeId);
+        Assert.Equal(NodeTypeId.Action_ShowMessage, typeDef.TypeId);
         Assert.Equal("Mostrar Mensaje", typeDef.DisplayName);
         Assert.Equal(NodeCategory.Action, typeDef.Category);
-        Assert.Equal(3, typeDef.OwnerTypes.Length);
+        Assert.True(typeDef.OwnerTypes.HasFlag(NodeOwnerType.Game));
+        Assert.True(typeDef.OwnerTypes.HasFlag(NodeOwnerType.Room));
+        Assert.True(typeDef.OwnerTypes.HasFlag(NodeOwnerType.Npc));
         Assert.Single(typeDef.InputPorts);
         Assert.Single(typeDef.OutputPorts);
         Assert.Single(typeDef.Properties);
     }
 
     [Fact]
-    public void NodeTypeDefinition_WildcardOwnerType_IndicatesAllOwners()
+    public void NodeTypeDefinition_AllOwnerType_IndicatesAllOwners()
     {
         var typeDef = new NodeTypeDefinition
         {
-            TypeId = "Action_SetFlag",
-            OwnerTypes = new[] { "*" }
+            TypeId = NodeTypeId.Action_SetFlag,
+            OwnerTypes = NodeOwnerType.All
         };
 
-        Assert.Contains("*", typeDef.OwnerTypes);
+        Assert.True(typeDef.OwnerTypes.HasFlag(NodeOwnerType.All));
+        Assert.True(typeDef.OwnerTypes.Matches("Game"));
+        Assert.True(typeDef.OwnerTypes.Matches("Room"));
+        Assert.True(typeDef.OwnerTypes.Matches("Npc"));
     }
 
     [Fact]
@@ -542,10 +549,10 @@ public class ScriptModelsTests
     {
         var typeDef = new NodeTypeDefinition
         {
-            TypeId = "Event_OnEnter",
+            TypeId = NodeTypeId.Event_OnEnter,
             DisplayName = "Al Entrar",
             Category = NodeCategory.Event,
-            OwnerTypes = new[] { "Room" },
+            OwnerTypes = NodeOwnerType.Room,
             OutputPorts = new[]
             {
                 new NodePort { Name = "Exec", PortType = PortType.Execution }
@@ -851,7 +858,7 @@ public class ScriptModelsTests
                 new ScriptNode
                 {
                     Id = "event_enter",
-                    NodeType = "Event_OnEnter",
+                    NodeType = NodeTypeId.Event_OnEnter,
                     Category = NodeCategory.Event,
                     X = 100,
                     Y = 100,
@@ -860,7 +867,7 @@ public class ScriptModelsTests
                 new ScriptNode
                 {
                     Id = "condition_flag",
-                    NodeType = "Condition_CheckFlag",
+                    NodeType = NodeTypeId.Condition_HasFlag,
                     Category = NodeCategory.Condition,
                     X = 300,
                     Y = 100,
@@ -872,7 +879,7 @@ public class ScriptModelsTests
                 new ScriptNode
                 {
                     Id = "action_message",
-                    NodeType = "Action_ShowMessage",
+                    NodeType = NodeTypeId.Action_ShowMessage,
                     Category = NodeCategory.Action,
                     X = 500,
                     Y = 50,
@@ -948,7 +955,7 @@ public class ScriptModelsTests
             script.Nodes.Add(new ScriptNode
             {
                 Id = $"node_{i}",
-                NodeType = "Action_ShowMessage",
+                NodeType = NodeTypeId.Action_ShowMessage,
                 Category = NodeCategory.Action,
                 X = i * 100,
                 Y = (i % 10) * 50

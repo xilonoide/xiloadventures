@@ -379,274 +379,274 @@ public partial class MapPanel : Control
         }
     }
 
-    
 
-private void DrawConnections(DrawingContext dc)
-{
-    if (_world == null)
-        return;
 
-    // Los rectángulos de hit test de salidas se recalculan en cada render
-    _exitHitRects.Clear();
-
-    // Para evitar solapamiento de textos cuando hay conexiones bidireccionales
-    // entre las mismas dos salas, sólo dibujamos una etiqueta por par de salas.
-    var labeledConnections = new HashSet<(string a, string b)>();
-
-    // Mapa rápido de puertas por Id para consultar su estado (abierta/cerrada).
-    // En modo pruebas usar _testDoors (estado del GameState), sino usar _world.Doors
-    var doorsSource = _testDoors ?? _world.Doors;
-    Dictionary<string, Door>? doorsById = null;
-    if (doorsSource != null && doorsSource.Count > 0)
+    private void DrawConnections(DrawingContext dc)
     {
-        doorsById = doorsSource
-            .Where(d => !string.IsNullOrWhiteSpace(d.Id))
-            .ToDictionary(d => d.Id, d => d, StringComparer.OrdinalIgnoreCase);
-    }
+        if (_world == null)
+            return;
 
-    // Pens para conexiones según estado de puerta
-    Pen normalPen = new(new SolidColorBrush(Color.FromRgb(200, 200, 200)), 2.0);
-    Pen selectedPen = new(new SolidColorBrush(Color.FromRgb(255, 220, 80)), 3.0);
-    Pen doorOpenPen = new(new SolidColorBrush(Color.FromRgb(80, 200, 80)), 2.0);
-    Pen doorClosedPen = new(new SolidColorBrush(Color.FromRgb(200, 80, 80)), 2.0);
-    Pen doorOpenSelectedPen = new(new SolidColorBrush(Color.FromRgb(120, 255, 120)), 3.0);
-    Pen doorClosedSelectedPen = new(new SolidColorBrush(Color.FromRgb(255, 120, 120)), 3.0);
+        // Los rectángulos de hit test de salidas se recalculan en cada render
+        _exitHitRects.Clear();
 
-    Typeface typeface = new("Segoe UI");
-    double dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+        // Para evitar solapamiento de textos cuando hay conexiones bidireccionales
+        // entre las mismas dos salas, sólo dibujamos una etiqueta por par de salas.
+        var labeledConnections = new HashSet<(string a, string b)>();
 
-    // Si hay exactamente una sala seleccionada, los textos de las salidas
-    // sólo se mostrarán para las conexiones que involucren a esa sala.
-    string? singleSelectedRoomId = null;
-    bool hasSingleSelectedRoom = _selectedRoomIds.Count == 1;
-    if (hasSingleSelectedRoom)
-    {
-        singleSelectedRoomId = _selectedRoomIds.First();
-    }
-
-    foreach (var room in _world.Rooms)
-    {
-        if (room.Exits == null)
-            continue;
-
-        if (!_roomRects.TryGetValue(room.Id, out var fromRect))
-            continue;
-
-        for (int i = 0; i < room.Exits.Count; i++)
+        // Mapa rápido de puertas por Id para consultar su estado (abierta/cerrada).
+        // En modo pruebas usar _testDoors (estado del GameState), sino usar _world.Doors
+        var doorsSource = _testDoors ?? _world.Doors;
+        Dictionary<string, Door>? doorsById = null;
+        if (doorsSource != null && doorsSource.Count > 0)
         {
-            var exit = room.Exits[i];
-            if (exit == null || string.IsNullOrEmpty(exit.TargetRoomId))
+            doorsById = doorsSource
+                .Where(d => !string.IsNullOrWhiteSpace(d.Id))
+                .ToDictionary(d => d.Id, d => d, StringComparer.OrdinalIgnoreCase);
+        }
+
+        // Pens para conexiones según estado de puerta
+        Pen normalPen = new(new SolidColorBrush(Color.FromRgb(200, 200, 200)), 2.0);
+        Pen selectedPen = new(new SolidColorBrush(Color.FromRgb(255, 220, 80)), 3.0);
+        Pen doorOpenPen = new(new SolidColorBrush(Color.FromRgb(80, 200, 80)), 2.0);
+        Pen doorClosedPen = new(new SolidColorBrush(Color.FromRgb(200, 80, 80)), 2.0);
+        Pen doorOpenSelectedPen = new(new SolidColorBrush(Color.FromRgb(120, 255, 120)), 3.0);
+        Pen doorClosedSelectedPen = new(new SolidColorBrush(Color.FromRgb(255, 120, 120)), 3.0);
+
+        Typeface typeface = new("Segoe UI");
+        double dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+
+        // Si hay exactamente una sala seleccionada, los textos de las salidas
+        // sólo se mostrarán para las conexiones que involucren a esa sala.
+        string? singleSelectedRoomId = null;
+        bool hasSingleSelectedRoom = _selectedRoomIds.Count == 1;
+        if (hasSingleSelectedRoom)
+        {
+            singleSelectedRoomId = _selectedRoomIds.First();
+        }
+
+        foreach (var room in _world.Rooms)
+        {
+            if (room.Exits == null)
                 continue;
 
-            var target = _world.Rooms.FirstOrDefault(r => r.Id == exit.TargetRoomId);
-            if (target == null)
+            if (!_roomRects.TryGetValue(room.Id, out var fromRect))
                 continue;
 
-            if (!_roomRects.TryGetValue(target.Id, out var toRect))
-                continue;
-
-            string rawDirection = exit.Direction ?? string.Empty;
-            string normDir = NormalizeDirectionLabel(rawDirection);
-
-            Point fromPoint = GetPortPointForDirection(fromRect, normDir);
-            string oppositeDir = GetOppositeDirection(normDir);
-            Point toPoint = GetPortPointForDirection(toRect, oppositeDir);
-
-            var exitKey = (room.Id, i);
-            bool isSelected = _selectedExits.Contains(exitKey);
-
-            // Detectar si hay puerta en esta conexión
-            Door? door = null;
-            if (doorsById != null && !string.IsNullOrEmpty(exit.DoorId))
+            for (int i = 0; i < room.Exits.Count; i++)
             {
-                doorsById.TryGetValue(exit.DoorId, out door);
-            }
+                var exit = room.Exits[i];
+                if (exit == null || string.IsNullOrEmpty(exit.TargetRoomId))
+                    continue;
 
-            if (door == null && doorsSource != null && doorsSource.Count > 0)
-            {
-                door = doorsSource.FirstOrDefault(d =>
-                    !string.IsNullOrEmpty(d.RoomIdA) &&
-                    !string.IsNullOrEmpty(d.RoomIdB) &&
-                    ((string.Equals(d.RoomIdA, room.Id, StringComparison.OrdinalIgnoreCase) &&
-                      string.Equals(d.RoomIdB, target.Id, StringComparison.OrdinalIgnoreCase)) ||
-                     (string.Equals(d.RoomIdB, room.Id, StringComparison.OrdinalIgnoreCase) &&
-                      string.Equals(d.RoomIdA, target.Id, StringComparison.OrdinalIgnoreCase))));
-            }
+                var target = _world.Rooms.FirstOrDefault(r => r.Id == exit.TargetRoomId);
+                if (target == null)
+                    continue;
 
-            // Determinar el pen según estado de puerta y selección
-            Pen linePen;
-            if (door != null)
-            {
-                if (door.IsOpen)
-                    linePen = isSelected ? doorOpenSelectedPen : doorOpenPen;
+                if (!_roomRects.TryGetValue(target.Id, out var toRect))
+                    continue;
+
+                string rawDirection = exit.Direction ?? string.Empty;
+                string normDir = NormalizeDirectionLabel(rawDirection);
+
+                Point fromPoint = GetPortPointForDirection(fromRect, normDir);
+                string oppositeDir = GetOppositeDirection(normDir);
+                Point toPoint = GetPortPointForDirection(toRect, oppositeDir);
+
+                var exitKey = (room.Id, i);
+                bool isSelected = _selectedExits.Contains(exitKey);
+
+                // Detectar si hay puerta en esta conexión
+                Door? door = null;
+                if (doorsById != null && !string.IsNullOrEmpty(exit.DoorId))
+                {
+                    doorsById.TryGetValue(exit.DoorId, out door);
+                }
+
+                if (door == null && doorsSource != null && doorsSource.Count > 0)
+                {
+                    door = doorsSource.FirstOrDefault(d =>
+                        !string.IsNullOrEmpty(d.RoomIdA) &&
+                        !string.IsNullOrEmpty(d.RoomIdB) &&
+                        ((string.Equals(d.RoomIdA, room.Id, StringComparison.OrdinalIgnoreCase) &&
+                          string.Equals(d.RoomIdB, target.Id, StringComparison.OrdinalIgnoreCase)) ||
+                         (string.Equals(d.RoomIdB, room.Id, StringComparison.OrdinalIgnoreCase) &&
+                          string.Equals(d.RoomIdA, target.Id, StringComparison.OrdinalIgnoreCase))));
+                }
+
+                // Determinar el pen según estado de puerta y selección
+                Pen linePen;
+                if (door != null)
+                {
+                    if (door.IsOpen)
+                        linePen = isSelected ? doorOpenSelectedPen : doorOpenPen;
+                    else
+                        linePen = isSelected ? doorClosedSelectedPen : doorClosedPen;
+                }
                 else
-                    linePen = isSelected ? doorClosedSelectedPen : doorClosedPen;
-            }
-            else
-            {
-                linePen = isSelected ? selectedPen : normalPen;
-            }
-
-            // No dibujar la línea de la salida que se está editando actualmente
-            // (se dibuja por separado en DrawPendingConnection con línea punteada)
-            bool isBeingEdited = _isEditingExit &&
-                                 _editingExitRoom != null &&
-                                 ReferenceEquals(_editingExitRoom, room) &&
-                                 _editingExitIndex == i;
-
-            if (!isBeingEdited)
-            {
-                DrawBezierConnection(dc, fromPoint, toPoint, linePen);
-            }
-
-            // Rectángulo de hit test que cubre toda la línea de la salida,
-            // con un pequeño margen para facilitar el click.
-            Point mid = Midpoint(fromPoint, toPoint);
-
-            // Rectángulo de hit-test estrecho alrededor de la línea de la salida,
-            // para evitar que se seleccione haciendo click demasiado lejos.
-            Rect baseRect = new Rect(fromPoint, toPoint);
-            double dx = Math.Abs(fromPoint.X - toPoint.X);
-            double dy = Math.Abs(fromPoint.Y - toPoint.Y);
-            const double halfThickness = 4.0;
-
-            Rect lineHitRect;
-            if (dx >= dy)
-            {
-                // Conexión principalmente horizontal: corredor fino en vertical.
-                double centerY = (fromPoint.Y + toPoint.Y) / 2.0;
-                lineHitRect = new Rect(
-                    baseRect.X,
-                    centerY - halfThickness,
-                    baseRect.Width,
-                    halfThickness * 2.0);
-            }
-            else
-            {
-                // Conexión principalmente vertical: corredor fino en horizontal.
-                double centerX = (fromPoint.X + toPoint.X) / 2.0;
-                lineHitRect = new Rect(
-                    centerX - halfThickness,
-                    baseRect.Y,
-                    halfThickness * 2.0,
-                    baseRect.Height);
-            }
-
-            // Inicialmente, el hit test de la salida es el de la línea.
-            Rect hitRect = lineHitRect;
-
-            // Etiqueta con la dirección en el punto medio.
-            // Si hay exactamente una sala seleccionada, el texto de la salida
-            // se muestra desde el punto de vista de esa sala.
-            string labelDirectionRaw = exit.Direction ?? string.Empty;
-
-            if (hasSingleSelectedRoom && singleSelectedRoomId != null)
-            {
-                if (singleSelectedRoomId == room.Id)
                 {
-                    // Vista desde la sala origen: usamos la dirección tal cual está definida.
-                    labelDirectionRaw = rawDirection;
+                    linePen = isSelected ? selectedPen : normalPen;
                 }
-                else if (singleSelectedRoomId == target.Id)
+
+                // No dibujar la línea de la salida que se está editando actualmente
+                // (se dibuja por separado en DrawPendingConnection con línea punteada)
+                bool isBeingEdited = _isEditingExit &&
+                                     _editingExitRoom != null &&
+                                     ReferenceEquals(_editingExitRoom, room) &&
+                                     _editingExitIndex == i;
+
+                if (!isBeingEdited)
                 {
-                    // Vista desde la sala destino: usamos la dirección opuesta.
-                    string labelNorm = NormalizeDirectionLabel(rawDirection);
-                    string oppositeForLabel = GetOppositeDirection(labelNorm);
-                    labelDirectionRaw = oppositeForLabel;
+                    DrawBezierConnection(dc, fromPoint, toPoint, linePen);
                 }
-            }
 
-            string label = GetSingleDirectionLabel(labelDirectionRaw);
+                // Rectángulo de hit test que cubre toda la línea de la salida,
+                // con un pequeño margen para facilitar el click.
+                Point mid = Midpoint(fromPoint, toPoint);
 
-            // Clave de conexión independiente del sentido (A-B == B-A)
-            var key = string.CompareOrdinal(room.Id, target.Id) <= 0
-                ? (room.Id, target.Id)
-                : (target.Id, room.Id);
+                // Rectángulo de hit-test estrecho alrededor de la línea de la salida,
+                // para evitar que se seleccione haciendo click demasiado lejos.
+                Rect baseRect = new Rect(fromPoint, toPoint);
+                double dx = Math.Abs(fromPoint.X - toPoint.X);
+                double dy = Math.Abs(fromPoint.Y - toPoint.Y);
+                const double halfThickness = 4.0;
 
-            bool canDrawLabel =
-                !string.IsNullOrWhiteSpace(label) &&
-                (!hasSingleSelectedRoom ||
-                 (singleSelectedRoomId == room.Id || singleSelectedRoomId == target.Id)) &&
-                !labeledConnections.Contains(key);
+                Rect lineHitRect;
+                if (dx >= dy)
+                {
+                    // Conexión principalmente horizontal: corredor fino en vertical.
+                    double centerY = (fromPoint.Y + toPoint.Y) / 2.0;
+                    lineHitRect = new Rect(
+                        baseRect.X,
+                        centerY - halfThickness,
+                        baseRect.Width,
+                        halfThickness * 2.0);
+                }
+                else
+                {
+                    // Conexión principalmente vertical: corredor fino en horizontal.
+                    double centerX = (fromPoint.X + toPoint.X) / 2.0;
+                    lineHitRect = new Rect(
+                        centerX - halfThickness,
+                        baseRect.Y,
+                        halfThickness * 2.0,
+                        baseRect.Height);
+                }
 
-            if (canDrawLabel && !isBeingEdited)
-            {
-                labeledConnections.Add(key);
+                // Inicialmente, el hit test de la salida es el de la línea.
+                Rect hitRect = lineHitRect;
 
-                var formatted = new FormattedText(
-                    label,
-                    System.Globalization.CultureInfo.CurrentUICulture,
-                    FlowDirection.LeftToRight,
-                    typeface,
-                    11,
-                    isSelected ? Brushes.LightYellow : Brushes.White,
-                    dpi);
+                // Etiqueta con la dirección en el punto medio.
+                // Si hay exactamente una sala seleccionada, el texto de la salida
+                // se muestra desde el punto de vista de esa sala.
+                string labelDirectionRaw = exit.Direction ?? string.Empty;
 
-                Point textPos = new(
-                    mid.X - formatted.Width / 2.0,
-                    mid.Y - formatted.Height - 4);
+                if (hasSingleSelectedRoom && singleSelectedRoomId != null)
+                {
+                    if (singleSelectedRoomId == room.Id)
+                    {
+                        // Vista desde la sala origen: usamos la dirección tal cual está definida.
+                        labelDirectionRaw = rawDirection;
+                    }
+                    else if (singleSelectedRoomId == target.Id)
+                    {
+                        // Vista desde la sala destino: usamos la dirección opuesta.
+                        string labelNorm = NormalizeDirectionLabel(rawDirection);
+                        string oppositeForLabel = GetOppositeDirection(labelNorm);
+                        labelDirectionRaw = oppositeForLabel;
+                    }
+                }
 
-                // Rectángulo específico para el texto de la etiqueta
-                Rect textRect = new Rect(
-                    textPos.X - 4,
-                    textPos.Y - 2,
-                    formatted.Width + 8,
-                    formatted.Height + 4);
+                string label = GetSingleDirectionLabel(labelDirectionRaw);
 
-                // Combinamos la zona de la línea con la del texto.
-                hitRect = Rect.Union(hitRect, textRect);
+                // Clave de conexión independiente del sentido (A-B == B-A)
+                var key = string.CompareOrdinal(room.Id, target.Id) <= 0
+                    ? (room.Id, target.Id)
+                    : (target.Id, room.Id);
 
-                dc.DrawText(formatted, textPos);
-            }
+                bool canDrawLabel =
+                    !string.IsNullOrWhiteSpace(label) &&
+                    (!hasSingleSelectedRoom ||
+                     (singleSelectedRoomId == room.Id || singleSelectedRoomId == target.Id)) &&
+                    !labeledConnections.Contains(key);
 
-            // No agregar hit test para la salida que se está editando
-            if (!isBeingEdited)
-            {
-                _exitHitRects[exitKey] = hitRect;
-            }
+                if (canDrawLabel && !isBeingEdited)
+                {
+                    labeledConnections.Add(key);
 
-            // Dibujar icono de llave si la puerta tiene cerradura con llave
-            if (door != null && !string.IsNullOrWhiteSpace(door.KeyObjectId) && !isBeingEdited)
-            {
-                const double keyIconSize = 16.0;
-                const double keyIconOffset = 12.0;
+                    var formatted = new FormattedText(
+                        label,
+                        System.Globalization.CultureInfo.CurrentUICulture,
+                        FlowDirection.LeftToRight,
+                        typeface,
+                        11,
+                        isSelected ? Brushes.LightYellow : Brushes.White,
+                        dpi);
 
-                // Posicionar el icono debajo del punto medio de la línea
-                Rect keyRect = new Rect(
-                    mid.X - keyIconSize / 2.0,
-                    mid.Y + keyIconOffset,
-                    keyIconSize,
-                    keyIconSize);
+                    Point textPos = new(
+                        mid.X - formatted.Width / 2.0,
+                        mid.Y - formatted.Height - 4);
 
-                _keyIconRects[door.KeyObjectId] = keyRect;
+                    // Rectángulo específico para el texto de la etiqueta
+                    Rect textRect = new Rect(
+                        textPos.X - 4,
+                        textPos.Y - 2,
+                        formatted.Width + 8,
+                        formatted.Height + 4);
 
-                // Color según estado: verde si está abierta, rojo si está cerrada/bloqueada
-                Color keyColor = door.IsOpen ? Color.FromRgb(80, 200, 80) : Color.FromRgb(200, 80, 80);
-                SolidColorBrush keyBg = new SolidColorBrush(keyColor);
-                Pen keyPen = new Pen(Brushes.White, 1.0);
+                    // Combinamos la zona de la línea con la del texto.
+                    hitRect = Rect.Union(hitRect, textRect);
 
-                dc.DrawRoundedRectangle(keyBg, keyPen, keyRect, 3, 3);
+                    dc.DrawText(formatted, textPos);
+                }
 
-                // Dibujar símbolo de llave (usando Segoe MDL2 Assets)
-                var keyText = new FormattedText(
-                    "\uE72E", // Icono de llave
-                    System.Globalization.CultureInfo.CurrentUICulture,
-                    FlowDirection.LeftToRight,
-                    new Typeface(new FontFamily("Segoe MDL2 Assets"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal),
-                    10,
-                    Brushes.White,
-                    dpi);
+                // No agregar hit test para la salida que se está editando
+                if (!isBeingEdited)
+                {
+                    _exitHitRects[exitKey] = hitRect;
+                }
 
-                Point keyTextPos = new(
-                    keyRect.X + (keyRect.Width - keyText.Width) / 2.0,
-                    keyRect.Y + (keyRect.Height - keyText.Height) / 2.0);
-                dc.DrawText(keyText, keyTextPos);
+                // Dibujar icono de llave si la puerta tiene cerradura con llave
+                if (door != null && !string.IsNullOrWhiteSpace(door.KeyObjectId) && !isBeingEdited)
+                {
+                    const double keyIconSize = 16.0;
+                    const double keyIconOffset = 12.0;
+
+                    // Posicionar el icono debajo del punto medio de la línea
+                    Rect keyRect = new Rect(
+                        mid.X - keyIconSize / 2.0,
+                        mid.Y + keyIconOffset,
+                        keyIconSize,
+                        keyIconSize);
+
+                    _keyIconRects[door.KeyObjectId] = keyRect;
+
+                    // Color según estado: verde si está abierta, rojo si está cerrada/bloqueada
+                    Color keyColor = door.IsOpen ? Color.FromRgb(80, 200, 80) : Color.FromRgb(200, 80, 80);
+                    SolidColorBrush keyBg = new SolidColorBrush(keyColor);
+                    Pen keyPen = new Pen(Brushes.White, 1.0);
+
+                    dc.DrawRoundedRectangle(keyBg, keyPen, keyRect, 3, 3);
+
+                    // Dibujar símbolo de llave (usando Segoe MDL2 Assets)
+                    var keyText = new FormattedText(
+                        "\uE72E", // Icono de llave
+                        System.Globalization.CultureInfo.CurrentUICulture,
+                        FlowDirection.LeftToRight,
+                        new Typeface(new FontFamily("Segoe MDL2 Assets"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal),
+                        10,
+                        Brushes.White,
+                        dpi);
+
+                    Point keyTextPos = new(
+                        keyRect.X + (keyRect.Width - keyText.Width) / 2.0,
+                        keyRect.Y + (keyRect.Height - keyText.Height) / 2.0);
+                    dc.DrawText(keyText, keyTextPos);
+                }
             }
         }
     }
-}
 
-private void DrawSelectionRectangle(DrawingContext dc)
+    private void DrawSelectionRectangle(DrawingContext dc)
     {
         if (!_isDragSelecting)
             return;

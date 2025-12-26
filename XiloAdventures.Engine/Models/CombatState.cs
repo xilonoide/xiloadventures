@@ -5,8 +5,15 @@ using XiloAdventures.Engine.Models.Enums;
 namespace XiloAdventures.Engine.Models;
 
 /// <summary>
-/// Estado de un combate activo.
+/// Estado de un combate activo entre el jugador y un NPC enemigo.
+/// Mantiene toda la información necesaria durante el transcurso del combate,
+/// incluyendo turnos, tiradas de dados y el historial de acciones.
 /// </summary>
+/// <remarks>
+/// El sistema de combate usa tiradas de D20 con bonificadores de estadísticas y equipo.
+/// Cada combate tiene fases: Initiative (quién empieza), PlayerTurn, EnemyTurn, y End.
+/// El combate termina cuando el jugador o el NPC llega a 0 de salud, o el jugador huye.
+/// </remarks>
 public class CombatState
 {
     /// <summary>
@@ -68,30 +75,4 @@ public class CombatState
     /// Historial del combate para mostrar en UI.
     /// </summary>
     public List<CombatLogEntry> CombatLog { get; set; } = new();
-}
-
-/// <summary>
-/// Entrada en el registro de combate.
-/// </summary>
-public class CombatLogEntry
-{
-    /// <summary>
-    /// Mensaje a mostrar.
-    /// </summary>
-    public string Message { get; set; } = string.Empty;
-
-    /// <summary>
-    /// True si la acción la realizó el jugador, false si fue del NPC.
-    /// </summary>
-    public bool IsPlayerAction { get; set; }
-
-    /// <summary>
-    /// Momento en que ocurrió.
-    /// </summary>
-    public DateTime Timestamp { get; set; } = DateTime.Now;
-
-    /// <summary>
-    /// Tipo de entrada para formateo visual.
-    /// </summary>
-    public CombatLogType LogType { get; set; } = CombatLogType.Normal;
 }

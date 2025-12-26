@@ -1250,13 +1250,13 @@ public class IntegrationTests
                         new ScriptNode
                         {
                             Id = "node_event",
-                            NodeType = "Event_OnUse",
+                            NodeType = NodeTypeId.Event_OnUse,
                             Properties = new Dictionary<string, object?>()
                         },
                         new ScriptNode
                         {
                             Id = "node_setflag",
-                            NodeType = "Action_SetFlag",
+                            NodeType = NodeTypeId.Action_SetFlag,
                             Properties = new Dictionary<string, object?>
                             {
                                 ["FlagName"] = "lever_pulled",

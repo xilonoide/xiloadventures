@@ -1,4 +1,5 @@
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 using Xunit;
 
 namespace XiloAdventures.Tests;
@@ -17,28 +18,19 @@ public class NodeTypeRegistryTests
     [Fact]
     public void GetNodeType_ValidTypeId_ReturnsDefinition()
     {
-        var result = NodeTypeRegistry.GetNodeType("Event_OnEnter");
+        var result = NodeTypeRegistry.GetNodeType(NodeTypeId.Event_OnEnter);
 
         Assert.NotNull(result);
-        Assert.Equal("Event_OnEnter", result.TypeId);
+        Assert.Equal(NodeTypeId.Event_OnEnter, result.TypeId);
         Assert.Equal(NodeCategory.Event, result.Category);
     }
 
     [Fact]
     public void GetNodeType_InvalidTypeId_ReturnsNull()
     {
-        var result = NodeTypeRegistry.GetNodeType("NonExistent_Node");
+        var result = NodeTypeRegistry.GetNodeType((NodeTypeId)99999);
 
         Assert.Null(result);
-    }
-
-    [Fact]
-    public void GetNodeType_CaseInsensitive()
-    {
-        var result = NodeTypeRegistry.GetNodeType("event_onenter");
-
-        Assert.NotNull(result);
-        Assert.Equal("Event_OnEnter", result.TypeId);
     }
 
     [Fact]
@@ -47,8 +39,8 @@ public class NodeTypeRegistryTests
         var roomNodes = NodeTypeRegistry.GetNodesForOwnerType("Room").ToList();
 
         Assert.True(roomNodes.Count > 0);
-        Assert.Contains(roomNodes, n => n.TypeId == "Event_OnEnter");
-        Assert.Contains(roomNodes, n => n.TypeId == "Event_OnExit");
+        Assert.Contains(roomNodes, n => n.TypeId == NodeTypeId.Event_OnEnter);
+        Assert.Contains(roomNodes, n => n.TypeId == NodeTypeId.Event_OnExit);
     }
 
     [Fact]
@@ -57,8 +49,8 @@ public class NodeTypeRegistryTests
         var roomNodes = NodeTypeRegistry.GetNodesForOwnerType("Room").ToList();
 
         // Wildcard nodes (OwnerTypes contains "*") should be included
-        Assert.Contains(roomNodes, n => n.TypeId == "Action_ShowMessage");
-        Assert.Contains(roomNodes, n => n.TypeId == "Condition_HasItem");
+        Assert.Contains(roomNodes, n => n.TypeId == NodeTypeId.Action_ShowMessage);
+        Assert.Contains(roomNodes, n => n.TypeId == NodeTypeId.Condition_HasItem);
     }
 
     [Fact]
@@ -67,8 +59,8 @@ public class NodeTypeRegistryTests
         var npcNodes = NodeTypeRegistry.GetNodesForOwnerType("Npc").ToList();
 
         Assert.True(npcNodes.Count > 0);
-        Assert.Contains(npcNodes, n => n.TypeId == "Event_OnTalk");
-        Assert.Contains(npcNodes, n => n.TypeId == "Event_OnNpcAttack");
+        Assert.Contains(npcNodes, n => n.TypeId == NodeTypeId.Event_OnTalk);
+        Assert.Contains(npcNodes, n => n.TypeId == NodeTypeId.Event_OnNpcAttack);
     }
 
     [Fact]
@@ -77,10 +69,10 @@ public class NodeTypeRegistryTests
         var objectNodes = NodeTypeRegistry.GetNodesForOwnerType("GameObject").ToList();
 
         Assert.True(objectNodes.Count > 0);
-        Assert.Contains(objectNodes, n => n.TypeId == "Event_OnTake");
-        Assert.Contains(objectNodes, n => n.TypeId == "Event_OnDrop");
-        Assert.Contains(objectNodes, n => n.TypeId == "Event_OnUse");
-        Assert.Contains(objectNodes, n => n.TypeId == "Event_OnExamine");
+        Assert.Contains(objectNodes, n => n.TypeId == NodeTypeId.Event_OnTake);
+        Assert.Contains(objectNodes, n => n.TypeId == NodeTypeId.Event_OnDrop);
+        Assert.Contains(objectNodes, n => n.TypeId == NodeTypeId.Event_OnUse);
+        Assert.Contains(objectNodes, n => n.TypeId == NodeTypeId.Event_OnExamine);
     }
 
     [Fact]
@@ -90,10 +82,10 @@ public class NodeTypeRegistryTests
         var npcNodes = NodeTypeRegistry.GetNodesForOwnerType("Npc").ToList();
 
         Assert.True(npcNodes.Count > 0);
-        Assert.Contains(npcNodes, n => n.TypeId == "Conversation_Start");
-        Assert.Contains(npcNodes, n => n.TypeId == "Conversation_NpcSay");
-        Assert.Contains(npcNodes, n => n.TypeId == "Conversation_PlayerChoice");
-        Assert.Contains(npcNodes, n => n.TypeId == "Conversation_End");
+        Assert.Contains(npcNodes, n => n.TypeId == NodeTypeId.Conversation_Start);
+        Assert.Contains(npcNodes, n => n.TypeId == NodeTypeId.Conversation_NpcSay);
+        Assert.Contains(npcNodes, n => n.TypeId == NodeTypeId.Conversation_PlayerChoice);
+        Assert.Contains(npcNodes, n => n.TypeId == NodeTypeId.Conversation_End);
     }
 
     [Fact]
@@ -103,8 +95,8 @@ public class NodeTypeRegistryTests
 
         Assert.True(eventNodes.Count > 0);
         Assert.All(eventNodes, n => Assert.Equal(NodeCategory.Event, n.Category));
-        Assert.Contains(eventNodes, n => n.TypeId == "Event_OnEnter");
-        Assert.Contains(eventNodes, n => n.TypeId == "Event_OnGameStart");
+        Assert.Contains(eventNodes, n => n.TypeId == NodeTypeId.Event_OnEnter);
+        Assert.Contains(eventNodes, n => n.TypeId == NodeTypeId.Event_OnGameStart);
     }
 
     [Fact]
@@ -114,8 +106,8 @@ public class NodeTypeRegistryTests
 
         Assert.True(actionNodes.Count > 0);
         Assert.All(actionNodes, n => Assert.Equal(NodeCategory.Action, n.Category));
-        Assert.Contains(actionNodes, n => n.TypeId == "Action_ShowMessage");
-        Assert.Contains(actionNodes, n => n.TypeId == "Action_GiveItem");
+        Assert.Contains(actionNodes, n => n.TypeId == NodeTypeId.Action_ShowMessage);
+        Assert.Contains(actionNodes, n => n.TypeId == NodeTypeId.Action_GiveItem);
     }
 
     [Fact]
@@ -125,8 +117,8 @@ public class NodeTypeRegistryTests
 
         Assert.True(conditionNodes.Count > 0);
         Assert.All(conditionNodes, n => Assert.Equal(NodeCategory.Condition, n.Category));
-        Assert.Contains(conditionNodes, n => n.TypeId == "Condition_HasItem");
-        Assert.Contains(conditionNodes, n => n.TypeId == "Condition_HasFlag");
+        Assert.Contains(conditionNodes, n => n.TypeId == NodeTypeId.Condition_HasItem);
+        Assert.Contains(conditionNodes, n => n.TypeId == NodeTypeId.Condition_HasFlag);
     }
 
     [Fact]
@@ -136,8 +128,8 @@ public class NodeTypeRegistryTests
 
         Assert.True(flowNodes.Count > 0);
         Assert.All(flowNodes, n => Assert.Equal(NodeCategory.Flow, n.Category));
-        Assert.Contains(flowNodes, n => n.TypeId == "Flow_Branch");
-        Assert.Contains(flowNodes, n => n.TypeId == "Flow_Sequence");
+        Assert.Contains(flowNodes, n => n.TypeId == NodeTypeId.Flow_Branch);
+        Assert.Contains(flowNodes, n => n.TypeId == NodeTypeId.Flow_Sequence);
     }
 
     [Fact]
@@ -147,8 +139,8 @@ public class NodeTypeRegistryTests
 
         Assert.True(variableNodes.Count > 0);
         Assert.All(variableNodes, n => Assert.Equal(NodeCategory.Variable, n.Category));
-        Assert.Contains(variableNodes, n => n.TypeId == "Variable_GetFlag");
-        Assert.Contains(variableNodes, n => n.TypeId == "Variable_GetCounter");
+        Assert.Contains(variableNodes, n => n.TypeId == NodeTypeId.Variable_GetFlag);
+        Assert.Contains(variableNodes, n => n.TypeId == NodeTypeId.Variable_GetCounter);
     }
 
     [Fact]
@@ -158,8 +150,8 @@ public class NodeTypeRegistryTests
 
         Assert.True(dialogueNodes.Count > 0);
         Assert.All(dialogueNodes, n => Assert.Equal(NodeCategory.Dialogue, n.Category));
-        Assert.Contains(dialogueNodes, n => n.TypeId == "Conversation_Start");
-        Assert.Contains(dialogueNodes, n => n.TypeId == "Conversation_NpcSay");
+        Assert.Contains(dialogueNodes, n => n.TypeId == NodeTypeId.Conversation_Start);
+        Assert.Contains(dialogueNodes, n => n.TypeId == NodeTypeId.Conversation_NpcSay);
     }
 
     #region Node Definition Property Tests
@@ -167,7 +159,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void ActionShowMessage_HasRequiredMessageProperty()
     {
-        var node = NodeTypeRegistry.GetNodeType("Action_ShowMessage");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Action_ShowMessage);
 
         Assert.NotNull(node);
         Assert.NotNull(node.Properties);
@@ -179,7 +171,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void EventOnEnter_HasExecutionOutput()
     {
-        var node = NodeTypeRegistry.GetNodeType("Event_OnEnter");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Event_OnEnter);
 
         Assert.NotNull(node);
         Assert.NotNull(node.OutputPorts);
@@ -189,7 +181,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void ConditionHasItem_HasTrueAndFalseOutputs()
     {
-        var node = NodeTypeRegistry.GetNodeType("Condition_HasItem");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Condition_HasItem);
 
         Assert.NotNull(node);
         Assert.NotNull(node.OutputPorts);
@@ -200,7 +192,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void FlowBranch_HasConditionDataInput()
     {
-        var node = NodeTypeRegistry.GetNodeType("Flow_Branch");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Flow_Branch);
 
         Assert.NotNull(node);
         Assert.NotNull(node.InputPorts);
@@ -213,7 +205,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void MathAdd_HasTwoIntInputsAndIntOutput()
     {
-        var node = NodeTypeRegistry.GetNodeType("Math_Add");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Math_Add);
 
         Assert.NotNull(node);
         Assert.NotNull(node.InputPorts);
@@ -234,7 +226,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void ConversationPlayerChoice_HasFourOptionOutputs()
     {
-        var node = NodeTypeRegistry.GetNodeType("Conversation_PlayerChoice");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Conversation_PlayerChoice);
 
         Assert.NotNull(node);
         Assert.NotNull(node.OutputPorts);
@@ -247,7 +239,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void ConversationShop_HasShopOutputs()
     {
-        var node = NodeTypeRegistry.GetNodeType("Conversation_Shop");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Conversation_Shop);
 
         Assert.NotNull(node);
         Assert.NotNull(node.OutputPorts);
@@ -261,17 +253,17 @@ public class NodeTypeRegistryTests
     #region Specific Node Type Existence Tests
 
     [Theory]
-    [InlineData("Event_OnGameStart")]
-    [InlineData("Event_OnEnter")]
-    [InlineData("Event_OnExit")]
-    [InlineData("Event_OnTalk")]
-    [InlineData("Event_OnTake")]
-    [InlineData("Event_OnDrop")]
-    [InlineData("Event_OnUse")]
-    [InlineData("Event_OnExamine")]
-    [InlineData("Event_OnQuestStart")]
-    [InlineData("Event_OnQuestComplete")]
-    public void EventNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Event_OnGameStart)]
+    [InlineData(NodeTypeId.Event_OnEnter)]
+    [InlineData(NodeTypeId.Event_OnExit)]
+    [InlineData(NodeTypeId.Event_OnTalk)]
+    [InlineData(NodeTypeId.Event_OnTake)]
+    [InlineData(NodeTypeId.Event_OnDrop)]
+    [InlineData(NodeTypeId.Event_OnUse)]
+    [InlineData(NodeTypeId.Event_OnExamine)]
+    [InlineData(NodeTypeId.Event_OnQuestStart)]
+    [InlineData(NodeTypeId.Event_OnQuestComplete)]
+    public void EventNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -279,17 +271,17 @@ public class NodeTypeRegistryTests
     }
 
     [Theory]
-    [InlineData("Action_ShowMessage")]
-    [InlineData("Action_GiveItem")]
-    [InlineData("Action_RemoveItem")]
-    [InlineData("Action_TeleportPlayer")]
-    [InlineData("Action_SetFlag")]
-    [InlineData("Action_SetCounter")]
-    [InlineData("Action_StartQuest")]
-    [InlineData("Action_CompleteQuest")]
-    [InlineData("Action_AddMoney")]
-    [InlineData("Action_RemoveMoney")]
-    public void ActionNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Action_ShowMessage)]
+    [InlineData(NodeTypeId.Action_GiveItem)]
+    [InlineData(NodeTypeId.Action_RemoveItem)]
+    [InlineData(NodeTypeId.Action_TeleportPlayer)]
+    [InlineData(NodeTypeId.Action_SetFlag)]
+    [InlineData(NodeTypeId.Action_SetCounter)]
+    [InlineData(NodeTypeId.Action_StartQuest)]
+    [InlineData(NodeTypeId.Action_CompleteQuest)]
+    [InlineData(NodeTypeId.Action_AddMoney)]
+    [InlineData(NodeTypeId.Action_RemoveMoney)]
+    public void ActionNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -297,12 +289,12 @@ public class NodeTypeRegistryTests
     }
 
     [Theory]
-    [InlineData("Condition_HasItem")]
-    [InlineData("Condition_IsInRoom")]
-    [InlineData("Condition_HasFlag")]
-    [InlineData("Condition_CompareCounter")]
-    [InlineData("Condition_Random")]
-    public void ConditionNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Condition_HasItem)]
+    [InlineData(NodeTypeId.Condition_IsInRoom)]
+    [InlineData(NodeTypeId.Condition_HasFlag)]
+    [InlineData(NodeTypeId.Condition_CompareCounter)]
+    [InlineData(NodeTypeId.Condition_Random)]
+    public void ConditionNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -310,11 +302,11 @@ public class NodeTypeRegistryTests
     }
 
     [Theory]
-    [InlineData("Flow_Branch")]
-    [InlineData("Flow_Sequence")]
-    [InlineData("Flow_Delay")]
-    [InlineData("Flow_RandomBranch")]
-    public void FlowNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Flow_Branch)]
+    [InlineData(NodeTypeId.Flow_Sequence)]
+    [InlineData(NodeTypeId.Flow_Delay)]
+    [InlineData(NodeTypeId.Flow_RandomBranch)]
+    public void FlowNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -322,13 +314,13 @@ public class NodeTypeRegistryTests
     }
 
     [Theory]
-    [InlineData("Conversation_Start")]
-    [InlineData("Conversation_NpcSay")]
-    [InlineData("Conversation_PlayerChoice")]
-    [InlineData("Conversation_Branch")]
-    [InlineData("Conversation_End")]
-    [InlineData("Conversation_Shop")]
-    public void ConversationNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Conversation_Start)]
+    [InlineData(NodeTypeId.Conversation_NpcSay)]
+    [InlineData(NodeTypeId.Conversation_PlayerChoice)]
+    [InlineData(NodeTypeId.Conversation_Branch)]
+    [InlineData(NodeTypeId.Conversation_End)]
+    [InlineData(NodeTypeId.Conversation_Shop)]
+    public void ConversationNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -342,7 +334,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void Action_StartQuest_HasQuestIdProperty()
     {
-        var node = NodeTypeRegistry.GetNodeType("Action_StartQuest");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Action_StartQuest);
 
         Assert.NotNull(node);
         Assert.NotNull(node.Properties);
@@ -353,7 +345,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void Action_CompleteQuest_HasQuestIdProperty()
     {
-        var node = NodeTypeRegistry.GetNodeType("Action_CompleteQuest");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Action_CompleteQuest);
 
         Assert.NotNull(node);
         Assert.NotNull(node.Properties);
@@ -364,7 +356,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void Action_FailQuest_Exists()
     {
-        var node = NodeTypeRegistry.GetNodeType("Action_FailQuest");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Action_FailQuest);
 
         Assert.NotNull(node);
         Assert.Equal(NodeCategory.Action, node.Category);
@@ -375,7 +367,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void Event_OnQuestStart_Exists()
     {
-        var node = NodeTypeRegistry.GetNodeType("Event_OnQuestStart");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Event_OnQuestStart);
 
         Assert.NotNull(node);
         Assert.Equal(NodeCategory.Event, node.Category);
@@ -387,7 +379,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void Event_OnQuestComplete_Exists()
     {
-        var node = NodeTypeRegistry.GetNodeType("Event_OnQuestComplete");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Event_OnQuestComplete);
 
         Assert.NotNull(node);
         Assert.Equal(NodeCategory.Event, node.Category);
@@ -401,11 +393,11 @@ public class NodeTypeRegistryTests
     #region Door Action Node Tests
 
     [Theory]
-    [InlineData("Action_OpenDoor")]
-    [InlineData("Action_CloseDoor")]
-    [InlineData("Action_LockDoor")]
-    [InlineData("Action_UnlockDoor")]
-    public void DoorActionNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Action_OpenDoor)]
+    [InlineData(NodeTypeId.Action_CloseDoor)]
+    [InlineData(NodeTypeId.Action_LockDoor)]
+    [InlineData(NodeTypeId.Action_UnlockDoor)]
+    public void DoorActionNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -424,7 +416,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void Action_SetObjectVisible_Exists()
     {
-        var node = NodeTypeRegistry.GetNodeType("Action_SetObjectVisible");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Action_SetObjectVisible);
         Assert.NotNull(node);
         Assert.Equal(NodeCategory.Action, node.Category);
         var objectIdProp = node?.Properties?.FirstOrDefault(p => p.Name == "ObjectId");
@@ -436,7 +428,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void Action_SetNpcVisible_Exists()
     {
-        var node = NodeTypeRegistry.GetNodeType("Action_SetNpcVisible");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Action_SetNpcVisible);
         Assert.NotNull(node);
         Assert.Equal(NodeCategory.Action, node.Category);
         var npcIdProp = node?.Properties?.FirstOrDefault(p => p.Name == "NpcId");
@@ -450,7 +442,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void Action_IncrementCounter_Exists()
     {
-        var node = NodeTypeRegistry.GetNodeType("Action_IncrementCounter");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Action_IncrementCounter);
         Assert.NotNull(node);
         Assert.Equal(NodeCategory.Action, node.Category);
         var counterNameProp = node?.Properties?.FirstOrDefault(p => p.Name == "CounterName");
@@ -460,7 +452,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void Action_SetCounter_Exists()
     {
-        var node = NodeTypeRegistry.GetNodeType("Action_SetCounter");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Action_SetCounter);
         Assert.NotNull(node);
         Assert.Equal(NodeCategory.Action, node.Category);
         var counterNameProp = node?.Properties?.FirstOrDefault(p => p.Name == "CounterName");
@@ -474,14 +466,14 @@ public class NodeTypeRegistryTests
     #region Additional Event Nodes Tests
 
     [Theory]
-    [InlineData("Event_OnGameEnd")]
-    [InlineData("Event_EveryMinute")]
-    [InlineData("Event_EveryHour")]
-    [InlineData("Event_OnTurnStart")]
-    [InlineData("Event_OnWeatherChange")]
-    [InlineData("Event_OnQuestFail")]
-    [InlineData("Event_OnObjectiveComplete")]
-    public void AdditionalEventNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Event_OnGameEnd)]
+    [InlineData(NodeTypeId.Event_EveryMinute)]
+    [InlineData(NodeTypeId.Event_EveryHour)]
+    [InlineData(NodeTypeId.Event_OnTurnStart)]
+    [InlineData(NodeTypeId.Event_OnWeatherChange)]
+    [InlineData(NodeTypeId.Event_OnQuestFail)]
+    [InlineData(NodeTypeId.Event_OnObjectiveComplete)]
+    public void AdditionalEventNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -491,12 +483,11 @@ public class NodeTypeRegistryTests
     }
 
     [Theory]
-    [InlineData("Event_OnDoorOpen")]
-    [InlineData("Event_OnDoorClose")]
-    [InlineData("Event_OnDoorLock")]
-    [InlineData("Event_OnDoorUnlock")]
-    [InlineData("Event_OnDoorKnock")]
-    public void DoorEventNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Event_OnDoorOpen)]
+    [InlineData(NodeTypeId.Event_OnDoorClose)]
+    [InlineData(NodeTypeId.Event_OnDoorLock)]
+    [InlineData(NodeTypeId.Event_OnDoorUnlock)]
+    public void DoorEventNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -504,9 +495,9 @@ public class NodeTypeRegistryTests
     }
 
     [Theory]
-    [InlineData("Event_OnNpcDeath")]
-    [InlineData("Event_OnNpcSee")]
-    public void NpcEventNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Event_OnNpcDeath)]
+    [InlineData(NodeTypeId.Event_OnNpcSee)]
+    public void NpcEventNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -514,9 +505,9 @@ public class NodeTypeRegistryTests
     }
 
     [Theory]
-    [InlineData("Event_OnContainerOpen")]
-    [InlineData("Event_OnContainerClose")]
-    public void ContainerEventNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Event_OnContainerOpen)]
+    [InlineData(NodeTypeId.Event_OnContainerClose)]
+    public void ContainerEventNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -528,13 +519,13 @@ public class NodeTypeRegistryTests
     #region Additional Condition Nodes Tests
 
     [Theory]
-    [InlineData("Condition_IsQuestStatus")]
-    [InlineData("Condition_IsTimeOfDay")]
-    [InlineData("Condition_IsDoorOpen")]
-    [InlineData("Condition_IsNpcVisible")]
-    [InlineData("Condition_IsPatrolling")]
-    [InlineData("Condition_IsFollowingPlayer")]
-    public void AdditionalConditionNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Condition_IsQuestStatus)]
+    [InlineData(NodeTypeId.Condition_IsTimeOfDay)]
+    [InlineData(NodeTypeId.Condition_IsDoorOpen)]
+    [InlineData(NodeTypeId.Condition_IsNpcVisible)]
+    [InlineData(NodeTypeId.Condition_IsPatrolling)]
+    [InlineData(NodeTypeId.Condition_IsFollowingPlayer)]
+    public void AdditionalConditionNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -549,16 +540,16 @@ public class NodeTypeRegistryTests
     #region Additional Action Nodes Tests
 
     [Theory]
-    [InlineData("Action_MoveNpc")]
-    [InlineData("Action_StartPatrol")]
-    [InlineData("Action_StopPatrol")]
-    [InlineData("Action_PatrolStep")]
-    [InlineData("Action_SetPatrolMode")]
-    [InlineData("Action_FollowPlayer")]
-    [InlineData("Action_StopFollowing")]
-    [InlineData("Action_SetFollowMode")]
-    [InlineData("Action_StartConversation")]
-    public void NpcActionNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Action_MoveNpc)]
+    [InlineData(NodeTypeId.Action_StartPatrol)]
+    [InlineData(NodeTypeId.Action_StopPatrol)]
+    [InlineData(NodeTypeId.Action_PatrolStep)]
+    [InlineData(NodeTypeId.Action_SetPatrolMode)]
+    [InlineData(NodeTypeId.Action_FollowPlayer)]
+    [InlineData(NodeTypeId.Action_StopFollowing)]
+    [InlineData(NodeTypeId.Action_SetFollowMode)]
+    [InlineData(NodeTypeId.Action_StartConversation)]
+    public void NpcActionNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -566,12 +557,11 @@ public class NodeTypeRegistryTests
     }
 
     [Theory]
-    [InlineData("Action_SetMoney")]
-    [InlineData("Action_AddMoneyData")]
-    [InlineData("Action_RemoveMoneyData")]
-    [InlineData("Action_SetCounterData")]
-    [InlineData("Action_IncrementCounterData")]
-    public void DataDrivenActionNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Action_SetCounter)]
+    [InlineData(NodeTypeId.Action_IncrementCounter)]
+    [InlineData(NodeTypeId.Action_AddPlayerMoney)]
+    [InlineData(NodeTypeId.Action_RemovePlayerMoney)]
+    public void DataDrivenActionNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -581,7 +571,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void Action_PlaySound_Exists()
     {
-        var node = NodeTypeRegistry.GetNodeType("Action_PlaySound");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Action_PlaySound);
         Assert.NotNull(node);
         Assert.Equal(NodeCategory.Action, node.Category);
         var soundIdProp = node?.Properties?.FirstOrDefault(p => p.Name == "SoundId");
@@ -593,11 +583,11 @@ public class NodeTypeRegistryTests
     #region Variable Nodes Tests
 
     [Theory]
-    [InlineData("Variable_GetGameHour")]
-    [InlineData("Variable_GetPlayerMoney")]
-    [InlineData("Variable_GetCurrentRoom")]
-    [InlineData("Variable_GetCurrentWeather")]
-    public void GameStateVariableNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Variable_GetGameHour)]
+    [InlineData(NodeTypeId.Variable_GetPlayerMoney)]
+    [InlineData(NodeTypeId.Variable_GetCurrentRoom)]
+    [InlineData(NodeTypeId.Variable_GetCurrentWeather)]
+    public void GameStateVariableNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -607,16 +597,16 @@ public class NodeTypeRegistryTests
     }
 
     [Theory]
-    [InlineData("Variable_GetPlayerStrength")]
-    [InlineData("Variable_GetPlayerConstitution")]
-    [InlineData("Variable_GetPlayerIntelligence")]
-    [InlineData("Variable_GetPlayerDexterity")]
-    [InlineData("Variable_GetPlayerCharisma")]
-    [InlineData("Variable_GetPlayerWeight")]
-    [InlineData("Variable_GetPlayerAge")]
-    [InlineData("Variable_GetPlayerHeight")]
-    [InlineData("Variable_GetPlayerInitialMoney")]
-    public void PlayerStatVariableNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Variable_GetPlayerStrength)]
+    [InlineData(NodeTypeId.Variable_GetPlayerConstitution)]
+    [InlineData(NodeTypeId.Variable_GetPlayerIntelligence)]
+    [InlineData(NodeTypeId.Variable_GetPlayerDexterity)]
+    [InlineData(NodeTypeId.Variable_GetPlayerCharisma)]
+    [InlineData(NodeTypeId.Variable_GetPlayerWeight)]
+    [InlineData(NodeTypeId.Variable_GetPlayerAge)]
+    [InlineData(NodeTypeId.Variable_GetPlayerHeight)]
+    [InlineData(NodeTypeId.Variable_GetPlayerInitialMoney)]
+    public void PlayerStatVariableNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -624,9 +614,9 @@ public class NodeTypeRegistryTests
     }
 
     [Theory]
-    [InlineData("Variable_ConstantInt")]
-    [InlineData("Variable_ConstantBool")]
-    public void ConstantVariableNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Variable_ConstantInt)]
+    [InlineData(NodeTypeId.Variable_ConstantBool)]
+    public void ConstantVariableNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -640,10 +630,10 @@ public class NodeTypeRegistryTests
     #region Compare Nodes Tests
 
     [Theory]
-    [InlineData("Compare_Int")]
-    [InlineData("Compare_PlayerMoney")]
-    [InlineData("Compare_Counter")]
-    public void CompareNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Compare_Int)]
+    [InlineData(NodeTypeId.Compare_PlayerMoney)]
+    [InlineData(NodeTypeId.Compare_Counter)]
+    public void CompareNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -658,12 +648,12 @@ public class NodeTypeRegistryTests
     #region Math Nodes Tests
 
     [Theory]
-    [InlineData("Math_Add")]
-    [InlineData("Math_Subtract")]
-    [InlineData("Math_Multiply")]
-    [InlineData("Math_Divide")]
-    [InlineData("Math_Modulo")]
-    public void BinaryMathNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Math_Add)]
+    [InlineData(NodeTypeId.Math_Subtract)]
+    [InlineData(NodeTypeId.Math_Multiply)]
+    [InlineData(NodeTypeId.Math_Divide)]
+    [InlineData(NodeTypeId.Math_Modulo)]
+    public void BinaryMathNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -675,9 +665,9 @@ public class NodeTypeRegistryTests
     }
 
     [Theory]
-    [InlineData("Math_Negate")]
-    [InlineData("Math_Abs")]
-    public void UnaryMathNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Math_Negate)]
+    [InlineData(NodeTypeId.Math_Abs)]
+    public void UnaryMathNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -685,9 +675,9 @@ public class NodeTypeRegistryTests
     }
 
     [Theory]
-    [InlineData("Math_Min")]
-    [InlineData("Math_Max")]
-    public void MinMaxMathNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Math_Min)]
+    [InlineData(NodeTypeId.Math_Max)]
+    public void MinMaxMathNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -697,7 +687,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void Math_Clamp_Exists()
     {
-        var node = NodeTypeRegistry.GetNodeType("Math_Clamp");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Math_Clamp);
         Assert.NotNull(node);
         Assert.Equal(NodeCategory.Variable, node.Category);
         Assert.NotNull(node.InputPorts);
@@ -708,7 +698,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void Math_Random_Exists()
     {
-        var node = NodeTypeRegistry.GetNodeType("Math_Random");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Math_Random);
         Assert.NotNull(node);
         Assert.Equal(NodeCategory.Variable, node.Category);
         Assert.NotNull(node.OutputPorts);
@@ -719,10 +709,10 @@ public class NodeTypeRegistryTests
     #region Logic Nodes Tests
 
     [Theory]
-    [InlineData("Logic_And")]
-    [InlineData("Logic_Or")]
-    [InlineData("Logic_Xor")]
-    public void BinaryLogicNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Logic_And)]
+    [InlineData(NodeTypeId.Logic_Or)]
+    [InlineData(NodeTypeId.Logic_Xor)]
+    public void BinaryLogicNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -737,7 +727,7 @@ public class NodeTypeRegistryTests
     [Fact]
     public void Logic_Not_Exists()
     {
-        var node = NodeTypeRegistry.GetNodeType("Logic_Not");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Logic_Not);
         Assert.NotNull(node);
         Assert.Equal(NodeCategory.Condition, node.Category);
         Assert.NotNull(node.InputPorts);
@@ -750,9 +740,9 @@ public class NodeTypeRegistryTests
     #region Select Nodes Tests
 
     [Theory]
-    [InlineData("Select_Int")]
-    [InlineData("Select_Bool")]
-    public void SelectNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Select_Int)]
+    [InlineData(NodeTypeId.Select_Bool)]
+    public void SelectNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -770,15 +760,15 @@ public class NodeTypeRegistryTests
     [Fact]
     public void Conversation_Action_Exists()
     {
-        var node = NodeTypeRegistry.GetNodeType("Conversation_Action");
+        var node = NodeTypeRegistry.GetNodeType(NodeTypeId.Conversation_Action);
         Assert.NotNull(node);
         Assert.Equal(NodeCategory.Dialogue, node.Category);
     }
 
     [Theory]
-    [InlineData("Conversation_BuyItem")]
-    [InlineData("Conversation_SellItem")]
-    public void ConversationTradeNodes_Exist(string typeId)
+    [InlineData(NodeTypeId.Conversation_BuyItem)]
+    [InlineData(NodeTypeId.Conversation_SellItem)]
+    public void ConversationTradeNodes_Exist(NodeTypeId typeId)
     {
         var node = NodeTypeRegistry.GetNodeType(typeId);
         Assert.NotNull(node);
@@ -795,8 +785,8 @@ public class NodeTypeRegistryTests
         var gameNodes = NodeTypeRegistry.GetNodesForOwnerType("Game").ToList();
 
         Assert.True(gameNodes.Count > 0);
-        Assert.Contains(gameNodes, n => n.TypeId == "Event_OnGameStart");
-        Assert.Contains(gameNodes, n => n.TypeId == "Event_OnGameEnd");
+        Assert.Contains(gameNodes, n => n.TypeId == NodeTypeId.Event_OnGameStart);
+        Assert.Contains(gameNodes, n => n.TypeId == NodeTypeId.Event_OnGameEnd);
     }
 
     [Fact]
@@ -805,8 +795,8 @@ public class NodeTypeRegistryTests
         var doorNodes = NodeTypeRegistry.GetNodesForOwnerType("Door").ToList();
 
         Assert.True(doorNodes.Count > 0);
-        Assert.Contains(doorNodes, n => n.TypeId == "Event_OnDoorOpen");
-        Assert.Contains(doorNodes, n => n.TypeId == "Event_OnDoorClose");
+        Assert.Contains(doorNodes, n => n.TypeId == NodeTypeId.Event_OnDoorOpen);
+        Assert.Contains(doorNodes, n => n.TypeId == NodeTypeId.Event_OnDoorClose);
     }
 
     [Fact]
@@ -815,9 +805,9 @@ public class NodeTypeRegistryTests
         var questNodes = NodeTypeRegistry.GetNodesForOwnerType("Quest").ToList();
 
         Assert.True(questNodes.Count > 0);
-        Assert.Contains(questNodes, n => n.TypeId == "Event_OnQuestStart");
-        Assert.Contains(questNodes, n => n.TypeId == "Event_OnQuestComplete");
-        Assert.Contains(questNodes, n => n.TypeId == "Event_OnQuestFail");
+        Assert.Contains(questNodes, n => n.TypeId == NodeTypeId.Event_OnQuestStart);
+        Assert.Contains(questNodes, n => n.TypeId == NodeTypeId.Event_OnQuestComplete);
+        Assert.Contains(questNodes, n => n.TypeId == NodeTypeId.Event_OnQuestFail);
     }
 
     [Fact]
@@ -837,29 +827,16 @@ public class NodeTypeRegistryTests
     {
         var unknownNodes = NodeTypeRegistry.GetNodesForOwnerType("UnknownType").ToList();
 
-        // Should only return wildcard nodes (those with "*" owner type)
+        // Should only return wildcard nodes (those with All owner type)
         // These are common nodes like Action_ShowMessage
         Assert.True(unknownNodes.Count > 0);
-        Assert.All(unknownNodes, n => Assert.Contains("*", n.OwnerTypes));
+        Assert.All(unknownNodes, n => Assert.True(n.OwnerTypes.HasFlag(NodeOwnerType.All)));
     }
 
     #endregion
 
     #region Edge Cases Tests
 
-    [Fact]
-    public void GetNodeType_EmptyString_ReturnsNull()
-    {
-        var result = NodeTypeRegistry.GetNodeType("");
-        Assert.Null(result);
-    }
-
-    [Fact]
-    public void GetNodeType_WhitespaceOnly_ReturnsNull()
-    {
-        var result = NodeTypeRegistry.GetNodeType("   ");
-        Assert.Null(result);
-    }
 
     [Fact]
     public void AllNodeTypes_HaveValidCategory()
@@ -931,7 +908,7 @@ public class NodeTypeRegistryTests
     public void FlowControlNodes_HaveExecInputPort()
     {
         // Only test the core flow control nodes, not data-flow nodes like Select_*
-        var flowControlTypeIds = new[] { "Flow_Branch", "Flow_Sequence", "Flow_Delay", "Flow_RandomBranch" };
+        var flowControlTypeIds = new[] { NodeTypeId.Flow_Branch, NodeTypeId.Flow_Sequence, NodeTypeId.Flow_Delay, NodeTypeId.Flow_RandomBranch };
 
         foreach (var typeId in flowControlTypeIds)
         {
@@ -943,14 +920,14 @@ public class NodeTypeRegistryTests
     }
 
     [Fact]
-    public void Types_IsCaseInsensitive()
+    public void Types_ContainsExpectedKeys()
     {
         var types = NodeTypeRegistry.Types;
 
-        // Should be able to look up by any case
-        Assert.True(types.ContainsKey("Event_OnEnter"));
-        Assert.True(types.ContainsKey("event_onenter"));
-        Assert.True(types.ContainsKey("EVENT_ONENTER"));
+        // Should contain expected keys
+        Assert.True(types.ContainsKey(NodeTypeId.Event_OnEnter));
+        Assert.True(types.ContainsKey(NodeTypeId.Action_ShowMessage));
+        Assert.True(types.ContainsKey(NodeTypeId.Condition_HasItem));
     }
 
     #endregion

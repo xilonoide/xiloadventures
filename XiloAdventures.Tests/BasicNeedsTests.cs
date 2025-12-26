@@ -292,14 +292,14 @@ public class BasicNeedsTests
                 new ScriptNode
                 {
                     Id = "event_node",
-                    NodeType = "Event_OnGameStart",
+                    NodeType = NodeTypeId.Event_OnGameStart,
                     Category = NodeCategory.Event,
                     Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 },
                 new ScriptNode
                 {
                     Id = "var_node",
-                    NodeType = "Variable_GetPlayerSleep",
+                    NodeType = NodeTypeId.Variable_GetPlayerSleep,
                     Category = NodeCategory.Variable,
                     Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 }
@@ -311,7 +311,7 @@ public class BasicNeedsTests
         var engine = new ScriptEngine(world, state);
 
         // Execute script - variable nodes are evaluated on demand
-        await engine.TriggerEventAsync("Game", "test_basic_needs", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_basic_needs", NodeTypeId.Event_OnGameStart);
 
         // The value should be accessible
         Assert.Equal(45, state.Player.DynamicStats.Sleep);
@@ -396,7 +396,7 @@ public class BasicNeedsTests
         var node = new ScriptNode
         {
             Id = "set_rate_node",
-            NodeType = "Action_SetNeedRate",
+            NodeType = NodeTypeId.Action_SetNeedRate,
             Category = NodeCategory.Action,
             Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -430,7 +430,7 @@ public class BasicNeedsTests
         var node = new ScriptNode
         {
             Id = "set_rate_node",
-            NodeType = "Action_SetNeedRate",
+            NodeType = NodeTypeId.Action_SetNeedRate,
             Category = NodeCategory.Action,
             Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -483,14 +483,14 @@ public class BasicNeedsTests
                 new ScriptNode
                 {
                     Id = "event_node",
-                    NodeType = "Event_OnGameStart",
+                    NodeType = NodeTypeId.Event_OnGameStart,
                     Category = NodeCategory.Event,
                     Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 },
                 new ScriptNode
                 {
                     Id = "get_rate_node",
-                    NodeType = "Variable_GetNeedRate",
+                    NodeType = NodeTypeId.Variable_GetNeedRate,
                     Category = NodeCategory.Variable,
                     Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                     {
@@ -532,7 +532,7 @@ public class BasicNeedsTests
         var setRateNode = new ScriptNode
         {
             Id = "set_rate_node",
-            NodeType = "Action_SetNeedRate",
+            NodeType = NodeTypeId.Action_SetNeedRate,
             Category = NodeCategory.Action,
             Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -566,7 +566,7 @@ public class BasicNeedsTests
         var setRateNode = new ScriptNode
         {
             Id = "set_rate_node",
-            NodeType = "Action_SetNeedRate",
+            NodeType = NodeTypeId.Action_SetNeedRate,
             Category = NodeCategory.Action,
             Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -611,14 +611,14 @@ public class BasicNeedsTests
                 new ScriptNode
                 {
                     Id = "event_node",
-                    NodeType = "Event_OnGameStart",
+                    NodeType = NodeTypeId.Event_OnGameStart,
                     Category = NodeCategory.Event,
                     Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 },
                 new ScriptNode
                 {
                     Id = "set_rate_node",
-                    NodeType = "Action_SetNeedRate",
+                    NodeType = NodeTypeId.Action_SetNeedRate,
                     Category = NodeCategory.Action,
                     Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                     {
@@ -641,7 +641,7 @@ public class BasicNeedsTests
         world.Scripts.Add(script);
 
         var engine = new ScriptEngine(world, state);
-        await engine.TriggerEventAsync("Game", "test_basic_needs", "Event_OnGameStart");
+        await engine.TriggerEventAsync("Game", "test_basic_needs", NodeTypeId.Event_OnGameStart);
 
         Assert.Equal(NeedRate.Low, world.Game.ThirstRate);
     }
@@ -657,7 +657,7 @@ public class BasicNeedsTests
         await scriptEngine.ExecuteSingleNodeAsync(new ScriptNode
         {
             Id = "node1",
-            NodeType = "Action_SetNeedRate",
+            NodeType = NodeTypeId.Action_SetNeedRate,
             Category = NodeCategory.Action,
             Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -669,7 +669,7 @@ public class BasicNeedsTests
         await scriptEngine.ExecuteSingleNodeAsync(new ScriptNode
         {
             Id = "node2",
-            NodeType = "Action_SetNeedRate",
+            NodeType = NodeTypeId.Action_SetNeedRate,
             Category = NodeCategory.Action,
             Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -681,7 +681,7 @@ public class BasicNeedsTests
         await scriptEngine.ExecuteSingleNodeAsync(new ScriptNode
         {
             Id = "node3",
-            NodeType = "Action_SetNeedRate",
+            NodeType = NodeTypeId.Action_SetNeedRate,
             Category = NodeCategory.Action,
             Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -702,27 +702,27 @@ public class BasicNeedsTests
     [Fact]
     public void NodeTypeRegistry_Action_SetNeedRate_Exists()
     {
-        var nodeDef = NodeTypeRegistry.GetNodeType("Action_SetNeedRate");
+        var nodeDef = NodeTypeRegistry.GetNodeType(NodeTypeId.Action_SetNeedRate);
         Assert.NotNull(nodeDef);
-        Assert.Equal("Action_SetNeedRate", nodeDef.TypeId);
+        Assert.Equal(NodeTypeId.Action_SetNeedRate, nodeDef.TypeId);
         Assert.Equal(NodeCategory.Action, nodeDef.Category);
-        Assert.Equal("BasicNeeds", nodeDef.RequiredFeature);
+        Assert.Equal(RequiredFeature.BasicNeeds, nodeDef.RequiredFeature);
     }
 
     [Fact]
     public void NodeTypeRegistry_Variable_GetNeedRate_Exists()
     {
-        var nodeDef = NodeTypeRegistry.GetNodeType("Variable_GetNeedRate");
+        var nodeDef = NodeTypeRegistry.GetNodeType(NodeTypeId.Variable_GetNeedRate);
         Assert.NotNull(nodeDef);
-        Assert.Equal("Variable_GetNeedRate", nodeDef.TypeId);
+        Assert.Equal(NodeTypeId.Variable_GetNeedRate, nodeDef.TypeId);
         Assert.Equal(NodeCategory.Variable, nodeDef.Category);
-        Assert.Equal("BasicNeeds", nodeDef.RequiredFeature);
+        Assert.Equal(RequiredFeature.BasicNeeds, nodeDef.RequiredFeature);
     }
 
     [Fact]
     public void NodeTypeRegistry_Action_SetNeedRate_HasCorrectProperties()
     {
-        var nodeDef = NodeTypeRegistry.GetNodeType("Action_SetNeedRate");
+        var nodeDef = NodeTypeRegistry.GetNodeType(NodeTypeId.Action_SetNeedRate);
         Assert.NotNull(nodeDef);
 
         var needTypeProp = nodeDef.Properties.FirstOrDefault(p => p.Name == "NeedType");
@@ -745,7 +745,7 @@ public class BasicNeedsTests
     [Fact]
     public void NodeTypeRegistry_Variable_GetNeedRate_HasCorrectProperties()
     {
-        var nodeDef = NodeTypeRegistry.GetNodeType("Variable_GetNeedRate");
+        var nodeDef = NodeTypeRegistry.GetNodeType(NodeTypeId.Variable_GetNeedRate);
         Assert.NotNull(nodeDef);
 
         var needTypeProp = nodeDef.Properties.FirstOrDefault(p => p.Name == "NeedType");
@@ -766,11 +766,11 @@ public class BasicNeedsTests
         var nodesWithFeature = NodeTypeRegistry.GetNodesForOwnerType("Game", gameInfoWithBasicNeeds).ToList();
         var nodesWithoutFeature = NodeTypeRegistry.GetNodesForOwnerType("Game", gameInfoWithoutBasicNeeds).ToList();
 
-        Assert.Contains(nodesWithFeature, n => n.TypeId == "Action_SetNeedRate");
-        Assert.Contains(nodesWithFeature, n => n.TypeId == "Variable_GetNeedRate");
+        Assert.Contains(nodesWithFeature, n => n.TypeId == NodeTypeId.Action_SetNeedRate);
+        Assert.Contains(nodesWithFeature, n => n.TypeId == NodeTypeId.Variable_GetNeedRate);
 
-        Assert.DoesNotContain(nodesWithoutFeature, n => n.TypeId == "Action_SetNeedRate");
-        Assert.DoesNotContain(nodesWithoutFeature, n => n.TypeId == "Variable_GetNeedRate");
+        Assert.DoesNotContain(nodesWithoutFeature, n => n.TypeId == NodeTypeId.Action_SetNeedRate);
+        Assert.DoesNotContain(nodesWithoutFeature, n => n.TypeId == NodeTypeId.Variable_GetNeedRate);
     }
 
     #endregion
@@ -1204,51 +1204,51 @@ public class BasicNeedsTests
     [Fact]
     public void NodeTypeRegistry_Event_OnEat_Exists()
     {
-        var nodeDef = NodeTypeRegistry.GetNodeType("Event_OnEat");
+        var nodeDef = NodeTypeRegistry.GetNodeType(NodeTypeId.Event_OnEat);
         Assert.NotNull(nodeDef);
-        Assert.Equal("Event_OnEat", nodeDef.TypeId);
+        Assert.Equal(NodeTypeId.Event_OnEat, nodeDef.TypeId);
         Assert.Equal(NodeCategory.Event, nodeDef.Category);
-        Assert.Equal("BasicNeeds", nodeDef.RequiredFeature);
+        Assert.Equal(RequiredFeature.BasicNeeds, nodeDef.RequiredFeature);
     }
 
     [Fact]
     public void NodeTypeRegistry_Event_OnDrink_Exists()
     {
-        var nodeDef = NodeTypeRegistry.GetNodeType("Event_OnDrink");
+        var nodeDef = NodeTypeRegistry.GetNodeType(NodeTypeId.Event_OnDrink);
         Assert.NotNull(nodeDef);
-        Assert.Equal("Event_OnDrink", nodeDef.TypeId);
+        Assert.Equal(NodeTypeId.Event_OnDrink, nodeDef.TypeId);
         Assert.Equal(NodeCategory.Event, nodeDef.Category);
-        Assert.Equal("BasicNeeds", nodeDef.RequiredFeature);
+        Assert.Equal(RequiredFeature.BasicNeeds, nodeDef.RequiredFeature);
     }
 
     [Fact]
     public void NodeTypeRegistry_Event_OnSleep_Exists()
     {
-        var nodeDef = NodeTypeRegistry.GetNodeType("Event_OnSleep");
+        var nodeDef = NodeTypeRegistry.GetNodeType(NodeTypeId.Event_OnSleep);
         Assert.NotNull(nodeDef);
-        Assert.Equal("Event_OnSleep", nodeDef.TypeId);
+        Assert.Equal(NodeTypeId.Event_OnSleep, nodeDef.TypeId);
         Assert.Equal(NodeCategory.Event, nodeDef.Category);
-        Assert.Equal("BasicNeeds", nodeDef.RequiredFeature);
+        Assert.Equal(RequiredFeature.BasicNeeds, nodeDef.RequiredFeature);
     }
 
     [Fact]
     public void NodeTypeRegistry_Event_OnWakeUp_Exists()
     {
-        var nodeDef = NodeTypeRegistry.GetNodeType("Event_OnWakeUp");
+        var nodeDef = NodeTypeRegistry.GetNodeType(NodeTypeId.Event_OnWakeUp);
         Assert.NotNull(nodeDef);
-        Assert.Equal("Event_OnWakeUp", nodeDef.TypeId);
+        Assert.Equal(NodeTypeId.Event_OnWakeUp, nodeDef.TypeId);
         Assert.Equal(NodeCategory.Event, nodeDef.Category);
-        Assert.Equal("BasicNeeds", nodeDef.RequiredFeature);
+        Assert.Equal(RequiredFeature.BasicNeeds, nodeDef.RequiredFeature);
     }
 
     [Fact]
     public void NodeTypeRegistry_Event_OnWakeUpStartled_Exists()
     {
-        var nodeDef = NodeTypeRegistry.GetNodeType("Event_OnWakeUpStartled");
+        var nodeDef = NodeTypeRegistry.GetNodeType(NodeTypeId.Event_OnWakeUpStartled);
         Assert.NotNull(nodeDef);
-        Assert.Equal("Event_OnWakeUpStartled", nodeDef.TypeId);
+        Assert.Equal(NodeTypeId.Event_OnWakeUpStartled, nodeDef.TypeId);
         Assert.Equal(NodeCategory.Event, nodeDef.Category);
-        Assert.Equal("BasicNeeds", nodeDef.RequiredFeature);
+        Assert.Equal(RequiredFeature.BasicNeeds, nodeDef.RequiredFeature);
     }
 
     [Fact]
@@ -1260,11 +1260,11 @@ public class BasicNeedsTests
         var nodesWithFeature = NodeTypeRegistry.GetNodesForOwnerType("GameObject", gameInfoWithBasicNeeds).ToList();
         var nodesWithoutFeature = NodeTypeRegistry.GetNodesForOwnerType("GameObject", gameInfoWithoutBasicNeeds).ToList();
 
-        Assert.Contains(nodesWithFeature, n => n.TypeId == "Event_OnEat");
-        Assert.Contains(nodesWithFeature, n => n.TypeId == "Event_OnDrink");
+        Assert.Contains(nodesWithFeature, n => n.TypeId == NodeTypeId.Event_OnEat);
+        Assert.Contains(nodesWithFeature, n => n.TypeId == NodeTypeId.Event_OnDrink);
 
-        Assert.DoesNotContain(nodesWithoutFeature, n => n.TypeId == "Event_OnEat");
-        Assert.DoesNotContain(nodesWithoutFeature, n => n.TypeId == "Event_OnDrink");
+        Assert.DoesNotContain(nodesWithoutFeature, n => n.TypeId == NodeTypeId.Event_OnEat);
+        Assert.DoesNotContain(nodesWithoutFeature, n => n.TypeId == NodeTypeId.Event_OnDrink);
     }
 
     #endregion

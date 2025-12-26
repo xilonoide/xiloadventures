@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using XiloAdventures.Engine.Models;
+using XiloAdventures.Engine.Models.Enums;
 using Xunit;
 
 namespace XiloAdventures.Tests;
@@ -29,7 +30,7 @@ public class ScriptValidatorTests
         };
     }
 
-    private static ScriptNode CreateEventNode(string id = "event1", string eventType = "Event_OnEnter")
+    private static ScriptNode CreateEventNode(string id = "event1", NodeTypeId eventType = NodeTypeId.Event_OnEnter)
     {
         return new ScriptNode
         {
@@ -42,7 +43,7 @@ public class ScriptValidatorTests
 
     private static ScriptNode CreateActionNode(
         string id = "action1",
-        string actionType = "Action_ShowMessage",
+        NodeTypeId actionType = NodeTypeId.Action_ShowMessage,
         Dictionary<string, object?>? properties = null)
     {
         var props = properties ?? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
@@ -60,7 +61,7 @@ public class ScriptValidatorTests
 
     private static ScriptNode CreateConditionNode(
         string id = "condition1",
-        string conditionType = "Condition_HasItem",
+        NodeTypeId conditionType = NodeTypeId.Condition_HasItem,
         Dictionary<string, object?>? properties = null)
     {
         var props = properties ?? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
@@ -76,7 +77,7 @@ public class ScriptValidatorTests
         };
     }
 
-    private static ScriptNode CreateFlowNode(string id = "flow1", string flowType = "Flow_Branch")
+    private static ScriptNode CreateFlowNode(string id = "flow1", NodeTypeId flowType = NodeTypeId.Flow_Branch)
     {
         return new ScriptNode
         {
@@ -156,18 +157,18 @@ public class ScriptValidatorTests
     }
 
     [Theory]
-    [InlineData("Event_OnEnter")]
-    [InlineData("Event_OnExit")]
-    [InlineData("Event_OnTake")]
-    [InlineData("Event_OnDrop")]
-    [InlineData("Event_OnUse")]
-    [InlineData("Event_OnExamine")]
-    [InlineData("Event_OnTalk")]
-    [InlineData("Event_OnGameStart")]
-    [InlineData("Event_OnDoorOpen")]
-    [InlineData("Event_OnQuestStart")]
-    [InlineData("Event_OnQuestComplete")]
-    public void Validate_AllEventTypes_DetectedAsEvent(string eventType)
+    [InlineData(NodeTypeId.Event_OnEnter)]
+    [InlineData(NodeTypeId.Event_OnExit)]
+    [InlineData(NodeTypeId.Event_OnTake)]
+    [InlineData(NodeTypeId.Event_OnDrop)]
+    [InlineData(NodeTypeId.Event_OnUse)]
+    [InlineData(NodeTypeId.Event_OnExamine)]
+    [InlineData(NodeTypeId.Event_OnTalk)]
+    [InlineData(NodeTypeId.Event_OnGameStart)]
+    [InlineData(NodeTypeId.Event_OnDoorOpen)]
+    [InlineData(NodeTypeId.Event_OnQuestStart)]
+    [InlineData(NodeTypeId.Event_OnQuestComplete)]
+    public void Validate_AllEventTypes_DetectedAsEvent(NodeTypeId eventType)
     {
         var script = CreateScript(
             nodes: new List<ScriptNode> { CreateEventNode(eventType: eventType) }
@@ -184,9 +185,9 @@ public class ScriptValidatorTests
         var script = CreateScript(
             nodes: new List<ScriptNode>
             {
-                CreateEventNode("event1", "Event_OnEnter"),
-                CreateEventNode("event2", "Event_OnExit"),
-                CreateEventNode("event3", "Event_OnTake")
+                CreateEventNode("event1", NodeTypeId.Event_OnEnter),
+                CreateEventNode("event2", NodeTypeId.Event_OnExit),
+                CreateEventNode("event3", NodeTypeId.Event_OnTake)
             }
         );
 
@@ -214,48 +215,49 @@ public class ScriptValidatorTests
     }
 
     [Theory]
-    [InlineData("Action_ShowMessage")]
-    [InlineData("Action_GiveItem")]
-    [InlineData("Action_RemoveItem")]
-    [InlineData("Action_TeleportPlayer")]
-    [InlineData("Action_SetFlag")]
-    [InlineData("Action_SetCounter")]
-    [InlineData("Action_OpenDoor")]
-    [InlineData("Action_CloseDoor")]
-    [InlineData("Action_StartQuest")]
-    [InlineData("Action_CompleteQuest")]
-    public void Validate_AllActionTypes_DetectedAsAction(string actionType)
+    [InlineData(NodeTypeId.Action_ShowMessage)]
+    [InlineData(NodeTypeId.Action_GiveItem)]
+    [InlineData(NodeTypeId.Action_RemoveItem)]
+    [InlineData(NodeTypeId.Action_TeleportPlayer)]
+    [InlineData(NodeTypeId.Action_SetFlag)]
+    [InlineData(NodeTypeId.Action_SetCounter)]
+    [InlineData(NodeTypeId.Action_OpenDoor)]
+    [InlineData(NodeTypeId.Action_CloseDoor)]
+    [InlineData(NodeTypeId.Action_StartQuest)]
+    [InlineData(NodeTypeId.Action_CompleteQuest)]
+    public void Validate_AllActionTypes_DetectedAsAction(NodeTypeId actionType)
     {
         var props = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 
         // Add required properties based on action type
-        switch (actionType)
+        if (actionType == NodeTypeId.Action_ShowMessage)
         {
-            case "Action_ShowMessage":
-                props["Message"] = "Test";
-                break;
-            case "Action_GiveItem":
-            case "Action_RemoveItem":
-                props["ObjectId"] = "obj1";
-                break;
-            case "Action_TeleportPlayer":
-                props["RoomId"] = "room1";
-                break;
-            case "Action_SetFlag":
-                props["FlagName"] = "flag1";
-                break;
-            case "Action_SetCounter":
-                props["CounterName"] = "counter1";
-                props["Value"] = 1;
-                break;
-            case "Action_OpenDoor":
-            case "Action_CloseDoor":
-                props["DoorId"] = "door1";
-                break;
-            case "Action_StartQuest":
-            case "Action_CompleteQuest":
-                props["QuestId"] = "quest1";
-                break;
+            props["Message"] = "Test";
+        }
+        else if (actionType == NodeTypeId.Action_GiveItem || actionType == NodeTypeId.Action_RemoveItem)
+        {
+            props["ObjectId"] = "obj1";
+        }
+        else if (actionType == NodeTypeId.Action_TeleportPlayer)
+        {
+            props["RoomId"] = "room1";
+        }
+        else if (actionType == NodeTypeId.Action_SetFlag)
+        {
+            props["FlagName"] = "flag1";
+        }
+        else if (actionType == NodeTypeId.Action_SetCounter)
+        {
+            props["CounterName"] = "counter1";
+            props["Value"] = 1;
+        }
+        else if (actionType == NodeTypeId.Action_OpenDoor || actionType == NodeTypeId.Action_CloseDoor)
+        {
+            props["DoorId"] = "door1";
+        }
+        else if (actionType == NodeTypeId.Action_StartQuest || actionType == NodeTypeId.Action_CompleteQuest)
+        {
+            props["QuestId"] = "quest1";
         }
 
         var script = CreateScript(
@@ -350,7 +352,7 @@ public class ScriptValidatorTests
             nodes: new List<ScriptNode>
             {
                 CreateEventNode(),
-                CreateFlowNode("flow1", "Flow_Sequence"),
+                CreateFlowNode("flow1", NodeTypeId.Flow_Sequence),
                 CreateActionNode()
             },
             connections: new List<NodeConnection>
@@ -427,8 +429,8 @@ public class ScriptValidatorTests
         var script = CreateScript(
             nodes: new List<ScriptNode>
             {
-                CreateEventNode("event1", "Event_OnEnter"),
-                CreateEventNode("event2", "Event_OnExit"),
+                CreateEventNode("event1", NodeTypeId.Event_OnEnter),
+                CreateEventNode("event2", NodeTypeId.Event_OnExit),
                 CreateActionNode()
             },
             connections: new List<NodeConnection>
@@ -477,7 +479,7 @@ public class ScriptValidatorTests
             nodes: new List<ScriptNode>
             {
                 CreateEventNode("event1"),
-                CreateEventNode("event2", "Event_OnExit"),
+                CreateEventNode("event2", NodeTypeId.Event_OnExit),
                 CreateActionNode()
             },
             connections: new List<NodeConnection>
@@ -737,65 +739,45 @@ public class ScriptValidatorTests
     [Fact]
     public void IsEventNode_ForEventType_ReturnsTrue()
     {
-        Assert.True(ScriptValidator.IsEventNode("Event_OnEnter"));
-        Assert.True(ScriptValidator.IsEventNode("Event_OnTake"));
-        Assert.True(ScriptValidator.IsEventNode("Event_OnGameStart"));
+        Assert.True(ScriptValidator.IsEventNode(NodeTypeId.Event_OnEnter));
+        Assert.True(ScriptValidator.IsEventNode(NodeTypeId.Event_OnTake));
+        Assert.True(ScriptValidator.IsEventNode(NodeTypeId.Event_OnGameStart));
     }
 
     [Fact]
     public void IsEventNode_ForNonEventType_ReturnsFalse()
     {
-        Assert.False(ScriptValidator.IsEventNode("Action_ShowMessage"));
-        Assert.False(ScriptValidator.IsEventNode("Condition_HasItem"));
-        Assert.False(ScriptValidator.IsEventNode("Flow_Branch"));
-    }
-
-    [Fact]
-    public void IsEventNode_CaseInsensitive()
-    {
-        Assert.True(ScriptValidator.IsEventNode("event_onenter"));
-        Assert.True(ScriptValidator.IsEventNode("EVENT_ONENTER"));
-        Assert.True(ScriptValidator.IsEventNode("Event_OnEnter"));
+        Assert.False(ScriptValidator.IsEventNode(NodeTypeId.Action_ShowMessage));
+        Assert.False(ScriptValidator.IsEventNode(NodeTypeId.Condition_HasItem));
+        Assert.False(ScriptValidator.IsEventNode(NodeTypeId.Flow_Branch));
     }
 
     [Fact]
     public void IsEventNode_InvalidType_ReturnsFalse()
     {
-        Assert.False(ScriptValidator.IsEventNode("InvalidNodeType"));
-        Assert.False(ScriptValidator.IsEventNode(""));
-        Assert.False(ScriptValidator.IsEventNode("Event_NonExistent"));
+        Assert.False(ScriptValidator.IsEventNode((NodeTypeId)99999));
     }
 
     [Fact]
     public void IsActionNode_ForActionType_ReturnsTrue()
     {
-        Assert.True(ScriptValidator.IsActionNode("Action_ShowMessage"));
-        Assert.True(ScriptValidator.IsActionNode("Action_GiveItem"));
-        Assert.True(ScriptValidator.IsActionNode("Action_TeleportPlayer"));
+        Assert.True(ScriptValidator.IsActionNode(NodeTypeId.Action_ShowMessage));
+        Assert.True(ScriptValidator.IsActionNode(NodeTypeId.Action_GiveItem));
+        Assert.True(ScriptValidator.IsActionNode(NodeTypeId.Action_TeleportPlayer));
     }
 
     [Fact]
     public void IsActionNode_ForNonActionType_ReturnsFalse()
     {
-        Assert.False(ScriptValidator.IsActionNode("Event_OnEnter"));
-        Assert.False(ScriptValidator.IsActionNode("Condition_HasItem"));
-        Assert.False(ScriptValidator.IsActionNode("Flow_Branch"));
-    }
-
-    [Fact]
-    public void IsActionNode_CaseInsensitive()
-    {
-        Assert.True(ScriptValidator.IsActionNode("action_showmessage"));
-        Assert.True(ScriptValidator.IsActionNode("ACTION_SHOWMESSAGE"));
-        Assert.True(ScriptValidator.IsActionNode("Action_ShowMessage"));
+        Assert.False(ScriptValidator.IsActionNode(NodeTypeId.Event_OnEnter));
+        Assert.False(ScriptValidator.IsActionNode(NodeTypeId.Condition_HasItem));
+        Assert.False(ScriptValidator.IsActionNode(NodeTypeId.Flow_Branch));
     }
 
     [Fact]
     public void IsActionNode_InvalidType_ReturnsFalse()
     {
-        Assert.False(ScriptValidator.IsActionNode("InvalidNodeType"));
-        Assert.False(ScriptValidator.IsActionNode(""));
-        Assert.False(ScriptValidator.IsActionNode("Action_NonExistent"));
+        Assert.False(ScriptValidator.IsActionNode((NodeTypeId)99999));
     }
 
     #endregion
@@ -877,7 +859,7 @@ public class ScriptValidatorTests
                 new ScriptNode
                 {
                     Id = "variable1",
-                    NodeType = "Variable_GetFlag",
+                    NodeType = NodeTypeId.Variable_GetFlag,
                     Category = NodeCategory.Variable,
                     Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                     {
@@ -915,7 +897,7 @@ public class ScriptValidatorTests
                 new ScriptNode
                 {
                     Id = "unknown1",
-                    NodeType = "Unknown_Type",
+                    NodeType = (NodeTypeId)99999,
                     Category = NodeCategory.Action,
                     Properties = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 }
