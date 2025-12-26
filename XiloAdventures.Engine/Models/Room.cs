@@ -89,10 +89,4 @@ public class Room
     [Browsable(false)]
     [Obsolete("Use RequiredQuests instead")]
     public QuestStatus? RequiredQuestStatus { get; set; }
-
-    /// <summary>
-    /// Tags arbitrarios para lógica de scripts y eventos.
-    /// </summary>
-    [Browsable(false)]
-    public List<string> Tags { get; set; } = new();
 }

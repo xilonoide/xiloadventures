@@ -988,10 +988,6 @@ public partial class PropertyEditor : UserControl
         if (name == PN.EncryptionKey)
             return PropertyCategory.Seguridad;
 
-        // Tags
-        if (name == PN.Tags)
-            return PropertyCategory.Otros;
-
         // Parser Dictionary al final de Otros
         if (name == PN.ParserDictionaryJson)
             return PropertyCategory.Otros;
@@ -2778,7 +2774,6 @@ public partial class PropertyEditor : UserControl
         ["KeyObjectId"] = "Llave (ID objeto)",
         ["ObjectId"] = "Objeto",
         ["DoorId"] = "Puerta",
-        ["Tags"] = "Etiquetas",
         ["StartHour"] = "Hora inicial",
         ["StartWeather"] = "Clima inicial",
         ["RequiredQuests"] = "Requisitos de misión",
@@ -2852,7 +2847,6 @@ public partial class PropertyEditor : UserControl
         ["Room.MusicId"] = "Música",
         ["Room.ImageId"] = "Imagen (id)",
         ["Room.RequiredQuests"] = "Requisitos de misión",
-        ["Room.Tags"] = "Etiquetas",
 
         // Objeto
         ["GameObject.RoomId"] = "Sala",
@@ -2870,7 +2864,6 @@ public partial class PropertyEditor : UserControl
         ["GameObject.NutritionAmount"] = "Cantidad (nutrición)",
         ["GameObject.ContainedObjectIds"] = "Objetos contenidos",
         ["GameObject.KeyId"] = "Llave necesaria",
-        ["GameObject.Tags"] = "Etiquetas",
         ["GameObject.Visible"] = "Visible",
         ["GameObject.IsLightSource"] = "Es luminoso",
         ["GameObject.IsLit"] = "Está encendido",
@@ -2884,7 +2877,6 @@ public partial class PropertyEditor : UserControl
         ["Npc.RoomId"] = "Sala",
         ["Npc.Dialogue"] = "Diálogo",
         ["Npc.InventoryObjectIds"] = "Objetos en inventario",
-        ["Npc.Tags"] = "Etiquetas",
         ["Npc.Visible"] = "Visible",
         ["Npc.Stats"] = "Estadísticas",
         ["Npc.IsShopkeeper"] = "Es comerciante",
@@ -2917,7 +2909,6 @@ public partial class PropertyEditor : UserControl
         ["Door.IsLocked"] = "Cerradura",
         ["Door.Visible"] = "Visible",
         ["Door.RequiredQuests"] = "Requisitos de misión",
-        ["Door.Tags"] = "Etiquetas",
 
         // Quest
         ["QuestDefinition.Name"] = "Nombre",

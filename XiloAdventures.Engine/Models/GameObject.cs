@@ -158,12 +158,6 @@ public class GameObject
     #endregion
 
     /// <summary>
-    /// Tags arbitrarios para lógica de scripts y eventos.
-    /// </summary>
-    [Browsable(false)]
-    public List<string> Tags { get; set; } = new();
-
-    /// <summary>
     /// Sala inicial donde se encuentra el objeto.
     /// </summary>
     public string? RoomId { get; set; }

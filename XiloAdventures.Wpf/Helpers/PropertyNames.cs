@@ -92,7 +92,6 @@ public static class PropertyNames
     public static readonly string IsInterior = nameof(Room.IsInterior);
     public static readonly string IsIlluminated = nameof(Room.IsIlluminated);
     public static readonly string RequiredQuests = nameof(Room.RequiredQuests);
-    public static readonly string Tags = nameof(Room.Tags);
 
     // === GameInfo ===
     public static readonly string StartHour = nameof(GameInfo.StartHour);

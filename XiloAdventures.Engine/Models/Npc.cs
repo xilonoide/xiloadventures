@@ -189,12 +189,6 @@ public class Npc
     #endregion
 
     /// <summary>
-    /// Tags arbitrarios para lógica de eventos, etc.
-    /// </summary>
-    [Browsable(false)]
-    public List<string> Tags { get; set; } = new();
-
-    /// <summary>
     /// Controla si el jugador puede ver / interactuar con el NPC en la sala.
     /// </summary>
     public bool Visible { get; set; } = true;

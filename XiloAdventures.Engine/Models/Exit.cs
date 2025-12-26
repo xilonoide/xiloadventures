@@ -68,11 +68,4 @@ public class Exit
     [Browsable(false)]
     [Obsolete("Use RequiredQuests instead")]
     public QuestStatus? RequiredQuestStatus { get; set; }
-
-    /// <summary>
-    /// Tags arbitrarios para lógica de scripts y eventos.
-    /// Permite categorizar salidas para procesamiento específico.
-    /// </summary>
-    [Browsable(false)]
-    public List<string> Tags { get; set; } = new();
 }
