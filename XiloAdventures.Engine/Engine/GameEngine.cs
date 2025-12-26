@@ -61,6 +61,15 @@ public class GameEngine
         {
             _ = StartConversationWithNpcAsync(npcId);
         };
+        _scriptEngine.OnStartTrade += npcId =>
+        {
+            var npc = _state.Npcs.FirstOrDefault(n =>
+                string.Equals(n.Id, npcId, StringComparison.OrdinalIgnoreCase));
+            if (npc != null && npc.IsShopkeeper)
+            {
+                TradeOpened?.Invoke(npc);
+            }
+        };
         _scriptEngine.OnAdventureCompleted += () => AdventureCompleted?.Invoke();
 
         // Reinicializar el motor de conversaciones
@@ -286,6 +295,15 @@ public class GameEngine
         _scriptEngine.OnStartConversation += npcId =>
         {
             _ = StartConversationWithNpcAsync(npcId);
+        };
+        _scriptEngine.OnStartTrade += npcId =>
+        {
+            var npc = _state.Npcs.FirstOrDefault(n =>
+                string.Equals(n.Id, npcId, StringComparison.OrdinalIgnoreCase));
+            if (npc != null && npc.IsShopkeeper)
+            {
+                TradeOpened?.Invoke(npc);
+            }
         };
         _scriptEngine.OnAdventureCompleted += () => AdventureCompleted?.Invoke();
 
@@ -989,6 +1007,35 @@ public class GameEngine
 
 
     /// <summary>
+    /// Describes the player's equipped items (summary for status panel).
+    /// </summary>
+    /// <returns>A formatted list of equipped items by slot.</returns>
+    public string DescribeEquipmentSummary()
+    {
+        var sb = new StringBuilder();
+
+        var rightHand = !string.IsNullOrEmpty(_state.Player.EquippedRightHandId)
+            ? FindObjectById(_state.Player.EquippedRightHandId)
+            : null;
+        var leftHand = !string.IsNullOrEmpty(_state.Player.EquippedLeftHandId)
+            ? FindObjectById(_state.Player.EquippedLeftHandId)
+            : null;
+        var torso = !string.IsNullOrEmpty(_state.Player.EquippedTorsoId)
+            ? FindObjectById(_state.Player.EquippedTorsoId)
+            : null;
+
+        sb.AppendLine($"Mano derecha: {(rightHand != null ? Cap(rightHand.Name) : "-")}");
+        // Solo mostrar mano izquierda si no es arma de 2 manos
+        if (rightHand == null || _state.Player.EquippedLeftHandId != _state.Player.EquippedRightHandId)
+        {
+            sb.AppendLine($"Mano izquierda: {(leftHand != null ? Cap(leftHand.Name) : "-")}");
+        }
+        sb.AppendLine($"Torso: {(torso != null ? Cap(torso.Name) : "-")}");
+
+        return sb.ToString().TrimEnd();
+    }
+
+    /// <summary>
     /// Lists the items currently in the player's inventory.
     /// </summary>
     /// <returns>A formatted list of inventory items, or a message if empty.</returns>
@@ -998,7 +1045,7 @@ public class GameEngine
 
         if (!_state.InventoryObjectIds.Any())
         {
-            sb.AppendLine(RandomMessages.InventoryEmpty);
+            sb.AppendLine("(vacío)");
         }
         else
         {
@@ -1010,10 +1057,10 @@ public class GameEngine
                     if (obj.IsLightSource && obj.IsLit)
                     {
                         var turnsDisplay = obj.LightTurnsRemaining == -1 ? "∞" : obj.LightTurnsRemaining.ToString();
-                        sb.AppendLine($" - {Cap(obj.Name)} ({turnsDisplay})");
+                        sb.AppendLine($"- {Cap(obj.Name)} ({turnsDisplay})");
                     }
                     else
-                        sb.AppendLine($" - {Cap(obj.Name)}");
+                        sb.AppendLine($"- {Cap(obj.Name)}");
                 }
             }
         }
@@ -2202,7 +2249,15 @@ public class GameEngine
             s.Nodes.Any(n => n.Category == NodeCategory.Dialogue));
 
         if (!hasDialogue)
+        {
+            // Si no tiene diálogo pero es comerciante, abrir tienda (puede vender aunque no tenga artículos)
+            if (npc.IsShopkeeper)
+            {
+                TradeOpened?.Invoke(npc);
+                return CommandResult.Empty;
+            }
             return CommandResult.Success(string.Format(RandomMessages.NothingToSay, Cap(npc.Name)));
+        }
 
         // Iniciar conversación con el NPC
         // Usamos ContinueWith para capturar errores sin bloquear

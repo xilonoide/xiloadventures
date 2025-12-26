@@ -635,6 +635,7 @@ public partial class MainWindow : Window
     {
         StatsLabel.Text = _engine.DescribePlayerStats();
         MoneyLabel.Text = _engine.DescribePlayerMoney();
+        EquipmentLabel.Text = _engine.DescribeEquipmentSummary();
         InventoryLabel.Text = _engine.DescribeInventory();
         ExitsLabel.Text = _engine.DescribeExits();
 

@@ -824,6 +824,7 @@ public partial class PropertyEditor : UserControl
         {
             [PropertyCategory.Identificacion] = new(),
             [PropertyCategory.Descripcion] = new(),
+            [PropertyCategory.Objetos] = new(),
             [PropertyCategory.Sistemas] = new(),
             [PropertyCategory.Multimedia] = new(),
             [PropertyCategory.Comportamiento] = new(),
@@ -860,6 +861,7 @@ public partial class PropertyEditor : UserControl
             PropertyCategory.Identificacion,
             PropertyCategory.Multimedia,
             PropertyCategory.Descripcion,
+            PropertyCategory.Objetos,
             PropertyCategory.Sistemas,
             PropertyCategory.Comportamiento,
             PropertyCategory.Combate,
@@ -1057,6 +1059,12 @@ public partial class PropertyEditor : UserControl
         if (name == PN.HungerDeathText) return 14;
         if (name == PN.ThirstDeathText) return 15;
         if (name == PN.SleepDeathText) return 16;
+
+        // Orden para propiedades de equipamiento (categoría Objetos)
+        if (name == PN.InitialRightHandId || name == PN.EquippedRightHandId) return 0;
+        if (name == PN.InitialLeftHandId || name == PN.EquippedLeftHandId) return 1;
+        if (name == PN.InitialTorsoId || name == PN.EquippedTorsoId) return 2;
+        if (name == PN.InitialInventory || name == PN.Inventory) return 10;
 
         // Parser Dictionary al final de Otros
         if (name == PN.ParserDictionaryJson) return 999;

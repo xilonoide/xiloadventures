@@ -692,36 +692,21 @@
                         <ScrollViewer Grid.Row="2" Grid.Column="1"
                                       VerticalScrollBarVisibility="Auto">
                             <StackPanel>
-                                <TextBlock Text="Estado"
-                                           FontWeight="Bold"
-                                           FontSize="14"
-                                           Foreground="White"
-                                           Margin="0,0,0,4"/>
                                 <TextBlock x:Name="TestStatsLabel"
                                            TextWrapping="Wrap"
                                            FontSize="14"
                                            Foreground="#AAAAAA"
                                            Margin="0,0,0,8"/>
 
-                                <TextBlock Text="Dinero"
-                                           FontWeight="Bold"
-                                           FontSize="14"
-                                           Foreground="White"
-                                           Margin="0,0,0,2"/>
-                                <TextBlock x:Name="TestMoneyLabel"
-                                           FontSize="14"
-                                           Foreground="#AAAAAA"
-                                           Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="Dinero: " FontWeight="Bold" FontSize="14" Foreground="White"/>
+                                    <TextBlock x:Name="TestMoneyLabel" FontSize="14" Foreground="#AAAAAA"/>
+                                </StackPanel>
 
-                                <TextBlock Text="Hora"
-                                           FontWeight="Bold"
-                                           FontSize="14"
-                                           Foreground="White"
-                                           Margin="0,0,0,2"/>
-                                <TextBlock x:Name="TestTimeLabel"
-                                           FontSize="14"
-                                           Foreground="#AAAAAA"
-                                           Margin="0,0,0,8"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="Hora: " FontWeight="Bold" FontSize="14" Foreground="White"/>
+                                    <TextBlock x:Name="TestTimeLabel" FontSize="14" Foreground="#AAAAAA"/>
+                                </StackPanel>
 
                                 <!-- Estados de combate (solo visible en debug si están activos) -->
                                 <StackPanel x:Name="TestCombatPanel" Visibility="Collapsed" Margin="0,0,0,8">
@@ -811,11 +796,21 @@
                                     </Grid>
                                 </StackPanel>
 
-                                <TextBlock Text="Inventario"
+                                <TextBlock Text="Equipo"
                                            FontWeight="Bold"
                                            FontSize="14"
                                            Foreground="White"
                                            Margin="0,0,0,4"/>
+                                <TextBlock x:Name="TestEquipmentLabel"
+                                           TextWrapping="Wrap"
+                                           FontSize="14"
+                                           Foreground="#AAAAAA"/>
+
+                                <TextBlock Text="Inventario"
+                                           FontWeight="Bold"
+                                           FontSize="14"
+                                           Foreground="White"
+                                           Margin="0,8,0,4"/>
                                 <TextBlock x:Name="TestInventoryLabel"
                                            TextWrapping="Wrap"
                                            FontSize="14"

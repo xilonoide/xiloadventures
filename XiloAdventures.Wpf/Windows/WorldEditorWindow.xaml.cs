@@ -2156,6 +2156,25 @@ public partial class WorldEditorWindow : Window
             TestTimeLabel.Text = state.TimeOfDay;
         }
 
+        // Equipo
+        var rightHand = !string.IsNullOrEmpty(state.Player.EquippedRightHandId)
+            ? _testWorld.Objects.FirstOrDefault(o => o.Id.Equals(state.Player.EquippedRightHandId, StringComparison.OrdinalIgnoreCase))
+            : null;
+        var leftHand = !string.IsNullOrEmpty(state.Player.EquippedLeftHandId)
+            ? _testWorld.Objects.FirstOrDefault(o => o.Id.Equals(state.Player.EquippedLeftHandId, StringComparison.OrdinalIgnoreCase))
+            : null;
+        var torso = !string.IsNullOrEmpty(state.Player.EquippedTorsoId)
+            ? _testWorld.Objects.FirstOrDefault(o => o.Id.Equals(state.Player.EquippedTorsoId, StringComparison.OrdinalIgnoreCase))
+            : null;
+
+        var equipLines = new List<string>
+        {
+            $"Mano derecha: {(rightHand != null ? rightHand.Name : "-")}",
+            $"Mano izquierda: {(leftHand != null ? leftHand.Name : "-")}",
+            $"Torso: {(torso != null ? torso.Name : "-")}"
+        };
+        TestEquipmentLabel.Text = string.Join("\n", equipLines);
+
         // Inventario
         if (state.InventoryObjectIds.Count == 0)
         {
