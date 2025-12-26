@@ -32,7 +32,16 @@ public partial class PromptGeneratorWindow : Window
     ""Intelligence"": 20,
     ""Dexterity"": 20,
     ""Charisma"": 20,
-    ""InitialMoney"": 50
+    ""InitialMoney"": 50,
+    ""MaxInventoryWeight"": -1,
+    ""MaxInventoryVolume"": -1,
+    ""InitialInventory"": [
+      { ""ObjectId"": ""obj_id"", ""Quantity"": 1 }
+    ],
+    ""InitialRightHandId"": ""obj_arma_id o null"",
+    ""InitialLeftHandId"": ""obj_escudo_id o null"",
+    ""InitialTorsoId"": ""obj_armadura_id o null"",
+    ""AbilityIds"": []
   },
   ""Rooms"": [
     {
@@ -41,6 +50,7 @@ public partial class PromptGeneratorWindow : Window
       ""Description"": ""Descripción de la sala"",
       ""IsInterior"": false,
       ""IsIlluminated"": true,
+      ""MusicId"": null,
       ""Exits"": [
         { ""TargetRoomId"": ""otra_sala"", ""Direction"": ""norte"", ""DoorId"": ""door_id o null"" }
       ]
@@ -51,9 +61,11 @@ public partial class PromptGeneratorWindow : Window
       ""Id"": ""obj_id"",
       ""Name"": ""Nombre"",
       ""Description"": ""Descripción"",
-      ""Type"": ""ninguno|arma|armadura|comida|bebida|ropa|llave|texto"",
-      ""TextContent"": ""Contenido legible (solo para Type=texto)"",
+      ""Type"": ""ninguno|arma|armadura|escudo|comida|bebida|llave"",
+      ""CanRead"": false,
+      ""TextContent"": ""Contenido legible (solo si CanRead=true)"",
       ""Gender"": ""Masculine|Feminine"",
+      ""IsPlural"": false,
       ""RoomId"": ""room_id o null si está en inventario/contenedor"",
       ""Visible"": true,
       ""CanTake"": true,
@@ -67,7 +79,21 @@ public partial class PromptGeneratorWindow : Window
       ""MaxCapacity"": 50000,
       ""Volume"": 10,
       ""Weight"": 100,
-      ""Price"": 10
+      ""Price"": 10,
+      ""AttackBonus"": 5,
+      ""DefenseBonus"": 3,
+      ""HandsRequired"": 1,
+      ""DamageType"": ""Physical"",
+      ""InitiativeBonus"": 0,
+      ""MaxDurability"": -1,
+      ""CurrentDurability"": -1,
+      ""NutritionAmount"": 10,
+      ""IsLightSource"": false,
+      ""IsLit"": false,
+      ""LightTurnsRemaining"": -1,
+      ""CanIgnite"": true,
+      ""CanExtinguish"": true,
+      ""IgniterObjectId"": null
     }
   ],
   ""Npcs"": [
@@ -77,11 +103,17 @@ public partial class PromptGeneratorWindow : Window
       ""Description"": ""Descripción del NPC y su personalidad"",
       ""RoomId"": ""room_id"",
       ""Visible"": true,
-      ""InventoryObjectIds"": [],
+      ""Inventory"": [
+        { ""ObjectId"": ""obj_id"", ""Quantity"": 1 }
+      ],
+      ""EquippedRightHandId"": null,
+      ""EquippedLeftHandId"": null,
+      ""EquippedTorsoId"": null,
       ""IsShopkeeper"": false,
       ""ShopInventory"": [],
       ""BuyPriceMultiplier"": 0.5,
       ""SellPriceMultiplier"": 1.0,
+      ""Money"": 0,
       ""PatrolRoute"": [],
       ""IsPatrolling"": false,
       ""PatrolMovementMode"": ""Turns"",
@@ -92,14 +124,15 @@ public partial class PromptGeneratorWindow : Window
       ""FollowSpeed"": 1,
       ""FollowTimeInterval"": 3.0,
       ""Stats"": {
-        ""Level"": 1,
         ""Strength"": 5,
         ""Dexterity"": 5,
         ""Intelligence"": 5,
         ""MaxHealth"": 10,
-        ""CurrentHealth"": 10,
-        ""Money"": 0
-      }
+        ""CurrentHealth"": 10
+      },
+      ""AbilityIds"": [],
+      ""MagicEnabled"": false,
+      ""IsCorpse"": false
     }
   ],
   ""Doors"": [
@@ -108,36 +141,63 @@ public partial class PromptGeneratorWindow : Window
       ""Name"": ""Nombre de la puerta"",
       ""Description"": ""Descripción opcional"",
       ""Gender"": ""Feminine"",
+      ""IsPlural"": false,
       ""RoomIdA"": ""sala_1"",
       ""RoomIdB"": ""sala_2"",
       ""IsOpen"": false,
       ""IsLocked"": true,
       ""KeyObjectId"": ""obj_llave o null"",
-      ""OpenFromSide"": ""Both""
+      ""OpenFromSide"": ""Both"",
+      ""Visible"": true
     }
   ],
   ""Quests"": [
     {
-      ""Id"": ""quest_id"",
-      ""Name"": ""Nombre misión"",
-      ""Description"": ""Descripción"",
-      ""Objectives"": [""Objetivo 1"", ""Objetivo 2""]
+      ""Id"": ""quest_principal"",
+      ""Name"": ""Misión Principal"",
+      ""Description"": ""Descripción de la misión principal"",
+      ""IsMainQuest"": true,
+      ""Objectives"": [""Objetivo 1"", ""Objetivo 2"", ""Objetivo final""]
+    },
+    {
+      ""Id"": ""quest_secundaria"",
+      ""Name"": ""Misión Secundaria"",
+      ""Description"": ""Descripción de misión opcional"",
+      ""IsMainQuest"": false,
+      ""Objectives"": [""Objetivo opcional""]
     }
   ],
   ""Conversations"": [
     {
-      ""Id"": ""conversation_id"",
-      ""Name"": ""Nombre de la conversación"",
+      ""Id"": ""conv_comerciante"",
+      ""Name"": ""Diálogo con comerciante (EJEMPLO COMPLETO)"",
       ""Nodes"": [
-        { ""Id"": ""conv_start_1"", ""NodeType"": ""Conversation_Start"", ""X"": 100, ""Y"": 100, ""Properties"": {} },
-        { ""Id"": ""conv_say_1"", ""NodeType"": ""Conversation_NpcSay"", ""X"": 300, ""Y"": 100, ""Properties"": { ""Text"": ""¡Hola viajero!"", ""SpeakerName"": """", ""Emotion"": ""Neutral"" } },
-        { ""Id"": ""conv_end_1"", ""NodeType"": ""Conversation_End"", ""X"": 500, ""Y"": 100, ""Properties"": {} }
+        { ""Id"": ""c1"", ""NodeType"": ""Conversation_Start"", ""X"": 100, ""Y"": 100, ""Properties"": {} },
+        { ""Id"": ""c2"", ""NodeType"": ""Conversation_NpcSay"", ""X"": 300, ""Y"": 100, ""Properties"": { ""Text"": ""¡Bienvenido a mi tienda! ¿En qué puedo ayudarte?"", ""SpeakerName"": """", ""Emotion"": ""Feliz"" } },
+        { ""Id"": ""c3"", ""NodeType"": ""Conversation_PlayerChoice"", ""X"": 500, ""Y"": 100, ""Properties"": { ""Text1"": ""Quiero ver tu mercancía"", ""Text2"": ""Busco información"", ""Text3"": ""Adiós"", ""Text4"": """" } },
+        { ""Id"": ""c4"", ""NodeType"": ""Conversation_Shop"", ""X"": 700, ""Y"": 50, ""Properties"": { ""ShopTitle"": ""Tienda"", ""WelcomeMessage"": ""¡Echa un vistazo!"" } },
+        { ""Id"": ""c5"", ""NodeType"": ""Conversation_Branch"", ""X"": 700, ""Y"": 150, ""Properties"": { ""ConditionType"": ""HasFlag"", ""FlagName"": ""info_obtenida"" } },
+        { ""Id"": ""c6"", ""NodeType"": ""Conversation_NpcSay"", ""X"": 900, ""Y"": 100, ""Properties"": { ""Text"": ""Ya te conté todo lo que sé."", ""SpeakerName"": """", ""Emotion"": ""Neutral"" } },
+        { ""Id"": ""c7"", ""NodeType"": ""Conversation_NpcSay"", ""X"": 900, ""Y"": 200, ""Properties"": { ""Text"": ""Dicen que hay un tesoro escondido en la cueva del norte..."", ""SpeakerName"": """", ""Emotion"": ""Sorprendido"" } },
+        { ""Id"": ""c8"", ""NodeType"": ""Conversation_Action"", ""X"": 1100, ""Y"": 200, ""Properties"": { ""ActionType"": ""SetFlag"", ""FlagName"": ""info_obtenida"" } },
+        { ""Id"": ""c9"", ""NodeType"": ""Conversation_NpcSay"", ""X"": 700, ""Y"": 250, ""Properties"": { ""Text"": ""¡Vuelve pronto!"", ""SpeakerName"": """", ""Emotion"": ""Feliz"" } },
+        { ""Id"": ""c10"", ""NodeType"": ""Conversation_End"", ""X"": 1300, ""Y"": 150, ""Properties"": {} }
       ],
       ""Connections"": [
-        { ""FromNodeId"": ""conv_start_1"", ""FromPortName"": ""Exec"", ""ToNodeId"": ""conv_say_1"", ""ToPortName"": ""Exec"" },
-        { ""FromNodeId"": ""conv_say_1"", ""FromPortName"": ""Exec"", ""ToNodeId"": ""conv_end_1"", ""ToPortName"": ""Exec"" }
+        { ""FromNodeId"": ""c1"", ""FromPortName"": ""Exec"", ""ToNodeId"": ""c2"", ""ToPortName"": ""Exec"" },
+        { ""FromNodeId"": ""c2"", ""FromPortName"": ""Exec"", ""ToNodeId"": ""c3"", ""ToPortName"": ""Exec"" },
+        { ""FromNodeId"": ""c3"", ""FromPortName"": ""Option1"", ""ToNodeId"": ""c4"", ""ToPortName"": ""Exec"" },
+        { ""FromNodeId"": ""c3"", ""FromPortName"": ""Option2"", ""ToNodeId"": ""c5"", ""ToPortName"": ""Exec"" },
+        { ""FromNodeId"": ""c3"", ""FromPortName"": ""Option3"", ""ToNodeId"": ""c9"", ""ToPortName"": ""Exec"" },
+        { ""FromNodeId"": ""c4"", ""FromPortName"": ""OnClose"", ""ToNodeId"": ""c2"", ""ToPortName"": ""Exec"" },
+        { ""FromNodeId"": ""c5"", ""FromPortName"": ""True"", ""ToNodeId"": ""c6"", ""ToPortName"": ""Exec"" },
+        { ""FromNodeId"": ""c5"", ""FromPortName"": ""False"", ""ToNodeId"": ""c7"", ""ToPortName"": ""Exec"" },
+        { ""FromNodeId"": ""c6"", ""FromPortName"": ""Exec"", ""ToNodeId"": ""c3"", ""ToPortName"": ""Exec"" },
+        { ""FromNodeId"": ""c7"", ""FromPortName"": ""Exec"", ""ToNodeId"": ""c8"", ""ToPortName"": ""Exec"" },
+        { ""FromNodeId"": ""c8"", ""FromPortName"": ""Exec"", ""ToNodeId"": ""c3"", ""ToPortName"": ""Exec"" },
+        { ""FromNodeId"": ""c9"", ""FromPortName"": ""Exec"", ""ToNodeId"": ""c10"", ""ToPortName"": ""Exec"" }
       ],
-      ""StartNodeId"": ""conv_start_1""
+      ""StartNodeId"": ""c1""
     }
   ],
   ""Scripts"": [
@@ -192,75 +252,303 @@ public partial class PromptGeneratorWindow : Window
 **IMPORTANTE**: Usa EXACTAMENTE estos TypeId. Si usas nombres incorrectos, los nodos no funcionarán.
 
 ### Eventos (inician el script, solo puerto de salida ""Exec""):
-- `Event_OnGameStart` - Al iniciar el juego (OwnerType: Game)
-- `Event_OnGameEnd` - Al finalizar el juego (OwnerType: Game)
-- `Event_EveryMinute` - Cada minuto de juego (OwnerType: Game)
-- `Event_EveryHour` - Cada hora de juego (OwnerType: Game)
-- `Event_OnWeatherChange` - Al cambiar el clima (OwnerType: Game)
-- `Event_OnEnter` - Al entrar a la sala (OwnerType: Room)
-- `Event_OnExit` - Al salir de la sala (OwnerType: Room)
-- `Event_OnTalk` - Al hablar con NPC (OwnerType: Npc)
-- `Event_OnNpcSee` - Cuando el NPC ve al jugador entrar (OwnerType: Npc)
-- `Event_OnNpcAttack` - Al atacar al NPC (OwnerType: Npc)
-- `Event_OnNpcDeath` - Al morir el NPC (OwnerType: Npc)
-- `Event_OnTake` - Al coger objeto (OwnerType: GameObject)
-- `Event_OnDrop` - Al soltar objeto (OwnerType: GameObject)
-- `Event_OnUse` - Al usar objeto (OwnerType: GameObject)
-- `Event_OnExamine` - Al examinar objeto (OwnerType: GameObject)
-- `Event_OnContainerOpen` - Al abrir contenedor (OwnerType: GameObject)
-- `Event_OnContainerClose` - Al cerrar contenedor (OwnerType: GameObject)
-- `Event_OnDoorOpen` - Al abrir puerta (OwnerType: Door)
-- `Event_OnDoorClose` - Al cerrar puerta (OwnerType: Door)
-- `Event_OnDoorLock` - Al bloquear puerta (OwnerType: Door)
-- `Event_OnDoorUnlock` - Al desbloquear puerta (OwnerType: Door)
-- `Event_OnDoorKnock` - Al llamar a la puerta (OwnerType: Door)
-- `Event_OnQuestStart` - Al iniciar misión (OwnerType: Quest)
-- `Event_OnQuestComplete` - Al completar misión (OwnerType: Quest)
-- `Event_OnQuestFail` - Al fallar misión (OwnerType: Quest)
-- `Event_OnObjectiveComplete` - Al completar un objetivo de misión (OwnerType: Quest)
+
+**Eventos de Juego (OwnerType: Game):**
+- `Event_OnGameStart` - Al iniciar el juego
+- `Event_OnGameEnd` - Al finalizar el juego
+- `Event_EveryMinute` - Cada minuto de juego
+- `Event_EveryHour` - Cada hora de juego
+- `Event_OnTurnStart` - Al inicio de cada turno del jugador
+- `Event_OnWeatherChange` - Al cambiar el clima
+- `Event_OnPlayerDeath` - Al morir el jugador
+
+**Eventos de Sala (OwnerType: Room):**
+- `Event_OnEnter` - Al entrar a la sala
+- `Event_OnExit` - Al salir de la sala
+- `Event_OnLook` - Al mirar/examinar la sala
+
+**Eventos de NPC (OwnerType: Npc):**
+- `Event_OnTalk` - Al hablar con NPC
+- `Event_OnNpcSee` - Cuando el NPC ve al jugador entrar
+- `Event_OnNpcAttack` - Al atacar al NPC
+- `Event_OnNpcDeath` - Al morir el NPC
+- `Event_OnNpcTurn` - En el turno del NPC en combate
+
+**Eventos de Objeto (OwnerType: GameObject):**
+- `Event_OnTake` - Al coger objeto
+- `Event_OnDrop` - Al soltar objeto
+- `Event_OnUse` - Al usar objeto
+- `Event_OnGive` - Al dar objeto a NPC
+- `Event_OnExamine` - Al examinar objeto
+- `Event_OnEquip` - Al equipar objeto
+- `Event_OnUnequip` - Al desequipar objeto
+- `Event_OnContainerOpen` - Al abrir contenedor
+- `Event_OnContainerClose` - Al cerrar contenedor
+- `Event_OnEat` - Al comer objeto (Type=comida)
+- `Event_OnDrink` - Al beber objeto (Type=bebida)
+
+**Eventos de Puerta (OwnerType: Door):**
+- `Event_OnDoorOpen` - Al abrir puerta
+- `Event_OnDoorClose` - Al cerrar puerta
+- `Event_OnDoorLock` - Al bloquear puerta
+- `Event_OnDoorUnlock` - Al desbloquear puerta
+
+**Eventos de Misión (OwnerType: Quest):**
+- `Event_OnQuestStart` - Al iniciar misión
+- `Event_OnQuestComplete` - Al completar misión
+- `Event_OnQuestFail` - Al fallar misión
+- `Event_OnObjectiveComplete` - Al completar un objetivo
+
+**Eventos de Combate (OwnerType: Game/Npc):**
+- `Event_OnCombatStart` - Al iniciar combate
+- `Event_OnCombatVictory` - Al ganar combate
+- `Event_OnCombatDefeat` - Al perder combate
+- `Event_OnCombatFlee` - Al huir de combate
+- `Event_OnPlayerAttack` - Cuando el jugador ataca
+- `Event_OnPlayerDefend` - Cuando el jugador defiende
+- `Event_OnCriticalHit` - Al conseguir golpe crítico
+- `Event_OnMiss` - Al fallar ataque
+
+**Eventos de Comercio (OwnerType: Npc):**
+- `Event_OnTradeStart` - Al iniciar comercio
+- `Event_OnTradeEnd` - Al terminar comercio
+- `Event_OnItemBought` - Al comprar objeto
+- `Event_OnItemSold` - Al vender objeto
+
+**Eventos de Estado del Jugador (OwnerType: Game):**
+- `Event_OnHealthLow` - Cuando la salud baja
+- `Event_OnHealthCritical` - Cuando la salud es crítica
+- `Event_OnHungerHigh` - Cuando el hambre es alta
+- `Event_OnThirstHigh` - Cuando la sed es alta
+- `Event_OnEnergyLow` - Cuando la energía es baja
+- `Event_OnSleepHigh` - Cuando el sueño es alto
+- `Event_OnSanityLow` - Cuando la cordura es baja
+- `Event_OnManaLow` - Cuando el maná es bajo
+- `Event_OnStateThreshold` - Cuando un estado cruza umbral. Properties: { ""StateName"": ""Health"", ""Threshold"": 50 }
+- `Event_OnMoneyGained` - Al ganar dinero
+- `Event_OnMoneyLost` - Al perder dinero
+- `Event_OnMoneyThreshold` - Al cruzar umbral de dinero. Properties: { ""Threshold"": 100 }
+
+**Eventos de Modificadores (OwnerType: Game):**
+- `Event_OnModifierApplied` - Cuando se aplica un modificador
+- `Event_OnModifierExpired` - Cuando expira un modificador
+
+**Eventos de Sueño (OwnerType: Game/GameObject):**
+- `Event_OnSleep` - Al dormir (ej: al usar una cama)
+- `Event_OnWakeUp` - Al despertar normalmente
+- `Event_OnWakeUpStartled` - Al despertar sobresaltado
 
 ### Condiciones (puerto entrada ""Exec"", puertos salida ""True""/""False""):
+
+**Condiciones de Variables:**
 - `Condition_HasFlag` - Properties: { ""FlagName"": ""nombre"" }
-- `Condition_HasItem` - Properties: { ""ObjectId"": ""obj_id"" }
-- `Condition_IsDoorOpen` - Properties: { ""DoorId"": ""door_id"" }
 - `Condition_CompareCounter` - Properties: { ""CounterName"": ""nombre"", ""Operator"": "">="", ""Value"": 5 } (Operators: ==, !=, <, <=, >, >=)
-- `Condition_IsInRoom` - Properties: { ""RoomId"": ""room_id"" }
-- `Condition_IsQuestStatus` - Properties: { ""QuestId"": ""quest_id"", ""Status"": ""InProgress"" } (Status: NotStarted, InProgress, Completed, Failed)
-- `Condition_IsTimeOfDay` - Properties: { ""TimeRange"": ""Manana"" } (valores: Manana, Tarde, Noche, Madrugada)
-- `Condition_IsNpcVisible` - Properties: { ""NpcId"": ""npc_id"" }
-- `Condition_IsPatrolling` - Comprueba si NPC está patrullando. Properties: { ""NpcId"": ""npc_id"" }
-- `Condition_IsFollowingPlayer` - Comprueba si NPC sigue al jugador. Properties: { ""NpcId"": ""npc_id"" }
+- `Condition_CompareProperty` - Compara propiedad de entidad. Properties: { ""EntityType"": ""Npc"", ""EntityId"": ""npc_id"", ""PropertyName"": ""Money"", ""Operator"": "">="", ""Value"": 100 }
 - `Condition_Random` - Properties: { ""Probability"": 50 } (0-100)
 
+**Condiciones de Inventario:**
+- `Condition_HasItem` - Jugador tiene objeto. Properties: { ""ObjectId"": ""obj_id"" }
+- `Condition_PlayerOwnsItem` - Jugador posee objeto (en inventario o equipado). Properties: { ""ObjectId"": ""obj_id"" }
+- `Condition_NpcHasItem` - NPC tiene objeto. Properties: { ""NpcId"": ""npc_id"", ""ObjectId"": ""obj_id"" }
+
+**Condiciones de Ubicación:**
+- `Condition_IsInRoom` - Jugador está en sala. Properties: { ""RoomId"": ""room_id"" }
+- `Condition_ObjectInRoom` - Objeto está en sala. Properties: { ""ObjectId"": ""obj_id"", ""RoomId"": ""room_id"" }
+- `Condition_ObjectInContainer` - Objeto está en contenedor. Properties: { ""ObjectId"": ""obj_id"", ""ContainerId"": ""container_id"" }
+- `Condition_NpcInRoom` - NPC está en sala. Properties: { ""NpcId"": ""npc_id"", ""RoomId"": ""room_id"" }
+
+**Condiciones de Puertas:**
+- `Condition_IsDoorOpen` - Properties: { ""DoorId"": ""door_id"" }
+- `Condition_IsDoorVisible` - Properties: { ""DoorId"": ""door_id"" }
+
+**Condiciones de Contenedores:**
+- `Condition_IsContainerOpen` - Properties: { ""ObjectId"": ""obj_id"" }
+- `Condition_IsContainerLocked` - Properties: { ""ObjectId"": ""obj_id"" }
+
+**Condiciones de Objetos:**
+- `Condition_IsObjectVisible` - Properties: { ""ObjectId"": ""obj_id"" }
+- `Condition_IsObjectTakeable` - Properties: { ""ObjectId"": ""obj_id"" }
+- `Condition_IsObjectLit` - Objeto luminoso encendido. Properties: { ""ObjectId"": ""obj_id"" }
+- `Condition_IsRoomLit` - Sala iluminada. Properties: { ""RoomId"": ""room_id"" }
+
+**Condiciones de NPCs:**
+- `Condition_IsNpcVisible` - Properties: { ""NpcId"": ""npc_id"" }
+- `Condition_IsPatrolling` - NPC está patrullando. Properties: { ""NpcId"": ""npc_id"" }
+- `Condition_IsFollowingPlayer` - NPC sigue al jugador. Properties: { ""NpcId"": ""npc_id"" }
+- `Condition_IsNpcAlive` - NPC está vivo. Properties: { ""NpcId"": ""npc_id"" }
+- `Condition_NpcHealthBelow` - Salud NPC bajo umbral. Properties: { ""NpcId"": ""npc_id"", ""Threshold"": 50 }
+- `Condition_NpcHasEquipped` - NPC tiene objeto equipado. Properties: { ""NpcId"": ""npc_id"", ""Slot"": ""RightHand"" } (Slots: RightHand, LeftHand, Torso)
+- `Condition_IsNpcSlotEmpty` - Slot de NPC vacío. Properties: { ""NpcId"": ""npc_id"", ""Slot"": ""RightHand"" }
+- `Condition_NpcHasMoney` - NPC tiene dinero. Properties: { ""NpcId"": ""npc_id"", ""Amount"": 100 }
+- `Condition_NpcHasInfiniteMoney` - NPC tiene dinero infinito. Properties: { ""NpcId"": ""npc_id"" }
+
+**Condiciones de Jugador:**
+- `Condition_IsPlayerAlive` - Jugador está vivo. Sin properties.
+- `Condition_PlayerHealthBelow` - Salud bajo umbral. Properties: { ""Threshold"": 50 }
+- `Condition_PlayerHealthAbove` - Salud sobre umbral. Properties: { ""Threshold"": 50 }
+- `Condition_PlayerHasMoney` - Jugador tiene dinero. Properties: { ""Amount"": 100 }
+- `Condition_PlayerHasEquipped` - Jugador tiene objeto equipado. Properties: { ""Slot"": ""RightHand"" } (Slots: RightHand, LeftHand, Torso)
+- `Condition_IsPlayerSlotEmpty` - Slot de jugador vacío. Properties: { ""Slot"": ""RightHand"" }
+- `Condition_PlayerHasWeaponType` - Jugador tiene tipo de arma. Properties: { ""WeaponType"": ""arma"" }
+- `Condition_PlayerHasArmor` - Jugador tiene armadura equipada. Sin properties.
+- `Condition_PlayerStateAbove` - Estado sobre umbral. Properties: { ""StateName"": ""Health"", ""Threshold"": 50 }
+- `Condition_PlayerStateBelow` - Estado bajo umbral. Properties: { ""StateName"": ""Health"", ""Threshold"": 50 }
+- `Condition_PlayerStateBetween` - Estado entre umbrales. Properties: { ""StateName"": ""Health"", ""MinThreshold"": 25, ""MaxThreshold"": 75 }
+- `Condition_PlayerStateEquals` - Estado igual a valor. Properties: { ""StateName"": ""Health"", ""Value"": 100 }
+- `Condition_HasModifier` - Jugador tiene modificador. Properties: { ""ModifierId"": ""mod_id"" }
+- `Condition_HasModifierForState` - Tiene modificador para estado. Properties: { ""StateName"": ""Health"" }
+
+**Condiciones de Misiones:**
+- `Condition_IsQuestStatus` - Properties: { ""QuestId"": ""quest_id"", ""Status"": ""InProgress"" } (Status: NotStarted, InProgress, Completed, Failed)
+- `Condition_IsMainQuest` - Es misión principal. Properties: { ""QuestId"": ""quest_id"" }
+
+**Condiciones de Tiempo y Clima:**
+- `Condition_IsTimeOfDay` - Properties: { ""TimeRange"": ""Manana"" } (valores: Manana, Tarde, Noche, Madrugada)
+- `Condition_IsWeather` - Properties: { ""Weather"": ""Despejado"" } (valores: Despejado, Lluvioso, Nublado, Tormenta)
+
+**Condiciones de Combate:**
+- `Condition_IsInCombat` - Jugador está en combate. Sin properties.
+- `Condition_IsCombatRound` - Es ronda específica. Properties: { ""Round"": 1 }
+- `Condition_IsInTrade` - Jugador está comerciando. Sin properties.
+
 ### Acciones (puerto entrada ""Exec"", puerto salida ""Exec""):
+
+**Acciones de Mensajes:**
 - `Action_ShowMessage` - Properties: { ""Message"": ""texto"" }
-- `Action_GiveItem` - Da un objeto al jugador. Properties: { ""ObjectId"": ""obj_id"" } **IMPORTANTE: El objeto NO debe estar en InventoryObjectIds de ningún NPC**
-- `Action_RemoveItem` - Properties: { ""ObjectId"": ""obj_id"" }
-- `Action_OpenDoor` - Properties: { ""DoorId"": ""door_id"" }
-- `Action_CloseDoor` - Properties: { ""DoorId"": ""door_id"" }
-- `Action_UnlockDoor` - Properties: { ""DoorId"": ""door_id"" }
-- `Action_LockDoor` - Properties: { ""DoorId"": ""door_id"" }
+- `Action_PlaySound` - Properties: { ""SoundId"": ""fx_id"" }
+- `Action_StartConversation` - Inicia conversación. Properties: { ""NpcId"": ""npc_id"" }
+
+**Acciones de Variables:**
 - `Action_SetFlag` - Properties: { ""FlagName"": ""nombre"", ""Value"": true }
 - `Action_SetCounter` - Properties: { ""CounterName"": ""nombre"", ""Value"": 0 }
 - `Action_IncrementCounter` - Properties: { ""CounterName"": ""nombre"", ""Amount"": 1 }
+
+**Acciones de Inventario:**
+- `Action_GiveItem` - Da objeto al jugador. Properties: { ""ObjectId"": ""obj_id"" } **IMPORTANTE: El objeto NO debe estar en Inventory del NPC**
+- `Action_RemoveItem` - Quita objeto del jugador. Properties: { ""ObjectId"": ""obj_id"" }
+- `Action_AddItemToNpcInventory` - Añade objeto a NPC. Properties: { ""NpcId"": ""npc_id"", ""ObjectId"": ""obj_id"" }
+- `Action_RemoveItemFromNpcInventory` - Quita objeto de NPC. Properties: { ""NpcId"": ""npc_id"", ""ObjectId"": ""obj_id"" }
+
+**Acciones de Equipamiento:**
+- `Action_EquipPlayerItem` - Equipa objeto en slot. Properties: { ""ObjectId"": ""obj_id"", ""Slot"": ""RightHand"" } (Slots: RightHand, LeftHand, Torso)
+- `Action_UnequipPlayerSlot` - Desequipa slot. Properties: { ""Slot"": ""RightHand"" }
+- `Action_EquipNpcItem` - Equipa objeto en NPC. Properties: { ""NpcId"": ""npc_id"", ""ObjectId"": ""obj_id"", ""Slot"": ""RightHand"" }
+- `Action_UnequipNpcSlot` - Desequipa slot de NPC. Properties: { ""NpcId"": ""npc_id"", ""Slot"": ""RightHand"" }
+
+**Acciones de Puertas:**
+- `Action_OpenDoor` - Properties: { ""DoorId"": ""door_id"" }
+- `Action_CloseDoor` - Properties: { ""DoorId"": ""door_id"" }
+- `Action_LockDoor` - Properties: { ""DoorId"": ""door_id"" }
+- `Action_UnlockDoor` - Properties: { ""DoorId"": ""door_id"" }
+- `Action_SetDoorVisible` - Properties: { ""DoorId"": ""door_id"", ""Visible"": true }
+
+**Acciones de Contenedores:**
+- `Action_OpenContainer` - Properties: { ""ObjectId"": ""obj_id"" }
+- `Action_CloseContainer` - Properties: { ""ObjectId"": ""obj_id"" }
+- `Action_LockContainer` - Properties: { ""ObjectId"": ""obj_id"" }
+- `Action_UnlockContainer` - Properties: { ""ObjectId"": ""obj_id"" }
+- `Action_SetContentsVisible` - Properties: { ""ObjectId"": ""obj_id"", ""Visible"": true }
+- `Action_PutObjectInContainer` - Properties: { ""ObjectId"": ""obj_id"", ""ContainerId"": ""container_id"" }
+- `Action_RemoveObjectFromContainer` - Properties: { ""ObjectId"": ""obj_id"", ""ContainerId"": ""container_id"" }
+
+**Acciones de Objetos:**
+- `Action_SetObjectVisible` - Properties: { ""ObjectId"": ""obj_id"", ""Visible"": true }
+- `Action_SetObjectTakeable` - Properties: { ""ObjectId"": ""obj_id"", ""CanTake"": true }
+- `Action_SetObjectPrice` - Properties: { ""ObjectId"": ""obj_id"", ""Price"": 100 }
+- `Action_SetObjectDurability` - Properties: { ""ObjectId"": ""obj_id"", ""Durability"": 50 }
+- `Action_MoveObjectToRoom` - Properties: { ""ObjectId"": ""obj_id"", ""RoomId"": ""room_id"" }
+
+**Acciones de Fuentes de Luz:**
+- `Action_SetObjectLit` - Enciende/apaga objeto. Properties: { ""ObjectId"": ""obj_id"", ""IsLit"": true }
+- `Action_SetLightTurns` - Establece turnos de luz. Properties: { ""ObjectId"": ""obj_id"", ""Turns"": 10 }
+
+**Acciones de Movimiento:**
 - `Action_TeleportPlayer` - Properties: { ""RoomId"": ""room_id"" }
 - `Action_MoveNpc` - Properties: { ""NpcId"": ""npc_id"", ""RoomId"": ""room_id"" }
-- `Action_StartPatrol` - Inicia patrulla del NPC. Properties: { ""NpcId"": ""npc_id"" }
-- `Action_StopPatrol` - Detiene patrulla del NPC. Properties: { ""NpcId"": ""npc_id"" }
-- `Action_PatrolStep` - Mueve manualmente el NPC al siguiente punto de su ruta. Properties: { ""NpcId"": ""npc_id"" }
-- `Action_SetPatrolMode` - Configura modo de patrulla. Properties: { ""NpcId"": ""npc_id"", ""Mode"": ""Turns"", ""TurnSpeed"": 1, ""TimeInterval"": 3.0 } (Mode: Turns/Time)
-- `Action_FollowPlayer` - NPC empieza a seguir al jugador. Properties: { ""NpcId"": ""npc_id"", ""Speed"": 1 }
-- `Action_StopFollowing` - NPC deja de seguir al jugador. Properties: { ""NpcId"": ""npc_id"" }
-- `Action_SetFollowMode` - Configura modo de seguimiento. Properties: { ""NpcId"": ""npc_id"", ""Mode"": ""Turns"", ""TurnSpeed"": 1, ""TimeInterval"": 3.0 } (Mode: Turns/Time)
+- `Action_StartPatrol` - Inicia patrulla. Properties: { ""NpcId"": ""npc_id"" }
+- `Action_StopPatrol` - Detiene patrulla. Properties: { ""NpcId"": ""npc_id"" }
+- `Action_PatrolStep` - Mueve NPC al siguiente punto. Properties: { ""NpcId"": ""npc_id"" }
+- `Action_SetPatrolMode` - Properties: { ""NpcId"": ""npc_id"", ""Mode"": ""Turns"", ""TurnSpeed"": 1, ""TimeInterval"": 3.0 }
+- `Action_SetPatrolRoute` - Establece ruta. Properties: { ""NpcId"": ""npc_id"", ""Route"": [""room1"", ""room2""] }
+- `Action_FollowPlayer` - NPC sigue al jugador. Properties: { ""NpcId"": ""npc_id"", ""Speed"": 1 }
+- `Action_StopFollowing` - Properties: { ""NpcId"": ""npc_id"" }
+- `Action_SetFollowMode` - Properties: { ""NpcId"": ""npc_id"", ""Mode"": ""Turns"", ""TurnSpeed"": 1, ""TimeInterval"": 3.0 }
+
+**Acciones de NPCs:**
+- `Action_SetNpcVisible` - Properties: { ""NpcId"": ""npc_id"", ""Visible"": true }
+- `Action_KillNpc` - Mata al NPC. Properties: { ""NpcId"": ""npc_id"" }
+- `Action_ReviveNpc` - Revive al NPC. Properties: { ""NpcId"": ""npc_id"" }
+- `Action_DamageNpc` - Daña al NPC. Properties: { ""NpcId"": ""npc_id"", ""Amount"": 10 }
+- `Action_HealNpc` - Cura al NPC. Properties: { ""NpcId"": ""npc_id"", ""Amount"": 10 }
+- `Action_SetNpcMaxHealth` - Properties: { ""NpcId"": ""npc_id"", ""MaxHealth"": 100 }
+- `Action_SetNpcAttack` - Properties: { ""NpcId"": ""npc_id"", ""Attack"": 10 }
+- `Action_SetNpcDefense` - Properties: { ""NpcId"": ""npc_id"", ""Defense"": 5 }
+- `Action_SetNpcMoney` - Properties: { ""NpcId"": ""npc_id"", ""Amount"": 100 }
+
+**Acciones de Misiones:**
 - `Action_StartQuest` - Properties: { ""QuestId"": ""quest_id"" }
 - `Action_CompleteQuest` - Properties: { ""QuestId"": ""quest_id"" }
 - `Action_FailQuest` - Properties: { ""QuestId"": ""quest_id"" }
-- `Action_SetNpcVisible` - Properties: { ""NpcId"": ""npc_id"", ""Visible"": true }
-- `Action_SetObjectVisible` - Properties: { ""ObjectId"": ""obj_id"", ""Visible"": true }
-- `Action_AddMoney` - Properties: { ""Amount"": 10 }
-- `Action_RemoveMoney` - Properties: { ""Amount"": 10 }
-- `Action_PlaySound` - Properties: { ""SoundId"": ""fx_id"" }
-- `Action_StartConversation` - Inicia una conversación con un NPC. Properties: { ""NpcId"": ""npc_id"" }
+- `Action_SetQuestStatus` - Properties: { ""QuestId"": ""quest_id"", ""Status"": ""InProgress"" }
+- `Action_AdvanceObjective` - Properties: { ""QuestId"": ""quest_id"" }
+
+**Acciones de Dinero:**
+- `Action_AddMoney` - Añade dinero al jugador. Properties: { ""Amount"": 10 }
+- `Action_RemoveMoney` - Quita dinero al jugador. Properties: { ""Amount"": 10 }
+- `Action_AddPlayerMoney` - Properties: { ""Amount"": 10 }
+- `Action_RemovePlayerMoney` - Properties: { ""Amount"": 10 }
+
+**Acciones de Estado del Jugador:**
+- `Action_HealPlayer` - Cura salud. Properties: { ""Amount"": 10 }
+- `Action_DamagePlayer` - Daña al jugador. Properties: { ""Amount"": 10 }
+- `Action_SetPlayerMaxHealth` - Properties: { ""MaxHealth"": 100 }
+- `Action_SetPlayerState` - Establece estado. Properties: { ""StateName"": ""Health"", ""Value"": 100 }
+- `Action_ModifyPlayerState` - Modifica estado. Properties: { ""StateName"": ""Health"", ""Amount"": -10 }
+- `Action_RestoreMana` - Properties: { ""Amount"": 10 }
+- `Action_ConsumeMana` - Properties: { ""Amount"": 10 }
+- `Action_FeedPlayer` - Reduce hambre. Properties: { ""Amount"": 20 }
+- `Action_HydratePlayer` - Reduce sed. Properties: { ""Amount"": 20 }
+- `Action_RestPlayer` - Reduce cansancio. Properties: { ""Amount"": 20 }
+- `Action_RestoreAllStats` - Restaura todos los estados. Sin properties.
+- `Action_SetNeedRate` - Velocidad de necesidad. Properties: { ""NeedType"": ""Hunger"", ""Rate"": ""Normal"" } (Rates: Off, Slow, Normal, Fast)
+
+**Acciones de Modificadores:**
+- `Action_ApplyModifier` - Aplica modificador. Properties: { ""ModifierId"": ""mod_id"", ""Duration"": 10 }
+- `Action_RemoveModifier` - Quita modificador. Properties: { ""ModifierId"": ""mod_id"" }
+- `Action_RemoveModifiersByState` - Properties: { ""StateName"": ""Health"" }
+- `Action_RemoveAllModifiers` - Quita todos los modificadores. Sin properties.
+
+**Acciones de Combate:**
+- `Action_StartCombat` - Inicia combate. Properties: { ""NpcId"": ""npc_id"" }
+- `Action_EndCombatVictory` - Termina combate con victoria. Sin properties.
+- `Action_EndCombatDefeat` - Termina combate con derrota. Sin properties.
+- `Action_ForceFlee` - Fuerza huida. Sin properties.
+
+**Acciones de Comercio:**
+- `Action_OpenTrade` - Abre comercio. Properties: { ""NpcId"": ""npc_id"" }
+- `Action_CloseTrade` - Cierra comercio. Sin properties.
+- `Action_SetBuyMultiplier` - Multiplicador compra. Properties: { ""NpcId"": ""npc_id"", ""Multiplier"": 0.5 }
+- `Action_SetSellMultiplier` - Multiplicador venta. Properties: { ""NpcId"": ""npc_id"", ""Multiplier"": 1.0 }
+
+**Acciones de Habilidades:**
+- `Action_AddAbility` - Da habilidad al jugador. Properties: { ""AbilityId"": ""ability_id"" }
+- `Action_RemoveAbility` - Quita habilidad. Properties: { ""AbilityId"": ""ability_id"" }
+- `Action_AddAbilityToNpc` - Da habilidad a NPC. Properties: { ""NpcId"": ""npc_id"", ""AbilityId"": ""ability_id"" }
+- `Action_RemoveAbilityFromNpc` - Quita habilidad de NPC. Properties: { ""NpcId"": ""npc_id"", ""AbilityId"": ""ability_id"" }
+
+**Acciones de Sala:**
+- `Action_SetRoomIllumination` - Properties: { ""RoomId"": ""room_id"", ""IsIlluminated"": true }
+- `Action_SetRoomMusic` - Properties: { ""RoomId"": ""room_id"", ""MusicId"": ""music_id"" }
+- `Action_SetRoomDescription` - Properties: { ""RoomId"": ""room_id"", ""Description"": ""nueva descripción"" }
+
+**Acciones de Propiedades (avanzado):**
+- `Action_SetProperty` - Establece propiedad de entidad. Properties: { ""EntityType"": ""Npc"", ""EntityId"": ""npc_id"", ""PropertyName"": ""Money"", ""Value"": 100 }
+- `Action_ModifyProperty` - Modifica propiedad numérica. Properties: { ""EntityType"": ""Npc"", ""EntityId"": ""npc_id"", ""PropertyName"": ""Money"", ""Amount"": -50 }
+
+**Acciones de Tiempo y Clima:**
+- `Action_SetWeather` - Properties: { ""Weather"": ""Lluvioso"" } (valores: Despejado, Lluvioso, Nublado, Tormenta)
+- `Action_SetGameHour` - Properties: { ""Hour"": 12 }
+- `Action_AdvanceTime` - Properties: { ""Hours"": 6 }
 
 ### Control de flujo:
 - `Flow_Sequence` - Ejecuta múltiples ramas simultáneamente (salidas: ""Then0"", ""Then1"", ""Then2""). **NOTA: Prefiere encadenar acciones secuencialmente (A→B→C) en lugar de usar Flow_Sequence. Úsalo solo cuando necesites ejecutar ramas paralelas independientes.**
@@ -298,6 +586,7 @@ Genera un mundo con temática ""{THEME}"" que contenga:
 1. **Aproximadamente {ROOM_COUNT} salas** conectadas lógicamente formando un mapa coherente
    - Usa IsInterior=true para interiores (cuevas, edificios) y false para exteriores
    - Usa IsIlluminated=false para salas oscuras que requieren luz (antorcha, linterna)
+   - MusicId=null por defecto (sin música) o ID de música si se definieron en Musics
 2. **{DOOR_COUNT} puertas** - al menos una cerrada con llave si hay llaves disponibles
    - OpenFromSide: ""Both"" (ambos lados), ""FromAOnly"" (solo desde sala A), ""FromBOnly"" (solo desde sala B)
 3. **{CONTAINER_COUNT} contenedores** (cofres, cajas, armarios...) con objetos dentro
@@ -305,27 +594,30 @@ Genera un mundo con temática ""{THEME}"" que contenga:
    - IsLocked=true + KeyId para contenedores con cerradura
    - ContentsVisible=false para ocultar contenido hasta abrir
 4. **{TOTAL_OBJECTS} objetos** distribuidos así:
-   - {WEAPON_COUNT} armas (Type=""arma"") - espadas, dagas, arcos...
-   - {ARMOR_COUNT} armaduras (Type=""armadura"") - escudos, cascos, corazas...
-   - {FOOD_COUNT} comida (Type=""comida"") - pan, manzana, carne...
-   - {DRINK_COUNT} bebidas (Type=""bebida"") - pociones, agua, vino...
-   - {CLOTHING_COUNT} ropa (Type=""ropa"") - capas, túnicas, botas...
+   - {WEAPON_COUNT} armas (Type=""arma"") - espadas, dagas, arcos... con AttackBonus y HandsRequired (1 o 2 manos)
+   - {ARMOR_COUNT} armaduras/escudos - armaduras (Type=""armadura"") para torso, escudos (Type=""escudo"") para mano izquierda, con DefenseBonus
+   - {FOOD_COUNT} comida (Type=""comida"") - pan, manzana, carne... con NutritionAmount
+   - {DRINK_COUNT} bebidas (Type=""bebida"") - pociones, agua, vino... con NutritionAmount
    - {KEY_COUNT} llaves (Type=""llave"") - para abrir puertas/contenedores
-   - {TEXT_COUNT} documentos legibles (Type=""texto"") - cartas, diarios, pergaminos... con TextContent
-   - {OTHER_COUNT} objetos genéricos (Type=""ninguno"") - gemas, joyas, herramientas, objetos de puzzle...
+   - {TEXT_COUNT} documentos legibles (Type=""ninguno"" con CanRead=true) - cartas, diarios, pergaminos... con TextContent
+   - {OTHER_COUNT} objetos genéricos (Type=""ninguno"") - gemas, joyas, herramientas, fuentes de luz (IsLightSource=true)...
    - Usa Visible=false para objetos ocultos que aparecen mediante scripts
 5. **{NPC_COUNT} NPCs** con personalidad acorde a la temática:
    - Si es comerciante: IsShopkeeper=true y añade IDs de objetos a ShopInventory
-   - Si lleva objetos (que puede dar/intercambiar): añade IDs a InventoryObjectIds
+   - Si lleva objetos: usa Inventory con lista de { ObjectId, Quantity } (Quantity=-1 para infinito)
+   - Equipamiento: EquippedRightHandId (arma/escudo), EquippedLeftHandId (arma 1 mano/escudo), EquippedTorsoId (armadura)
    - Si tiene diálogo: crea un Script para el NPC con nodos Conversation_* (ver punto 8)
-   - **Stats de combate**: Level, Strength, Dexterity, Intelligence, MaxHealth, CurrentHealth, Money
+   - **Stats de combate**: Strength, Dexterity, Intelligence, MaxHealth, CurrentHealth (dentro de Stats). Money va fuera de Stats.
    - **Patrulla por turnos**: PatrolRoute con lista de IDs de salas conectadas. PatrolMovementMode=""Turns"", PatrolSpeed=1 (cada turno), 2 (lento), 3 (muy lento). IsPatrolling=true para empezar patrullando.
    - **Patrulla por tiempo**: PatrolMovementMode=""Time"", PatrolTimeInterval=3.0 (segundos entre movimientos)
    - **Seguimiento por turnos**: FollowMovementMode=""Turns"", FollowSpeed=1/2/3. Actívalo con `Action_FollowPlayer`.
    - **Seguimiento por tiempo**: FollowMovementMode=""Time"", FollowTimeInterval=3.0 (segundos)
    - Usa Visible=false para NPCs ocultos que aparecen mediante scripts
    - **Al menos 1 NPC con ruta de patrulla definida** (guardia, explorador, etc.)
-6. **{QUEST_COUNT} misiones** con objetivos definidos en el array Objectives
+6. **{QUEST_COUNT} misiones** con objetivos definidos en el array Objectives:
+   - **Al menos 1 misión principal** (IsMainQuest=true): el objetivo principal de la aventura
+   - **Misiones secundarias** (IsMainQuest=false): objetivos opcionales que dan recompensas o enriquecen la historia
+   - Cada misión debe tener varios Objectives que marquen el progreso
 7. **Scripts variados** que demuestren (usa los TypeId EXACTOS de la lista anterior):
    - **OBLIGATORIO: Un script en Game con `Event_OnGameStart`** que inicie la misión principal (`Action_StartQuest`) y muestre mensaje introductorio
    - Un objeto que al examinarlo (`Event_OnExamine`) muestra mensaje (`Action_ShowMessage`)
@@ -337,11 +629,17 @@ Genera un mundo con temática ""{THEME}"" que contenga:
    - Un NPC patrullero con IsPatrolling=true desde el inicio
    - Un script que haga que un NPC siga al jugador (`Action_FollowPlayer`) cuando se cumpla alguna condición (ej: hablar con él, darle un objeto)
    - **Al menos un script que complete la misión** (`Action_CompleteQuest`) cuando se cumpla un objetivo final
-8. **Diálogos de NPCs** mediante Scripts:
-   - Crea un Script con OwnerType=""Npc"" y OwnerId=id_del_npc
-   - Usa nodos Conversation_Start → Conversation_NpcSay → Conversation_End
-   - Usa Conversation_PlayerChoice para diálogos con opciones
-   - **Connections entre nodos de conversación**: Usa los nombres de puerto correctos (Exec, Option1, Option2, True, False, OnClose, etc.)
+8. **Diálogos de NPCs** mediante el array Conversations:
+   - Cada NPC con diálogo debe tener una entrada en el array **Conversations** con su diálogo completo
+   - Los nodos de conversación van en Conversations, NO en Scripts
+   - Usa Conversation_Start → Conversation_NpcSay → Conversation_PlayerChoice → Conversation_End
+   - Para que un NPC use una conversación, crea un Script con Event_OnTalk que llame a Action_StartConversation
+   - **Connections entre nodos de conversación**: Usa los nombres de puerto correctos:
+     - Conversation_Start/NpcSay/Action/End: puerto ""Exec""
+     - Conversation_PlayerChoice: puertos ""Option1"", ""Option2"", ""Option3"", ""Option4""
+     - Conversation_Branch: puertos ""True"", ""False""
+     - Conversation_Shop: puertos ""OnClose"", ""OnBuy"", ""OnSell""
+   - Ver ejemplo ""conv_comerciante"" en la plantilla JSON para un diálogo completo con tienda, condiciones y acciones
 
 ## NOTAS IMPORTANTES
 - Los IDs deben ser snake_case únicos
@@ -361,9 +659,40 @@ Genera un mundo con temática ""{THEME}"" que contenga:
   - **Arriba**: (X, Y - 180) — para subir pisos/escaleras, usa misma posición visual que norte
   - **Abajo**: (X, Y + 180) — para bajar pisos/sótanos, usa misma posición visual que sur
 - Ejemplo para 5 salas en cruz: central (80,45), norte (80,-135), sur (80,225), este (400,45), oeste (-240,45)
-- **Type de objetos SOLO puede ser uno de estos valores exactos**: ninguno, arma, armadura, comida, bebida, ropa, llave, texto
+- **Type de objetos SOLO puede ser uno de estos valores exactos**: ninguno, arma, armadura, escudo, comida, bebida, llave
 - **Los objetos que son llaves DEBEN tener Type=""llave""**
-- **Los objetos de tipo ""texto"" DEBEN tener TextContent** con el texto legible (carta, diario, pergamino, libro, nota...). El jugador usará el comando ""leer"" para ver este contenido.
+- **Para objetos legibles** (cartas, diarios, pergaminos...): usa Type=""ninguno"" con CanRead=true y TextContent con el texto. El jugador usará el comando ""leer"".
+
+### Sistema de Equipamiento
+- **3 slots de equipamiento**: RightHand (mano derecha), LeftHand (mano izquierda), Torso
+- **Armas de 1 mano** (HandsRequired=1): pueden ir en RightHand o LeftHand
+- **Armas de 2 manos** (HandsRequired=2): ocupan RightHand y LeftHand automáticamente
+- **Escudos** (Type=""escudo""): solo pueden ir en LeftHand
+- **Armaduras** (Type=""armadura""): solo pueden ir en Torso
+- **InitialRightHandId, InitialLeftHandId, InitialTorsoId**: equipamiento inicial del jugador
+- **EquippedRightHandId, EquippedLeftHandId, EquippedTorsoId**: equipamiento de NPCs
+
+### Fuentes de Luz
+- **IsLightSource=true**: el objeto es una fuente de luz (antorcha, vela, lámpara...)
+- **IsLit**: si está encendido actualmente
+- **LightTurnsRemaining**: turnos de luz restantes (-1 = infinito)
+- **CanIgnite/CanExtinguish**: si se puede encender/apagar
+- **IgniterObjectId**: objeto necesario para encender (null = se enciende sin nada)
+- Las salas con IsIlluminated=false requieren luz para ver
+
+### Inventario con Cantidades
+- **InitialInventory del jugador**: lista de { ObjectId, Quantity } para inventario inicial
+- **Inventory de NPCs**: lista de { ObjectId, Quantity } - objetos que el NPC posee (puede dar/intercambiar)
+- **Quantity=-1**: cantidad infinita (para objetos que no se agotan)
+
+### Sistema de Comercio (NPCs comerciantes)
+- **IsShopkeeper=true**: el NPC es un comerciante con tienda
+- **ShopInventory**: lista de { ObjectId, Quantity } - objetos a la VENTA (stock de tienda, NO en Inventory)
+- **Inventory**: objetos propios del NPC (NO se venden, puede darlos/intercambiarlos)
+- **BuyPriceMultiplier**: precio al que COMPRA al jugador (0.5 = 50% del precio base)
+- **SellPriceMultiplier**: precio al que VENDE al jugador (1.0 = precio base, 1.5 = 150%)
+- **Money**: dinero del comerciante (-1 = infinito, 0+ = cantidad limitada)
+- Ejemplo: Un herrero vende espadas (en ShopInventory) pero NO vende su propio martillo (en Inventory)
 - **Puerta cerrada con llave**: `IsLocked=true` + `KeyObjectId` con el Id de un objeto llave existente
 - **Puerta que se abre con puzzle/script**: `IsLocked=false` + `IsOpen=false`. Usa `Action_OpenDoor` en el script cuando se resuelva el puzzle. **NO uses IsLocked=true sin KeyObjectId** - el motor no lo permite
 - **Si un contenedor tiene IsLocked=true, DEBE tener KeyId con el Id de un objeto llave existente** (contenedor bloqueado requiere llave)
@@ -375,7 +704,7 @@ Genera un mundo con temática ""{THEME}"" que contenga:
 - Ejemplo correcto: cofre en sala_1 con llave dentro → cofre.RoomId=""sala_1"", llave.RoomId=null, cofre.ContainedObjectIds=[""llave""]
 
 ### ⚠️ Objetos que un NPC ""da"" al jugador (MUY IMPORTANTE)
-- Si un NPC debe dar un objeto mediante script (Action_GiveItem), el objeto debe tener **RoomId=null** y **Visible=false** y **NO estar en InventoryObjectIds del NPC**
+- Si un NPC debe dar un objeto mediante script (Action_GiveItem), el objeto debe tener **RoomId=null** y **Visible=false** y **NO estar en Inventory del NPC**
 - **⚠️ OBLIGATORIO: Si el objeto tiene Visible=false, SIEMPRE debes llamar Action_SetObjectVisible(obj_id, true) ANTES de Action_GiveItem**. Sin esto el objeto no funcionará correctamente.
 - **Secuencia OBLIGATORIA para dar objetos ocultos** (ver ejemplo ""script_npc_give_item"" en la plantilla JSON):
   1. Condition_HasFlag(""objeto_entregado"") → Si True: mostrar ""Ya te lo di""
@@ -383,7 +712,7 @@ Genera un mundo con temática ""{THEME}"" que contenga:
   3. Action_GiveItem(obj_id)
   4. Action_SetFlag(""objeto_entregado"", true)
   5. Action_ShowMessage con diálogo
-- **InventoryObjectIds** de los NPCs es solo para objetos que el NPC TIENE permanentemente (ej: un tendero con su mercancía)
+- **Inventory** de los NPCs es solo para objetos que el NPC TIENE permanentemente (ej: un tendero con su mercancía)
 
 ### Género gramatical (Gender)
 - **Gender** indica el género gramatical en español para artículos (el/la): `Masculine` o `Feminine`
@@ -426,6 +755,11 @@ Genera un mundo con temática ""{THEME}"" que contenga:
   - Ejemplo mago: Strength=10, Constitution=15, Intelligence=40, Dexterity=20, Charisma=15 (suma=100)
   - Ejemplo equilibrado: Strength=20, Constitution=20, Intelligence=20, Dexterity=20, Charisma=20 (suma=100)
 - **InitialMoney**: Dinero inicial. Calcula un valor razonable basándote en los precios de los objetos (que pueda comprar 1-2 objetos baratos)
+- **MaxInventoryWeight**: Peso máximo del inventario en gramos (-1 = ilimitado)
+- **MaxInventoryVolume**: Volumen máximo del inventario en cm³ (-1 = ilimitado)
+- **InitialInventory**: Lista de objetos iniciales con cantidad: [{ ""ObjectId"": ""obj_id"", ""Quantity"": 1 }]
+- **Equipamiento inicial**: InitialRightHandId, InitialLeftHandId, InitialTorsoId para armas/escudos/armaduras equipados al inicio
+- **AbilityIds**: Lista de IDs de habilidades de combate iniciales
 - Los nodos de scripts necesitan posiciones X,Y para visualización (separados ~200px)
 - Conecta los nodos: evento → condiciones/acciones mediante puerto ""Exec""
 - El puerto de salida de eventos y acciones es ""Exec"", el de entrada también es ""Exec""
@@ -440,7 +774,7 @@ Genera un mundo con temática ""{THEME}"" que contenga:
 6. **Puertas sin referencia bidireccional**: Si una puerta conecta dos salas, AMBAS salidas deben tener el mismo DoorId
 7. **Llaves inaccesibles**: NUNCA pongas una llave detrás de la puerta que abre
 8. **Puertas/Contenedores bloqueados sin llave**: Si IsLocked=true, DEBE existir un KeyId/KeyObjectId válido. Para puzzles usa IsLocked=false + IsOpen=false + Action_OpenDoor
-9. **Objetos dados por NPC en InventoryObjectIds**: Los objetos que se dan con Action_GiveItem NO deben estar en InventoryObjectIds
+9. **Objetos dados por NPC en Inventory**: Los objetos que se dan con Action_GiveItem NO deben estar en el Inventory del NPC
 10. **Puzzle de puerta mal configurado**: Para puzzles usa IsLocked=false + IsOpen=false + Action_OpenDoor. NUNCA uses IsLocked=true sin KeyObjectId
 11. **⚠️ CRÍTICO - Action_GiveItem sin Action_SetObjectVisible**: Si el objeto tiene Visible=false, SIEMPRE debes añadir Action_SetObjectVisible(obj, true) ANTES de Action_GiveItem. Sin esto, el objeto no aparecerá en el inventario correctamente. Secuencia obligatoria:
     - Condition_HasItem/HasFlag (verificar)
