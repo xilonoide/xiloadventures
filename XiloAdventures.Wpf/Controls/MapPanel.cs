@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using XiloAdventures.Engine.Models;
 using XiloAdventures.Wpf.Windows;
 using XiloAdventures.Wpf.Common.Windows;
@@ -90,6 +91,14 @@ public partial class MapPanel : Control
     // Para distinguir click de arrastre
     private Point _mouseDownScreen;
     private Room? _mouseDownRoom;
+
+    // Animación de respiración para destacar una sala
+    private string? _breathingRoomId;
+    private DispatcherTimer? _breathingTimer;
+    private double _breathingPhase; // 0 a 2*PI para un ciclo completo
+    private int _breathingCyclesRemaining;
+    private const int BreathingTotalCycles = 5;
+    private const double BreathingCycleDuration = 800.0; // ms por ciclo (igual que DiceControl)
 
     public event Action<Room>? RoomClicked;
     public event Action<Door>? DoorClicked;
@@ -230,6 +239,84 @@ public partial class MapPanel : Control
             height / (2.0 * _zoom) - logicalCenter.Y);
 
         InvalidateVisual();
+    }
+
+    /// <summary>
+    /// Inicia una animación de respiración (5 pulsos) para destacar una sala.
+    /// Útil cuando se hace click en un objeto o NPC para resaltar su ubicación.
+    /// </summary>
+    public void HighlightRoomWithBreathing(string roomId)
+    {
+        if (string.IsNullOrWhiteSpace(roomId))
+            return;
+
+        // Detener animación anterior si existe
+        StopBreathingAnimation();
+
+        _breathingRoomId = roomId;
+        _breathingPhase = 0;
+        _breathingCyclesRemaining = BreathingTotalCycles;
+
+        _breathingTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(16) // ~60 FPS
+        };
+        _breathingTimer.Tick += BreathingTimer_Tick;
+        _breathingTimer.Start();
+    }
+
+    private void BreathingTimer_Tick(object? sender, EventArgs e)
+    {
+        // Incrementar fase basándose en el tiempo transcurrido
+        // Un ciclo completo (0 a 2*PI) toma BreathingCycleDuration ms
+        double phaseIncrement = (2 * Math.PI) / (BreathingCycleDuration / 16.0);
+        _breathingPhase += phaseIncrement;
+
+        // Si completamos un ciclo (la fase pasa de 2*PI)
+        if (_breathingPhase >= 2 * Math.PI)
+        {
+            _breathingPhase -= 2 * Math.PI;
+            _breathingCyclesRemaining--;
+
+            if (_breathingCyclesRemaining <= 0)
+            {
+                StopBreathingAnimation();
+                return;
+            }
+        }
+
+        InvalidateVisual();
+    }
+
+    private void StopBreathingAnimation()
+    {
+        if (_breathingTimer != null)
+        {
+            _breathingTimer.Stop();
+            _breathingTimer.Tick -= BreathingTimer_Tick;
+            _breathingTimer = null;
+        }
+
+        _breathingRoomId = null;
+        _breathingPhase = 0;
+        _breathingCyclesRemaining = 0;
+        InvalidateVisual();
+    }
+
+    /// <summary>
+    /// Obtiene la intensidad actual de la animación de respiración (0.0 a 1.0).
+    /// Usa una función seno para el efecto suave de respiración.
+    /// </summary>
+    public double GetBreathingIntensity()
+    {
+        if (_breathingRoomId == null)
+            return 0;
+
+        // Sin wave: de 0.4 a 1.0 (igual que DiceControl)
+        // (1 + sin(phase - PI/2)) / 2 da valores de 0 a 1
+        // Luego escalamos a 0.4-1.0
+        double normalized = (1 + Math.Sin(_breathingPhase - Math.PI / 2)) / 2.0;
+        return 0.4 + normalized * 0.6;
     }
 
     public void CenterOnDoor(Door door)

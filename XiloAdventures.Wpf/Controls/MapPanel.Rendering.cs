@@ -132,9 +132,31 @@ public partial class MapPanel : Control
             bool isLit = room.IsIlluminated;
             bool isTestPlayerRoom = _testPlayerRoomId != null &&
                 string.Equals(room.Id, _testPlayerRoomId, StringComparison.OrdinalIgnoreCase);
+            bool isBreathingRoom = _breathingRoomId != null &&
+                string.Equals(room.Id, _breathingRoomId, StringComparison.OrdinalIgnoreCase);
 
-            // Dibujar resplandor si es la sala del jugador en prueba
-            if (isTestPlayerRoom)
+            // Dibujar resplandor con efecto de respiración (5 pulsos)
+            if (isBreathingRoom)
+            {
+                double intensity = GetBreathingIntensity();
+                var glowColor = Color.FromRgb(0, 180, 255); // Mismo color que el test player room
+
+                for (int i = 4; i >= 1; i--)
+                {
+                    double expand = i * 4 * intensity; // El tamaño también respira
+                    byte baseAlpha = (byte)(60 - i * 12);
+                    byte alpha = (byte)(baseAlpha * intensity);
+                    var glowRect = new Rect(
+                        rect.X - expand,
+                        rect.Y - expand,
+                        rect.Width + expand * 2,
+                        rect.Height + expand * 2);
+                    var glowBrush = new SolidColorBrush(Color.FromArgb(alpha, glowColor.R, glowColor.G, glowColor.B));
+                    dc.DrawRoundedRectangle(glowBrush, null, glowRect, 6 + expand / 2, 6 + expand / 2);
+                }
+            }
+            // Dibujar resplandor si es la sala del jugador en prueba (solo si no está respirando)
+            else if (isTestPlayerRoom)
             {
                 var glowColor = Color.FromRgb(0, 180, 255);
                 for (int i = 4; i >= 1; i--)
@@ -165,9 +187,15 @@ public partial class MapPanel : Control
 
             double borderThickness = room.IsInterior ? 2.0 : 1.0;
 
-            // Borde más brillante si es la sala del jugador
+            // Borde más brillante si es la sala del jugador o está respirando
             Pen borderPen;
-            if (isTestPlayerRoom)
+            if (isBreathingRoom)
+            {
+                double intensity = GetBreathingIntensity();
+                byte brightness = (byte)(150 + 105 * intensity); // 150-255
+                borderPen = new Pen(new SolidColorBrush(Color.FromRgb(0, brightness, 255)), 2.5);
+            }
+            else if (isTestPlayerRoom)
             {
                 borderPen = new Pen(new SolidColorBrush(Color.FromRgb(0, 200, 255)), 2.5);
             }

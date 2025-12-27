@@ -664,6 +664,7 @@ Genera un mundo con temática ""{THEME}"" que contenga:
    - **Al menos 1 misión principal** (IsMainQuest=true): el objetivo principal de la aventura
    - **Misiones secundarias** (IsMainQuest=false): objetivos opcionales que dan recompensas o enriquecen la historia
    - Cada misión debe tener varios Objectives que marquen el progreso
+   - **⚠️ OBLIGATORIO: TODA misión (principal y secundaria) debe tener un `Action_StartQuest` y un `Action_CompleteQuest`** en algún script o conversación. No definas misiones que no se puedan iniciar o completar
 7. **Scripts variados** que demuestren (usa los TypeId EXACTOS de la lista anterior):
    - **OBLIGATORIO: Un script en Game con `Event_OnGameStart`** que inicie la misión principal (`Action_StartQuest`) y muestre mensaje introductorio
    - Un objeto que al examinarlo (`Event_OnExamine`) muestra mensaje (`Action_ShowMessage`)
@@ -674,12 +675,12 @@ Genera un mundo con temática ""{THEME}"" que contenga:
    - Uso de flags para recordar acciones (`Action_SetFlag` + `Condition_HasFlag`)
    - Un NPC patrullero con IsPatrolling=true desde el inicio
    - Un script que haga que un NPC siga al jugador (`Action_FollowPlayer`) cuando se cumpla alguna condición (ej: hablar con él, darle un objeto)
-   - **Al menos un script que complete la misión** (`Action_CompleteQuest`) cuando se cumpla un objetivo final
+   - **Scripts o conversaciones que inicien y completen CADA misión** - recuerda que toda misión necesita `Action_StartQuest` y `Action_CompleteQuest`
 8. **Diálogos de NPCs** mediante el array Conversations:
    - Cada NPC con diálogo debe tener una entrada en el array **Conversations** con su diálogo completo
    - Los nodos de conversación van en Conversations, NO en Scripts
    - Usa Conversation_Start → Conversation_NpcSay → Conversation_PlayerChoice → Conversation_End
-   - Para que un NPC use una conversación, crea un Script con Event_OnTalk que llame a Action_StartConversation
+   - **NO crees scripts con Event_OnTalk solo para iniciar conversaciones** - el motor lo hace automáticamente. Sí puedes usar Event_OnTalk para otras acciones adicionales (dar objetos, activar flags, etc.)
    - **Connections entre nodos de conversación**: Usa los nombres de puerto correctos:
      - Conversation_Start/NpcSay/Action/End: puerto ""Exec""
      - Conversation_PlayerChoice: puertos ""Option1"", ""Option2"", ""Option3"", ""Option4""

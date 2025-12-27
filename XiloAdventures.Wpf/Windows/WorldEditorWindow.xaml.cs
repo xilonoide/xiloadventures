@@ -1418,6 +1418,30 @@ public partial class WorldEditorWindow : Window
                 var npc = e.Data.GetData("Npc") as Npc;
                 if (npc != null)
                 {
+                    // Si el NPC tiene una ruta de patrulla, preguntar antes de moverlo
+                    if (npc.PatrolRoute.Count > 0)
+                    {
+                        var confirmWindow = new AlertWindow(
+                            $"El NPC '{npc.Name}' tiene una ruta de patrulla configurada.\n\n" +
+                            $"Si lo mueves a otra sala, la ruta de patrulla se eliminará " +
+                            $"y el NPC dejará de patrullar.\n\n" +
+                            $"¿Deseas continuar?",
+                            "Mover NPC con ruta de patrulla");
+                        confirmWindow.ShowCancelButton(true);
+                        confirmWindow.SetOkButtonText("Mover y eliminar ruta");
+                        confirmWindow.Owner = this;
+
+                        if (confirmWindow.ShowDialog() != true)
+                        {
+                            e.Handled = true;
+                            return; // El usuario canceló
+                        }
+
+                        // Limpiar la ruta de patrulla y desactivar el patrullaje
+                        npc.PatrolRoute.Clear();
+                        npc.IsPatrolling = false;
+                    }
+
                     npc.RoomId = targetRoom.Id;
                     droppedItem = npc;
                     changed = true;
@@ -1555,74 +1579,28 @@ public partial class WorldEditorWindow : Window
 
     private void CenterOnObject(GameObject obj)
     {
-        if (_world == null)
+        if (_world == null || string.IsNullOrWhiteSpace(obj.RoomId))
             return;
 
-        Room? room = null;
-
-        if (!string.IsNullOrWhiteSpace(obj.RoomId))
-        {
-            room = _world.Rooms.FirstOrDefault(r => r.Id == obj.RoomId);
-        }
-
+        var room = _world.Rooms.FirstOrDefault(r => r.Id == obj.RoomId);
         if (room == null)
-        {
-            var dlg = new SelectRoomWindow(_world.Rooms, $"Selecciona la sala para el objeto '{obj.Name}'")
-            {
-                Owner = this
-            };
+            return;
 
-            if (dlg.ShowDialog() == true && dlg.SelectedRoom != null)
-            {
-                room = dlg.SelectedRoom;
-                obj.RoomId = room.Id;
-            }
-            else
-            {
-                return;
-            }
-        }
-
-        if (room != null)
-        {
-            MapPanel.CenterOnRoom(room);
-        }
+        MapPanel.CenterOnRoom(room);
+        MapPanel.HighlightRoomWithBreathing(room.Id);
     }
 
     private void CenterOnNpc(Npc npc)
     {
-        if (_world == null)
+        if (_world == null || string.IsNullOrWhiteSpace(npc.RoomId))
             return;
 
-        Room? room = null;
-
-        if (!string.IsNullOrWhiteSpace(npc.RoomId))
-        {
-            room = _world.Rooms.FirstOrDefault(r => r.Id == npc.RoomId);
-        }
-
+        var room = _world.Rooms.FirstOrDefault(r => r.Id == npc.RoomId);
         if (room == null)
-        {
-            var dlg = new SelectRoomWindow(_world.Rooms, $"Selecciona la sala para el NPC '{npc.Name}'")
-            {
-                Owner = this
-            };
+            return;
 
-            if (dlg.ShowDialog() == true && dlg.SelectedRoom != null)
-            {
-                room = dlg.SelectedRoom;
-                npc.RoomId = room.Id;
-            }
-            else
-            {
-                return;
-            }
-        }
-
-        if (room != null)
-        {
-            MapPanel.CenterOnRoom(room);
-        }
+        MapPanel.CenterOnRoom(room);
+        MapPanel.HighlightRoomWithBreathing(room.Id);
     }
 
     private void ExpandAll_Click(object sender, RoutedEventArgs e)
