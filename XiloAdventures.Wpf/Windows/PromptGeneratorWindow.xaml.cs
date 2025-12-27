@@ -16,11 +16,18 @@ public partial class PromptGeneratorWindow : Window
   ""Game"": {
     ""Id"": ""game"",
     ""Title"": ""Título acorde a la temática {THEME}"",
+    ""Theme"": ""{THEME}"",
     ""StartRoomId"": ""id_sala_inicial"",
     ""StartHour"": 9,
     ""StartWeather"": ""Despejado"",
     ""MinutesPerGameHour"": 6,
-    ""ParserDictionaryJson"": null
+    ""ParserDictionaryJson"": null,
+    ""EncryptionKey"": ""XXXXXXXX"",
+    ""EndingText"": ""Texto de felicitación por completar la aventura, acorde a la temática"",
+    ""CombatEnabled"": true,
+    ""MagicEnabled"": true,
+    ""BasicNeedsEnabled"": false,
+    ""CraftingEnabled"": false
   },
   ""Player"": {
     ""Name"": ""Nombre aleatorio del protagonista"",
@@ -36,12 +43,13 @@ public partial class PromptGeneratorWindow : Window
     ""MaxInventoryWeight"": -1,
     ""MaxInventoryVolume"": -1,
     ""InitialInventory"": [
-      { ""ObjectId"": ""obj_id"", ""Quantity"": 1 }
+      { ""ObjectId"": ""obj_linterna"", ""Quantity"": 1 },
+      { ""ObjectId"": ""obj_espada_inicial"", ""Quantity"": 1 }
     ],
-    ""InitialRightHandId"": ""obj_arma_id o null"",
-    ""InitialLeftHandId"": ""obj_escudo_id o null"",
-    ""InitialTorsoId"": ""obj_armadura_id o null"",
-    ""AbilityIds"": []
+    ""InitialRightHandId"": ""obj_espada_inicial"",
+    ""InitialLeftHandId"": null,
+    ""InitialTorsoId"": ""obj_armadura_inicial"",
+    ""AbilityIds"": [""habilidad_magia_inicial""]
   },
   ""Rooms"": [
     {
@@ -238,6 +246,38 @@ public partial class PromptGeneratorWindow : Window
         { ""FromNodeId"": ""n5"", ""FromPortName"": ""Exec"", ""ToNodeId"": ""n6"", ""ToPortName"": ""Exec"" },
         { ""FromNodeId"": ""n6"", ""FromPortName"": ""Exec"", ""ToNodeId"": ""n7"", ""ToPortName"": ""Exec"" }
       ]
+    }
+  ],
+  ""Abilities"": [
+    {
+      ""Id"": ""habilidad_bola_fuego"",
+      ""Name"": ""Bola de Fuego"",
+      ""Description"": ""Lanza una bola de fuego que causa daño mágico"",
+      ""AbilityType"": ""Attack"",
+      ""ManaCost"": 15,
+      ""AttackValue"": 5,
+      ""DefenseValue"": 0,
+      ""Damage"": 20,
+      ""Healing"": 0,
+      ""DamageType"": ""Magical"",
+      ""StatusEffect"": null,
+      ""StatusEffectDuration"": 0,
+      ""TargetsSelf"": false
+    },
+    {
+      ""Id"": ""habilidad_curacion"",
+      ""Name"": ""Curación Menor"",
+      ""Description"": ""Restaura salud al usuario"",
+      ""AbilityType"": ""Defense"",
+      ""ManaCost"": 10,
+      ""AttackValue"": 0,
+      ""DefenseValue"": 0,
+      ""Damage"": 0,
+      ""Healing"": 25,
+      ""DamageType"": ""Magical"",
+      ""StatusEffect"": null,
+      ""StatusEffectDuration"": 0,
+      ""TargetsSelf"": true
     }
   ],
   ""RoomPositions"": {
@@ -580,6 +620,67 @@ public partial class PromptGeneratorWindow : Window
 - `Conversation_BuyItem` - Comprar objeto específico. Properties: { ""ObjectId"": ""obj_id"", ""Price"": 10, ""ConfirmText"": ""¿Comprar por {precio}?"" } (salidas: Success, NotEnoughMoney, Cancelled)
 - `Conversation_SellItem` - Vender objeto específico. Properties: { ""ObjectId"": ""obj_id"", ""Price"": 5 } (salidas: Success, NoItem, Cancelled)
 
+## SISTEMAS DEL JUEGO
+
+El JSON de Game contiene flags para activar sistemas:
+
+### Sistema de Combate (CombatEnabled)
+- Activa: salud, maná, energía, combate por turnos
+- Si está activo, crea objetos de tipo arma y armadura para el jugador y NPCs
+- **Si activas combate, equipa al jugador con un arma inicial** (InitialRightHandId)
+
+### Sistema de Magia (MagicEnabled)
+- Requiere CombatEnabled=true
+- Activa: uso de maná y habilidades mágicas
+- **Si activas magia, DEBES crear habilidades en el array Abilities**
+- Asigna habilidades iniciales al jugador con AbilityIds
+- Los NPCs mágicos también pueden tener AbilityIds
+
+### Sistema de Necesidades Básicas (BasicNeedsEnabled)
+- Activa: hambre, sed, sueño
+- El jugador debe comer, beber y dormir para sobrevivir
+- Crea objetos de tipo comida y bebida
+
+### Sistema de Fabricación (CraftingEnabled)
+- Activa: crear objetos combinando ingredientes
+- Requiere definir recetas (no incluido en este prompt básico)
+
+## HABILIDADES MÁGICAS (Abilities)
+
+Si MagicEnabled=true, crea habilidades acorde a la temática:
+
+```json
+{
+  ""Id"": ""habilidad_id"",
+  ""Name"": ""Nombre de la habilidad"",
+  ""Description"": ""Descripción de lo que hace"",
+  ""AbilityType"": ""Attack"",
+  ""ManaCost"": 15,
+  ""AttackValue"": 5,
+  ""DefenseValue"": 0,
+  ""Damage"": 20,
+  ""Healing"": 0,
+  ""DamageType"": ""Magical"",
+  ""StatusEffect"": null,
+  ""StatusEffectDuration"": 0,
+  ""TargetsSelf"": false
+}
+```
+
+- **AbilityType**: ""Attack"" (ofensiva) o ""Defense"" (defensiva/curación)
+- **ManaCost**: Coste de maná para usar la habilidad
+- **AttackValue/DefenseValue**: Bonus a tiradas de ataque/defensa
+- **Damage**: Daño que causa (0 si no hace daño)
+- **Healing**: Curación que proporciona (0 si no cura)
+- **DamageType**: ""Physical"" o ""Magical""
+- **StatusEffect**: Efecto de estado que aplica (null = ninguno)
+- **TargetsSelf**: true si afecta al usuario, false si afecta al enemigo
+
+### Ejemplos de habilidades por temática:
+- **Fantasía**: Bola de Fuego, Rayo de Hielo, Curación, Escudo Mágico
+- **Horror**: Maldición, Drenar Vida, Aura de Miedo, Regeneración
+- **Sci-fi**: Rayo Láser, Escudo de Energía, Nanobots Curativos
+
 ## REQUISITOS DEL MUNDO
 
 Genera un mundo con temática ""{THEME}"" que contenga:
@@ -726,13 +827,26 @@ Genera un mundo con temática ""{THEME}"" que contenga:
 - **MinutesPerGameHour**: Minutos reales por hora de juego (1-10). Ej: 6 = cada 6 min reales pasa 1 hora en el juego
 
 ### Diccionario del parser (Game.ParserDictionaryJson)
-- Permite añadir sinónimos personalizados para verbos, sustantivos y adjetivos
+El motor tiene un parser de lenguaje natural que entiende comandos del jugador. Tienes a tu disposición un diccionario para añadir sinónimos específicos de tu aventura:
+
+- **El motor YA reconoce**: verbos básicos (coger, examinar, abrir, ir, atacar, hablar...), artículos (el, la, un...), preposiciones (con, en, a, de...)
+- **Usa el diccionario para**: sinónimos específicos de tu temática (ej: ""orbe"" como sinónimo de ""gema"", ""portal"" como sinónimo de ""puerta"")
 - Si no necesitas sinónimos extra, deja **null**
 - Formato JSON (como string escapado):
 ```json
-""ParserDictionaryJson"": ""{\""verbs\"": {\""atacar\"": [\""golpear\"", \""apuñalar\""]}, \""nouns\"": {\""gema\"": [\""joya\"", \""piedra\""]}}""
+""ParserDictionaryJson"": ""{\""verbs\"": {\""atacar\"": [\""golpear\"", \""apuñalar\""]}, \""nouns\"": {\""gema\"": [\""joya\"", \""piedra\"", \""orbe\""]}}""
 ```
-- **NOTA**: El motor ya reconoce verbos básicos (coger, examinar, abrir, ir...) y artículos (el, la, un...). Solo añade sinónimos específicos de tu aventura.
+
+### Clave de cifrado (Game.EncryptionKey)
+- Clave de 8 caracteres para cifrar las partidas guardadas
+- Usa caracteres alfanuméricos aleatorios (ej: ""X7kM9pL2"")
+- Cada mundo debe tener una clave única
+
+### Texto de finalización (Game.EndingText)
+- Texto que se muestra al completar la aventura (tras Action_CompleteQuest de la misión principal)
+- Crea un mensaje de felicitación acorde a la temática
+- Ejemplo horror: ""Has sobrevivido a la mansión maldita. Pocos pueden decir lo mismo...""
+- Ejemplo fantasía: ""¡Héroe! Tu nombre será recordado en las crónicas del reino.""
 
 ### Estadísticas de objetos
 - **Volume**: Volumen en centímetros cúbicos (cm³). Ejemplos: llave=10, libro=1000, espada=500, cofre=50000
@@ -760,7 +874,12 @@ Genera un mundo con temática ""{THEME}"" que contenga:
 - **MaxInventoryVolume**: Volumen máximo del inventario en cm³ (-1 = ilimitado)
 - **InitialInventory**: Lista de objetos iniciales con cantidad: [{ ""ObjectId"": ""obj_id"", ""Quantity"": 1 }]
 - **Equipamiento inicial**: InitialRightHandId, InitialLeftHandId, InitialTorsoId para armas/escudos/armaduras equipados al inicio
+  - **⚠️ OBLIGATORIO si CombatEnabled=true**: El jugador DEBE empezar con al menos un arma equipada (InitialRightHandId)
+  - Crea un arma y/o armadura inicial específica para el jugador (ej: ""espada_inicial"", ""tunica_inicial"")
+  - Estos objetos deben estar en InitialInventory Y en el slot correspondiente
 - **AbilityIds**: Lista de IDs de habilidades de combate iniciales
+  - **⚠️ OBLIGATORIO si MagicEnabled=true**: El jugador DEBE tener al menos 1-2 habilidades iniciales
+  - Los IDs deben coincidir con habilidades definidas en el array Abilities
 - Los nodos de scripts necesitan posiciones X,Y para visualización (separados ~200px)
 - Conecta los nodos: evento → condiciones/acciones mediante puerto ""Exec""
 - El puerto de salida de eventos y acciones es ""Exec"", el de entrada también es ""Exec""
@@ -783,24 +902,44 @@ Genera un mundo con temática ""{THEME}"" que contenga:
     - Action_GiveItem(obj_id)
     - Action_SetFlag (evitar duplicados)
     - Action_ShowMessage
-12. **OwnerType y OwnerId incoherentes**: El OwnerId DEBE ser el Id de una entidad del tipo OwnerType:
+12. **MagicEnabled=true sin Abilities**: Si activas magia, DEBES crear habilidades en el array Abilities y asignarlas al jugador
+13. **CombatEnabled=true sin equipamiento**: Si activas combate, el jugador DEBE tener arma inicial (InitialRightHandId)
+14. **Abilities referenciadas sin definir**: Cada AbilityId en Player/Npc debe existir en el array Abilities
+15. **OwnerType y OwnerId incoherentes**: El OwnerId DEBE ser el Id de una entidad del tipo OwnerType:
     - OwnerType=""Game"" → OwnerId=""game""
     - OwnerType=""Room"" → OwnerId=Id de una sala existente
     - OwnerType=""Npc"" → OwnerId=Id de un NPC existente
     - OwnerType=""GameObject"" → OwnerId=Id de un objeto existente
     - OwnerType=""Door"" → OwnerId=Id de una puerta existente
     - OwnerType=""Quest"" → OwnerId=Id de una misión existente
-13. **Eventos incompatibles con OwnerType**: Cada evento solo funciona con ciertos OwnerTypes (ver lista de eventos). Ej: Event_OnEnter solo funciona con OwnerType=""Room""
-14. **⚠️ Objetos dentro de contenedor con RoomId**: Si un objeto está en ContainedObjectIds de un contenedor, DEBE tener RoomId=null. Si tiene RoomId, aparecerá suelto en la sala aunque esté ""dentro"" del contenedor
+16. **Eventos incompatibles con OwnerType**: Cada evento solo funciona con ciertos OwnerTypes (ver lista de eventos). Ej: Event_OnEnter solo funciona con OwnerType=""Room""
+17. **⚠️ Objetos dentro de contenedor con RoomId**: Si un objeto está en ContainedObjectIds de un contenedor, DEBE tener RoomId=null. Si tiene RoomId, aparecerá suelto en la sala aunque esté ""dentro"" del contenedor
 
 ## FORMATO DE SALIDA
 
-**IMPORTANTE: Genera el resultado como un archivo descargable con extensión .xaw** (no como texto en el chat).
-- El JSON debe ser válido y parseable
-- Sin markdown code blocks, solo el JSON puro
-- El archivo .xaw se abrirá directamente en el editor XiloAdventures
-- **NO uses caracteres especiales invisibles** (soft hyphens, zero-width spaces, etc.) - solo caracteres UTF-8 estándar
-- Usa solo comillas rectas ("") nunca comillas tipográficas ("")
+**OBLIGATORIO: Tu respuesta debe ser ÚNICAMENTE un archivo descargable llamado `nuevo_mundo.xaw`**
+
+### Reglas estrictas:
+❌ NO escribas NADA de texto antes del archivo
+❌ NO escribas NADA de texto después del archivo
+❌ NO uses markdown code blocks
+❌ NO ofrezcas ""continuar en el siguiente mensaje""
+❌ NO digas que el contenido está ""truncado"" o ""compactado""
+❌ NO hagas preguntas ni ofrezcas opciones
+✅ Genera el archivo .xaw COMPLETO directamente para descargar
+✅ Incluye TODO el contenido solicitado en UN SOLO archivo
+
+### Requisitos del archivo:
+- JSON válido y parseable
+- COMPLETO con todas las salas, objetos, NPCs, scripts y misiones solicitados
+- **NO uses caracteres especiales invisibles** (soft hyphens, zero-width spaces, etc.)
+- Usa solo comillas rectas ("") nunca tipográficas ("")
+
+### Si tienes límites de longitud:
+Los archivos descargables pueden ser más largos que las respuestas de texto. Usa esa capacidad para generar el archivo COMPLETO.
+Si aún así no cabe todo, reduce ligeramente las descripciones pero NUNCA omitas elementos estructurales (salas, objetos, NPCs, scripts).
+
+**NUNCA pidas confirmación ni ofrezcas dividir el trabajo. Genera el archivo completo directamente.**
 
 ## CONSISTENCIA DE PUERTAS
 
