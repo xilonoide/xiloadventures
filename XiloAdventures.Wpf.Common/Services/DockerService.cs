@@ -379,8 +379,12 @@ public static class DockerService
         progress?.Report("Creando contenedor de Stable Diffusion...");
 
         // Comando diferente según si hay GPU o no
+        // Optimizations for RTX 3080 Ti: xformers, fp16, better memory allocation
         string runCommand = hasGpu
-            ? $"run -d --gpus all --name {StableDiffusionContainerName} -p 7860:8000 -v {StableDiffusionContainerName}_cache:/root/.cache gadicc/diffusers-api:latest"
+            ? $"run -d --gpus all --name {StableDiffusionContainerName} -p 7860:8000 " +
+              $"-e PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512 " +
+              $"-e HF_HUB_ENABLE_HF_TRANSFER=1 " +
+              $"-v {StableDiffusionContainerName}_cache:/root/.cache gadicc/diffusers-api:latest"
             : $"run -d --name {StableDiffusionContainerName} -p 7860:8000 -v {StableDiffusionContainerName}_cache:/root/.cache gadicc/diffusers-api:latest";
 
         await RunDockerCheckedAsync(runCommand, cancellationToken).ConfigureAwait(false);

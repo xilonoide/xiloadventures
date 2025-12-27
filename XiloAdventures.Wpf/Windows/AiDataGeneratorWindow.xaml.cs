@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -7,6 +9,8 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media.Imaging;
+using XiloAdventures.Engine;
 using XiloAdventures.Engine.Models;
 using XiloAdventures.Engine.Models.Enums;
 using XiloAdventures.Wpf.Common.Windows;
@@ -16,8 +20,10 @@ namespace XiloAdventures.Wpf.Windows;
 public partial class AiDataGeneratorWindow : Window
 {
     private readonly WorldModel _world;
+    private readonly string? _worldPath;
     private CancellationTokenSource? _cts;
     private bool _isProcessing;
+    private bool _imagePreviewShown;
 
     private static readonly HttpClient _ollamaClient = new()
     {
@@ -31,10 +37,47 @@ public partial class AiDataGeneratorWindow : Window
         Timeout = TimeSpan.FromMinutes(3)
     };
 
-    public AiDataGeneratorWindow(WorldModel world)
+    public AiDataGeneratorWindow(WorldModel world, string? worldPath = null)
     {
         InitializeComponent();
         _world = world;
+        _worldPath = worldPath;
+    }
+
+    private void SaveWorldIfPathAvailable()
+    {
+        if (string.IsNullOrEmpty(_worldPath))
+        {
+            System.Diagnostics.Debug.WriteLine("SaveWorldIfPathAvailable: No path available, skipping save");
+            return;
+        }
+
+        try
+        {
+            WorldLoader.SaveWorldModel(_world, _worldPath);
+            System.Diagnostics.Debug.WriteLine($"SaveWorldIfPathAvailable: Saved to {_worldPath}");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"SaveWorldIfPathAvailable: Error saving - {ex.Message}");
+        }
+    }
+
+    private void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        // CenterOwner handles initial positioning
+    }
+
+    private void RecenterWindow()
+    {
+        if (Owner != null)
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                Left = Owner.Left + (Owner.Width - ActualWidth) / 2;
+                Top = Owner.Top + (Owner.Height - ActualHeight) / 2;
+            }, System.Windows.Threading.DispatcherPriority.Render);
+        }
     }
 
     /// <summary>
@@ -263,6 +306,8 @@ public partial class AiDataGeneratorWindow : Window
                             {
                                 room.ImageBase64 = imageBase64;
                                 room.ImageId = null;
+                                ShowImagePreview(imageBase64, room.Name);
+                                SaveWorldIfPathAvailable();
                             }
                         }
                         catch (OperationCanceledException) { throw; }
@@ -275,6 +320,7 @@ public partial class AiDataGeneratorWindow : Window
                     }
                 }
 
+                HideImagePreview();
                 progress("¡Proceso completo!", totalSteps);
             });
     }
@@ -349,6 +395,8 @@ public partial class AiDataGeneratorWindow : Window
                         {
                             room.ImageBase64 = imageBase64;
                             room.ImageId = null; // Mark as AI-generated
+                            ShowImagePreview(imageBase64, room.Name);
+                            SaveWorldIfPathAvailable();
                         }
                     }
                     catch (OperationCanceledException)
@@ -360,6 +408,7 @@ public partial class AiDataGeneratorWindow : Window
                         System.Diagnostics.Debug.WriteLine($"Error generando imagen para {room.Name}: {ex.Message}");
                     }
                 }
+                HideImagePreview();
                 progress("Completado", roomsWithoutImages.Count);
             });
     }
@@ -528,6 +577,9 @@ public partial class AiDataGeneratorWindow : Window
         ProgressBar.Maximum = total;
         ProgressLabel.Text = label;
         ProgressStatus.Text = $"0 / {total}";
+        TimeRemainingLabel.Text = "";
+
+        var stopwatch = Stopwatch.StartNew();
 
         try
         {
@@ -538,14 +590,50 @@ public partial class AiDataGeneratorWindow : Window
                     ProgressLabel.Text = status;
                     ProgressBar.Value = current;
                     ProgressStatus.Text = $"{current} / {total}";
+
+                    // Calculate time remaining
+                    if (current > 0)
+                    {
+                        var elapsed = stopwatch.Elapsed;
+                        var avgPerItem = elapsed.TotalSeconds / current;
+                        var remaining = (total - current) * avgPerItem;
+                        var remainingTime = TimeSpan.FromSeconds(remaining);
+
+                        if (remainingTime.TotalHours >= 1)
+                        {
+                            TimeRemainingLabel.Text = $"⏱️ {(int)remainingTime.TotalHours}h {remainingTime.Minutes:D2}m restantes";
+                        }
+                        else if (remainingTime.TotalMinutes >= 1)
+                        {
+                            TimeRemainingLabel.Text = $"⏱️ {remainingTime.Minutes}m {remainingTime.Seconds:D2}s restantes";
+                        }
+                        else
+                        {
+                            TimeRemainingLabel.Text = $"⏱️ {remainingTime.Seconds}s restantes";
+                        }
+                    }
                 });
             }, _cts.Token);
 
+            stopwatch.Stop();
             Dispatcher.Invoke(() =>
             {
                 ProgressBar.Value = total;
                 ProgressStatus.Text = $"{total} / {total}";
                 ProgressLabel.Text = "Proceso completado";
+                var totalTime = stopwatch.Elapsed;
+                if (totalTime.TotalHours >= 1)
+                {
+                    TimeRemainingLabel.Text = $"✅ Completado en {(int)totalTime.TotalHours}h {totalTime.Minutes:D2}m";
+                }
+                else if (totalTime.TotalMinutes >= 1)
+                {
+                    TimeRemainingLabel.Text = $"✅ Completado en {totalTime.Minutes}m {totalTime.Seconds:D2}s";
+                }
+                else
+                {
+                    TimeRemainingLabel.Text = $"✅ Completado en {totalTime.Seconds}s";
+                }
             });
         }
         catch (OperationCanceledException)
@@ -553,6 +641,7 @@ public partial class AiDataGeneratorWindow : Window
             Dispatcher.Invoke(() =>
             {
                 ProgressLabel.Text = "Proceso cancelado";
+                TimeRemainingLabel.Text = "";
             });
         }
         catch (Exception ex)
@@ -560,14 +649,18 @@ public partial class AiDataGeneratorWindow : Window
             Dispatcher.Invoke(() =>
             {
                 DarkErrorDialog.Show("Error", $"Error durante el proceso: {ex.Message}", this);
+                TimeRemainingLabel.Text = "";
             });
         }
         finally
         {
             _isProcessing = false;
+            _imagePreviewShown = false;
             SetButtonsEnabled(true);
             CancelButton.Visibility = Visibility.Collapsed;
             ProgressSection.Visibility = Visibility.Collapsed;
+            ImagePreviewSection.Visibility = Visibility.Collapsed;
+            ImagePreview.Source = null;
         }
     }
 
@@ -577,6 +670,49 @@ public partial class AiDataGeneratorWindow : Window
         GenerateImagesButton.IsEnabled = enabled;
         CorrectArticlesButton.IsEnabled = enabled;
         CreateDescriptionsButton.IsEnabled = enabled;
+    }
+
+    private void ShowImagePreview(string base64, string roomName)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            try
+            {
+                var bytes = Convert.FromBase64String(base64);
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.StreamSource = new MemoryStream(bytes);
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.EndInit();
+                bitmap.Freeze();
+
+                ImagePreview.Source = bitmap;
+                ImagePreviewLabel.Text = $"🖼️ {roomName}";
+
+                bool wasHidden = ImagePreviewSection.Visibility != Visibility.Visible;
+                ImagePreviewSection.Visibility = Visibility.Visible;
+
+                // Recenter window when preview first appears (window size changed)
+                if (wasHidden && !_imagePreviewShown)
+                {
+                    _imagePreviewShown = true;
+                    RecenterWindow();
+                }
+            }
+            catch
+            {
+                // Ignore preview errors
+            }
+        });
+    }
+
+    private void HideImagePreview()
+    {
+        Dispatcher.Invoke(() =>
+        {
+            ImagePreviewSection.Visibility = Visibility.Collapsed;
+            ImagePreview.Source = null;
+        });
     }
 
     private async Task<string?> GenerateRoomImageAsync(Room room, CancellationToken ct)
@@ -589,28 +725,35 @@ public partial class AiDataGeneratorWindow : Window
             prompt = $"pixel art, 16-bit, retro game style, {_world.Game.Theme ?? "fantasy"}, {room.Name}, atmospheric, detailed";
         }
 
-        // gadicc/diffusers-api expects this specific format
+        // Optimized for RTX 3080 Ti - using DPM++ 2M Karras scheduler for faster convergence
+        // DPM++ converges in fewer steps than Euler, 15 steps is enough for good quality
         var requestBody = new
         {
             modelInputs = new
             {
                 prompt,
-                negative_prompt = "text, watermark, signature, blurry, low quality, deformed, ugly, bad anatomy, realistic, photorealistic, 3d render",
+                negative_prompt = "text, watermark, signature, blurry, low quality, deformed",
                 width = 896,
                 height = 256,
-                num_inference_steps = 25,
-                guidance_scale = 7.5
+                num_inference_steps = 10,  // DPM++ with Karras works well at 10 steps
+                guidance_scale = 7.0       // Slightly lower for speed, still good quality
             },
             callInputs = new
             {
                 MODEL_ID = "runwayml/stable-diffusion-v1-5",
                 PIPELINE = "StableDiffusionPipeline",
-                SCHEDULER = "EulerAncestralDiscreteScheduler"
+                SCHEDULER = "DPMSolverMultistepScheduler",  // Much faster than EulerAncestral
+                use_karras_sigmas = true,       // Better quality at low step counts
+                safety_checker = false,         // Skip NSFW check for speed
+                requires_safety_checker = false,
+                enable_attention_slicing = false,  // Not needed with enough VRAM (12GB)
+                xformers_memory_efficient_attention = true,  // Use xformers for speed
+                torch_dtype = "float16"         // FP16 is faster on RTX 3080 Ti
             }
         };
 
         var json = JsonSerializer.Serialize(requestBody);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         var response = await _sdClient.PostAsync("/", content, ct);
         response.EnsureSuccessStatusCode();

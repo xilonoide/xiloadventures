@@ -282,10 +282,12 @@ public static class WorldLoader
                     room.MusicId = null;
 
                 if (string.IsNullOrWhiteSpace(room.ImageId))
-                {
                     room.ImageId = null;
+
+                // Only clear ImageBase64 if both ImageId and ImageBase64 are empty
+                // (AI-generated images have ImageBase64 but no ImageId)
+                if (string.IsNullOrWhiteSpace(room.ImageId) && string.IsNullOrWhiteSpace(room.ImageBase64))
                     room.ImageBase64 = null;
-                }
             }
         }
 

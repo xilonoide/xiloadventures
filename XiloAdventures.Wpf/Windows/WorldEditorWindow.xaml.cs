@@ -3116,7 +3116,7 @@ public partial class WorldEditorWindow : Window
 
     private void GenerateDataMenu_Click(object sender, RoutedEventArgs e)
     {
-        var generatorWindow = new AiDataGeneratorWindow(_world)
+        var generatorWindow = new AiDataGeneratorWindow(_world, _currentPath)
         {
             Owner = this
         };
@@ -3785,22 +3785,29 @@ public partial class WorldEditorWindow : Window
             var prompt = BuildImagePrompt(room);
 
             // Llamar a la API de Stable Diffusion (gadicc/diffusers-api)
+            // Optimized for RTX 3080 Ti with DPM++ scheduler and xformers
             var requestBody = new
             {
                 modelInputs = new
                 {
                     prompt = prompt,
-                    negative_prompt = "text, watermark, signature, blurry, low quality, deformed, ugly, bad anatomy",
+                    negative_prompt = "text, watermark, signature, blurry, low quality, deformed",
                     width = 896,
                     height = 256,
-                    num_inference_steps = 25,
-                    guidance_scale = 7.5
+                    num_inference_steps = 10,   // DPM++ with Karras works well at 10 steps
+                    guidance_scale = 7.0
                 },
                 callInputs = new
                 {
                     MODEL_ID = "runwayml/stable-diffusion-v1-5",
                     PIPELINE = "StableDiffusionPipeline",
-                    SCHEDULER = "EulerAncestralDiscreteScheduler"
+                    SCHEDULER = "DPMSolverMultistepScheduler",
+                    use_karras_sigmas = true,
+                    safety_checker = false,
+                    requires_safety_checker = false,
+                    enable_attention_slicing = false,
+                    xformers_memory_efficient_attention = true,
+                    torch_dtype = "float16"
                 }
             };
 

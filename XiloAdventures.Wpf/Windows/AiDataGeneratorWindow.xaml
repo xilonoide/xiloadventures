@@ -10,7 +10,8 @@
         Background="#2A2A2A"
         Foreground="White"
         WindowStyle="None"
-        AllowsTransparency="True">
+        AllowsTransparency="True"
+        Loaded="Window_Loaded">
 
     <Window.Resources>
         <!-- Button Style -->
@@ -79,6 +80,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
@@ -272,18 +274,47 @@
                                  Value="0"
                                  Background="#404040"
                                  Foreground="#3A7CA5"/>
-                    <TextBlock x:Name="ProgressStatus"
-                               Text="0 / 0"
-                               FontSize="12"
+                    <Grid Margin="0,4,0,0">
+                        <TextBlock x:Name="TimeRemainingLabel"
+                                   Text=""
+                                   FontSize="12"
+                                   Foreground="#AAAAAA"
+                                   HorizontalAlignment="Left"/>
+                        <TextBlock x:Name="ProgressStatus"
+                                   Text="0 / 0"
+                                   FontSize="12"
+                                   Foreground="#888888"
+                                   HorizontalAlignment="Right"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Image Preview (only visible during image generation) -->
+            <Border x:Name="ImagePreviewSection"
+                    Grid.Row="3"
+                    Background="#1A1A1A"
+                    Margin="20,0,20,8"
+                    Padding="8"
+                    CornerRadius="4"
+                    Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock x:Name="ImagePreviewLabel"
+                               Text="Última imagen generada:"
+                               FontSize="11"
                                Foreground="#888888"
-                               HorizontalAlignment="Right"
-                               Margin="0,4,0,0"/>
+                               Margin="0,0,0,6"/>
+                    <Border Background="#000000" CornerRadius="2">
+                        <Image x:Name="ImagePreview"
+                               Height="160"
+                               Stretch="Uniform"
+                               RenderOptions.BitmapScalingMode="HighQuality"/>
+                    </Border>
                 </StackPanel>
             </Border>
 
             <!-- Cancel Button (only visible during processing) -->
             <Button x:Name="CancelButton"
-                    Grid.Row="3"
+                    Grid.Row="4"
                     Content="Cancelar"
                     Style="{StaticResource CloseButtonStyle}"
                     HorizontalAlignment="Right"

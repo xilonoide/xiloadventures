@@ -708,7 +708,7 @@ Genera un mundo con temática ""{THEME}"" que contenga:
 - Ejemplo para 5 salas en cruz: central (80,45), norte (80,-135), sur (80,225), este (400,45), oeste (-240,45)
 - **Type de objetos SOLO puede ser uno de estos valores exactos**: ninguno, arma, armadura, casco, escudo, comida, bebida, llave
 - **Los objetos que son llaves DEBEN tener Type=""llave""**
-- **Para objetos legibles** (cartas, diarios, pergaminos...): usa Type=""ninguno"" con CanRead=true y TextContent con el texto. El jugador usará el comando ""leer"".
+- **Para objetos legibles** (cartas, diarios, pergaminos...): usa Type=""ninguno"" con CanRead=true y TextContent con el texto. El jugador usará el comando ""leer"". **NO crees scripts para leer objetos** - el motor lo maneja automáticamente con el verbo ""leer"".
 
 ### Sistema de Equipamiento
 - **3 slots de equipamiento**: RightHand (mano derecha), LeftHand (mano izquierda), Torso

@@ -190,6 +190,7 @@ public partial class MapPanel : Control
         _editingExitIsOrigin = false;
         _keyIconRects.Clear();
         HideIconTooltip();
+        HideRoomImageTooltip();
         EnsureLayout();
         InvalidateVisual();
     }

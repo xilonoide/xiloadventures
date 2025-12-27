@@ -449,7 +449,7 @@
             <!-- Left Panel: Entity Tree -->
             <Border Grid.Column="0"
                     Panel.ZIndex="1"
-                    Width="200"
+                    MinWidth="200"
                     Background="#333333">
                 <Grid>
                     <Grid.RowDefinitions>
