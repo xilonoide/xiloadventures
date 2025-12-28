@@ -308,13 +308,6 @@ public static class WorldLoader
 
         // Guardar directamente sin cifrado
         File.WriteAllText(path, base64, Encoding.UTF8);
-
-#if DEBUG
-        // Guardar también el archivo .json sin comprimir en el escritorio
-        var jsonFileName = Path.ChangeExtension(Path.GetFileName(path), ".json");
-        var jsonPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), jsonFileName);
-        File.WriteAllText(jsonPath, json, Encoding.UTF8);
-#endif
     }
 
 
