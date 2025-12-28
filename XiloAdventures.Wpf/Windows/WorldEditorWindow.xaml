@@ -367,28 +367,12 @@
                 </MenuItem>
                 <MenuItem Header="IA"
                         Style="{StaticResource TopMenuItemStyle}">
-                    <MenuItem Header="Generar datos"
+                    <MenuItem Header="🤖 Generar datos"
                             Click="GenerateDataMenu_Click"
-                            Style="{StaticResource SubMenuItemStyle}">
-                        <MenuItem.Icon>
-                            <TextBlock FontFamily="Segoe MDL2 Assets"
-                                    VerticalAlignment="Center"
-                                    Text="&#xE9D9;"
-                                    FontSize="18"
-                                    Margin="2"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem Header="Generador de mundos"
+                            Style="{StaticResource SubMenuItemStyle}"/>
+                    <MenuItem Header="✨ Generador de mundos"
                             Click="PromptGeneratorMenu_Click"
-                            Style="{StaticResource SubMenuItemStyle}">
-                        <MenuItem.Icon>
-                            <TextBlock FontFamily="Segoe MDL2 Assets"
-                                    VerticalAlignment="Center"
-                                    Text="&#xE943;"
-                                    FontSize="18"
-                                    Margin="2"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
+                            Style="{StaticResource SubMenuItemStyle}"/>
                 </MenuItem>
                 <MenuItem Header="Opciones"
                         Style="{StaticResource TopMenuItemStyle}">

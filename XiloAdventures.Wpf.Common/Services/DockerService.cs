@@ -15,7 +15,7 @@ public static class DockerService
     private const string TtsContainerName = "xilo-tts";
     private const string StableDiffusionContainerName = "xilo-stablediffusion";
 
-    public static async Task EnsureAllAsync(IProgress<string>? progress = null, CancellationToken cancellationToken = default, bool includeTts = true, bool includeStableDiffusion = false, bool includeOllama = true)
+    public static async Task EnsureAllAsync(IProgress<string>? progress = null, CancellationToken cancellationToken = default, bool includeTts = true, bool includeStableDiffusion = false, bool includeOllama = true, string ollamaModel = "llama3")
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -30,8 +30,8 @@ public static class DockerService
                 progress?.Report("Preparando contenedor de IA (Ollama)...");
                 await EnsureOllamaAsync(progress, cancellationToken).ConfigureAwait(false);
 
-                progress?.Report("Descargando modelo llama3 (si es necesario)...");
-                await EnsureLlamaModelAsync(progress, cancellationToken).ConfigureAwait(false);
+                progress?.Report($"Descargando modelo {ollamaModel} (si es necesario)...");
+                await EnsureLlamaModelAsync(ollamaModel, progress, cancellationToken).ConfigureAwait(false);
             }
 
             if (includeTts)
@@ -205,18 +205,24 @@ public static class DockerService
         progress?.Report("Descargando imagen de Ollama (la primera vez tarda hasta 15')...");
         await RunDockerCheckedAsync("pull ollama/ollama:latest", cancellationToken).ConfigureAwait(false);
 
-        progress?.Report("Creando contenedor de Ollama...");
-        // Creamos el contenedor con volumen persistente para los modelos
+        progress?.Report("Creando contenedor de Ollama con soporte GPU...");
+        // Creamos el contenedor con volumen persistente para los modelos y soporte GPU
         await RunDockerCheckedAsync(
-            $"run -d --name {OllamaContainerName} -p 11434:11434 -v {OllamaContainerName}:/root/.ollama ollama/ollama:latest",
+            $"run -d --gpus all --name {OllamaContainerName} -p 11434:11434 -v {OllamaContainerName}:/root/.ollama ollama/ollama:latest",
             cancellationToken).ConfigureAwait(false);
     }
 
-    private static async Task EnsureLlamaModelAsync(IProgress<string>? progress, CancellationToken cancellationToken)
+    private static async Task EnsureLlamaModelAsync(string modelName, IProgress<string>? progress, CancellationToken cancellationToken)
     {
         // Siempre intentamos hacer pull; si ya está descargado será rápido.
-        progress?.Report("Descargando modelo llama3 dentro del contenedor de Ollama (esto tarda hasta 15' o más)...");
-        await RunDockerCheckedAsync($"exec {OllamaContainerName} ollama pull llama3", cancellationToken).ConfigureAwait(false);
+        // Mensaje especial para modelos grandes
+        var downloadMessage = modelName switch
+        {
+            "llama3.1:70b" => $"Descargando modelo {modelName} (40GB) (esto puede tardar hasta 1h la primera vez)...",
+            _ => $"Descargando modelo {modelName} (esto puede tardar varios minutos la primera vez)..."
+        };
+        progress?.Report(downloadMessage);
+        await RunDockerCheckedAsync($"exec {OllamaContainerName} ollama pull {modelName}", cancellationToken).ConfigureAwait(false);
     }
 
     private static async Task EnsureTtsAsync(IProgress<string>? progress, CancellationToken cancellationToken)
@@ -237,14 +243,20 @@ public static class DockerService
             return;
         }
 
-        progress?.Report("Descargando imagen de Coqui TTS (la primera vez tarda hasta 15')...");
-        await RunDockerCheckedAsync("pull ghcr.io/idiap/coqui-tts-cpu:latest", cancellationToken).ConfigureAwait(false);
+        // Detectar si hay GPU NVIDIA disponible
+        progress?.Report("Detectando GPU NVIDIA...");
+        bool hasGpu = await HasNvidiaGpuAsync(cancellationToken).ConfigureAwait(false);
+
+        string ttsImage = hasGpu ? "ghcr.io/coqui-ai/tts:latest" : "ghcr.io/idiap/coqui-tts-cpu:latest";
+        progress?.Report($"Descargando imagen de Coqui TTS {(hasGpu ? "(GPU)" : "(CPU)")} (la primera vez tarda hasta 15')...");
+        await RunDockerCheckedAsync($"pull {ttsImage}", cancellationToken).ConfigureAwait(false);
 
         progress?.Report("Creando contenedor de Coqui TTS...");
         // Arrancamos el servidor HTTP de TTS en el puerto 5002 con un modelo de un solo hablante
-        await RunDockerCheckedAsync(
-            $"run -d --name {TtsContainerName} -p 5002:5002 --entrypoint python3 ghcr.io/idiap/coqui-tts-cpu TTS/server/server.py --model_name tts_models/es/css10/vits",
-            cancellationToken).ConfigureAwait(false);
+        string runCommand = hasGpu
+            ? $"run -d --gpus all --name {TtsContainerName} -p 5002:5002 --entrypoint python3 {ttsImage} TTS/server/server.py --model_name tts_models/es/css10/vits"
+            : $"run -d --name {TtsContainerName} -p 5002:5002 --entrypoint python3 {ttsImage} TTS/server/server.py --model_name tts_models/es/css10/vits";
+        await RunDockerCheckedAsync(runCommand, cancellationToken).ConfigureAwait(false);
 
         progress?.Report("Esperando a que Coqui TTS esté listo...");
         await WaitForTtsReadyAsync(progress, cancellationToken).ConfigureAwait(false);
@@ -311,7 +323,7 @@ public static class DockerService
             var psi = new ProcessStartInfo
             {
                 FileName = "docker",
-                Arguments = "run --rm --gpus all nvidia/cuda:12.0-base nvidia-smi",
+                Arguments = "run --rm --gpus all nvidia/cuda:12.2.0-base-ubuntu22.04 nvidia-smi",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,

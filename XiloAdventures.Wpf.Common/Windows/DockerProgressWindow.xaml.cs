@@ -54,6 +54,12 @@ public partial class DockerProgressWindow : Window
     /// </summary>
     public bool IncludeStableDiffusion { get; set; } = false;
 
+    /// <summary>
+    /// El modelo de Ollama a descargar/usar. Por defecto es "llama3".
+    /// Usar "llama3.2" para tareas que requieren más contexto (como generación de mundos).
+    /// </summary>
+    public string OllamaModel { get; set; } = "llama3";
+
     public DockerProgressWindow()
     {
         InitializeComponent();
@@ -82,7 +88,7 @@ public partial class DockerProgressWindow : Window
 
             try
             {
-                await DockerService.EnsureAllAsync(progress, _cts.Token, IncludeTts, IncludeStableDiffusion, IncludeOllama).ConfigureAwait(true);
+                await DockerService.EnsureAllAsync(progress, _cts.Token, IncludeTts, IncludeStableDiffusion, IncludeOllama, OllamaModel).ConfigureAwait(true);
                 if (_cts.IsCancellationRequested)
                 {
                     return;

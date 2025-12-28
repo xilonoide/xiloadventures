@@ -1,13 +1,17 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Text;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Navigation;
+using System.Windows.Threading;
 using Microsoft.Win32;
 using XiloAdventures.Engine;
 using XiloAdventures.Engine.Models;
@@ -16,15 +20,30 @@ using XiloAdventures.Wpf.Common.Windows;
 
 namespace XiloAdventures.Wpf.Windows;
 
+/// <summary>
+/// Representa un mundo en la lista con su ruta y título.
+/// </summary>
+public class WorldListItem
+{
+    public string FilePath { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
+
+    public override string ToString() => Title;
+}
+
 public partial class StartupWindow : Window
 {
     private bool _isStartingNewGame;
     private bool _isLoadingVisible;
+    private FileSystemWatcher? _worldsWatcher;
+    private DispatcherTimer? _reloadDebounceTimer;
 
     public StartupWindow()
     {
         InitializeComponent();
         Loaded += StartupWindow_Loaded;
+        Closed += StartupWindow_Closed;
     }
 
     private void StartupWindow_Loaded(object sender, RoutedEventArgs e)
@@ -39,11 +58,101 @@ public partial class StartupWindow : Window
         }
 
         WorldsList.SelectionChanged += WorldsList_SelectionChanged;
-        UpdateDeleteIconEnabled();
+        UpdateButtonsEnabled();
+
+        // Iniciar FileSystemWatcher para detectar cambios en la carpeta de mundos
+        StartWorldsWatcher();
+    }
+
+    private void StartupWindow_Closed(object? sender, EventArgs e)
+    {
+        StopWorldsWatcher();
+    }
+
+    private void StartWorldsWatcher()
+    {
+        try
+        {
+            if (!Directory.Exists(AppPaths.WorldsFolder))
+            {
+                Directory.CreateDirectory(AppPaths.WorldsFolder);
+            }
+
+            _worldsWatcher = new FileSystemWatcher(AppPaths.WorldsFolder, "*.xaw")
+            {
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime,
+                EnableRaisingEvents = true
+            };
+
+            _worldsWatcher.Created += OnWorldFileChanged;
+            _worldsWatcher.Deleted += OnWorldFileChanged;
+            _worldsWatcher.Renamed += OnWorldFileRenamed;
+        }
+        catch
+        {
+            // Ignorar errores al iniciar el watcher
+        }
+    }
+
+    private void StopWorldsWatcher()
+    {
+        if (_worldsWatcher != null)
+        {
+            _worldsWatcher.EnableRaisingEvents = false;
+            _worldsWatcher.Created -= OnWorldFileChanged;
+            _worldsWatcher.Deleted -= OnWorldFileChanged;
+            _worldsWatcher.Renamed -= OnWorldFileRenamed;
+            _worldsWatcher.Dispose();
+            _worldsWatcher = null;
+        }
+
+        if (_reloadDebounceTimer != null)
+        {
+            _reloadDebounceTimer.Stop();
+            _reloadDebounceTimer = null;
+        }
+    }
+
+    private void OnWorldFileChanged(object sender, FileSystemEventArgs e)
+    {
+        // Usar debounce para dar tiempo a que el archivo se escriba completamente
+        Dispatcher.BeginInvoke(ScheduleReload);
+    }
+
+    private void OnWorldFileRenamed(object sender, RenamedEventArgs e)
+    {
+        // Usar debounce para dar tiempo a que el archivo se escriba completamente
+        Dispatcher.BeginInvoke(ScheduleReload);
+    }
+
+    private void ScheduleReload()
+    {
+        // Reiniciar el timer si ya está corriendo (debounce)
+        if (_reloadDebounceTimer != null)
+        {
+            _reloadDebounceTimer.Stop();
+        }
+        else
+        {
+            _reloadDebounceTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(300)
+            };
+            _reloadDebounceTimer.Tick += (_, _) =>
+            {
+                _reloadDebounceTimer?.Stop();
+                ReloadWorlds();
+            };
+        }
+
+        _reloadDebounceTimer.Start();
     }
 
     private void ReloadWorlds()
     {
+        var previousSelection = WorldsList.SelectedItem as WorldListItem;
+        var previousFileName = previousSelection?.FileName;
+
         WorldsList.Items.Clear();
 
         if (Directory.Exists(AppPaths.WorldsFolder))
@@ -51,8 +160,26 @@ public partial class StartupWindow : Window
             var files = Directory.GetFiles(AppPaths.WorldsFolder, "*.xaw");
             foreach (var file in files.OrderBy(f => f))
             {
-                var name = Path.GetFileNameWithoutExtension(file);
-                WorldsList.Items.Add(name);
+                var item = new WorldListItem
+                {
+                    FilePath = file,
+                    FileName = Path.GetFileNameWithoutExtension(file),
+                    Title = ReadWorldTitle(file) ?? Path.GetFileNameWithoutExtension(file)
+                };
+                WorldsList.Items.Add(item);
+            }
+        }
+
+        // Restaurar selección anterior si es posible
+        if (!string.IsNullOrEmpty(previousFileName))
+        {
+            for (int i = 0; i < WorldsList.Items.Count; i++)
+            {
+                if (WorldsList.Items[i] is WorldListItem item && item.FileName == previousFileName)
+                {
+                    WorldsList.SelectedIndex = i;
+                    break;
+                }
             }
         }
 
@@ -61,31 +188,166 @@ public partial class StartupWindow : Window
             WorldsList.SelectedIndex = 0;
         }
 
-        UpdateDeleteIconEnabled();
+        UpdateButtonsEnabled();
+    }
+
+    private static string? ReadWorldTitle(string filePath)
+    {
+        // Intentar hasta 3 veces con pequeño delay (por si el archivo está bloqueado)
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            try
+            {
+                // Leer el contenido del archivo
+                var content = File.ReadAllText(filePath);
+
+                // 1. Intentar decodificar como base64+zip (formato actual del editor)
+                if (TryDecodeZippedJson(content, out var json))
+                {
+                    var title = TryExtractTitleFromJson(json);
+                    if (title != null)
+                    {
+                        return title;
+                    }
+                }
+
+                // 2. Intentar parsear como JSON plano (formato legacy)
+                var titleDirect = TryExtractTitleFromJson(content);
+                if (titleDirect != null)
+                {
+                    return titleDirect;
+                }
+
+                // 3. Intentar descifrar (archivos cifrados)
+                try
+                {
+                    var decrypted = CryptoUtil.DecryptFromFile(filePath);
+                    // El contenido descifrado puede ser base64+zip o JSON plano
+                    if (TryDecodeZippedJson(decrypted, out var decryptedJson))
+                    {
+                        var title = TryExtractTitleFromJson(decryptedJson);
+                        if (title != null)
+                        {
+                            return title;
+                        }
+                    }
+                    else
+                    {
+                        var title = TryExtractTitleFromJson(decrypted);
+                        if (title != null)
+                        {
+                            return title;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Si falla el descifrado, el archivo está corrupto o no está cifrado
+                }
+
+                // Si llegamos aquí, el archivo existe pero no pudimos leer el título
+                break;
+            }
+            catch (IOException) when (attempt < 2)
+            {
+                // El archivo podría estar bloqueado, esperar un poco y reintentar
+                System.Threading.Thread.Sleep(100);
+            }
+            catch
+            {
+                // Otros errores, no reintentar
+                break;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Intenta decodificar un texto como base64+zip que contiene world.json.
+    /// </summary>
+    private static bool TryDecodeZippedJson(string text, out string json)
+    {
+        json = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+
+        try
+        {
+            var compressedBytes = Convert.FromBase64String(text);
+            using var ms = new MemoryStream(compressedBytes);
+            using var zip = new ZipArchive(ms, ZipArchiveMode.Read);
+
+            var entry = zip.GetEntry("world.json") ?? zip.Entries.FirstOrDefault();
+            if (entry == null)
+                return false;
+
+            using var entryStream = entry.Open();
+            using var sr = new StreamReader(entryStream, Encoding.UTF8);
+            json = sr.ReadToEnd();
+            return !string.IsNullOrWhiteSpace(json);
+        }
+        catch
+        {
+            json = string.Empty;
+            return false;
+        }
+    }
+
+    private static string? TryExtractTitleFromJson(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("Game", out var game) &&
+                game.TryGetProperty("Title", out var title))
+            {
+                var titleStr = title.GetString();
+                if (!string.IsNullOrWhiteSpace(titleStr))
+                {
+                    return titleStr;
+                }
+            }
+        }
+        catch
+        {
+            // JSON inválido
+        }
+
+        return null;
     }
 
     private void WorldsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        UpdateDeleteIconEnabled();
+        UpdateButtonsEnabled();
     }
 
-    private void UpdateDeleteIconEnabled()
+    private void UpdateButtonsEnabled()
     {
-        if (DeleteWorldIcon == null)
-            return;
+        var hasSelection = WorldsList.SelectedItem is WorldListItem;
 
-        var selected = WorldsList.SelectedItem as string;
-        var hasSelection = !string.IsNullOrEmpty(selected);
+        // Botones que requieren un mundo seleccionado
+        if (NewGameButton != null)
+            NewGameButton.IsEnabled = hasSelection;
 
-        DeleteWorldIcon.IsEnabled = hasSelection;
-        DeleteWorldIcon.Opacity = hasSelection ? 1.0 : 0.4;
+        if (EditorButton != null)
+            EditorButton.IsEnabled = hasSelection;
+
+        if (DeleteWorldIcon != null)
+        {
+            DeleteWorldIcon.IsEnabled = hasSelection;
+            DeleteWorldIcon.Opacity = hasSelection ? 1.0 : 0.4;
+        }
+
+        // LoadGameButton siempre está habilitado (carga desde archivo)
     }
 
     private string? GetSelectedWorldFile()
     {
-        if (WorldsList.SelectedItem is string name)
+        if (WorldsList.SelectedItem is WorldListItem item)
         {
-            return Path.Combine(AppPaths.WorldsFolder, name + ".xaw");
+            return item.FilePath;
         }
 
         new AlertWindow("Selecciona un mundo primero.") { Owner = this }.ShowDialog();
@@ -204,8 +466,8 @@ public partial class StartupWindow : Window
             if (WorldsList.Items.Count > 0)
             {
                 var worldName = Path.GetFileNameWithoutExtension(worldPath);
-                var index = WorldsList.Items.IndexOf(worldName);
-                WorldsList.SelectedIndex = index >= 0 ? index : 1;
+                var index = FindWorldIndexByFileName(worldName);
+                WorldsList.SelectedIndex = index >= 0 ? index : 0;
             }
 
         }
@@ -215,6 +477,19 @@ public partial class StartupWindow : Window
             _isStartingNewGame = false;
             NewGameButton.IsEnabled = true;
         }
+    }
+
+    private int FindWorldIndexByFileName(string fileName)
+    {
+        for (int i = 0; i < WorldsList.Items.Count; i++)
+        {
+            if (WorldsList.Items[i] is WorldListItem item &&
+                string.Equals(item.FileName, fileName, StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private async void LoadGameButton_Click(object sender, RoutedEventArgs e)
@@ -408,8 +683,8 @@ public partial class StartupWindow : Window
             if (WorldsList.Items.Count > 0)
             {
                 var worldName = Path.GetFileNameWithoutExtension(world.Game.Id);
-                var index = WorldsList.Items.IndexOf(worldName);
-                WorldsList.SelectedIndex = index >= 0 ? index : 1;
+                var index = FindWorldIndexByFileName(worldName);
+                WorldsList.SelectedIndex = index >= 0 ? index : 0;
             }
         }
         finally
@@ -435,16 +710,15 @@ public partial class StartupWindow : Window
     private void OpenSelectedWorldInEditor()
     {
         string? worldPath = null;
-        string? selectedWorldName = null;
+        string? selectedFileName = null;
 
         // Si hay un mundo seleccionado en la lista, intentamos abrir su fichero
-        if (WorldsList.SelectedItem is string name)
+        if (WorldsList.SelectedItem is WorldListItem selectedItem)
         {
-            selectedWorldName = name;
-            var candidate = Path.Combine(AppPaths.WorldsFolder, name + ".xaw");
-            if (File.Exists(candidate))
+            selectedFileName = selectedItem.FileName;
+            if (File.Exists(selectedItem.FilePath))
             {
-                worldPath = candidate;
+                worldPath = selectedItem.FilePath;
             }
         }
 
@@ -461,9 +735,9 @@ public partial class StartupWindow : Window
         // Restaurar selección
         if (WorldsList.Items.Count > 0)
         {
-            if (selectedWorldName != null)
+            if (selectedFileName != null)
             {
-                var index = WorldsList.Items.IndexOf(selectedWorldName);
+                var index = FindWorldIndexByFileName(selectedFileName);
                 WorldsList.SelectedIndex = index >= 0 ? index : 0;
             }
             else
@@ -567,11 +841,6 @@ public partial class StartupWindow : Window
         }
     }
 
-    private void RefreshList_Click(object sender, MouseButtonEventArgs e)
-    {
-        ReloadWorlds();
-    }
-
     private void WorldGenerator_Click(object sender, MouseButtonEventArgs e)
     {
         var promptWindow = new PromptGeneratorWindow
@@ -579,6 +848,9 @@ public partial class StartupWindow : Window
             Owner = this
         };
         promptWindow.ShowDialog();
+
+        // Recargar la lista después de cerrar el generador (el archivo ya está guardado)
+        ReloadWorlds();
     }
 
     private void CreateNewWorld_Click(object sender, MouseButtonEventArgs e)
@@ -602,14 +874,14 @@ public partial class StartupWindow : Window
 
     private void DeleteWorldIcon_Click(object sender, MouseButtonEventArgs e)
     {
-        var worldPath = GetSelectedWorldFile();
-        if (worldPath is null)
+        if (WorldsList.SelectedItem is not WorldListItem selectedItem)
+        {
+            new AlertWindow("Selecciona un mundo primero.") { Owner = this }.ShowDialog();
             return;
-
-        var worldName = Path.GetFileNameWithoutExtension(worldPath);
+        }
 
         var dlg = new ConfirmWindow(
-            $"¿Seguro que quieres eliminar el mundo \"{worldName}\"?\n\nEsta acción no se puede deshacer.",
+            $"¿Seguro que quieres eliminar el mundo \"{selectedItem.Title}\"?\n\nEsta acción no se puede deshacer.",
             "Eliminar mundo")
         {
             Owner = this
@@ -621,9 +893,9 @@ public partial class StartupWindow : Window
 
         try
         {
-            if (File.Exists(worldPath))
+            if (File.Exists(selectedItem.FilePath))
             {
-                File.Delete(worldPath);
+                File.Delete(selectedItem.FilePath);
             }
         }
         catch (Exception ex)

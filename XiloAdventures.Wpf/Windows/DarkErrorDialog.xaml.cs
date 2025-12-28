@@ -8,13 +8,12 @@ namespace XiloAdventures.Wpf.Windows;
 /// </summary>
 public partial class DarkErrorDialog : Window
 {
-    public DarkErrorDialog(string title, string message, Window? owner = null, bool showCopyButton = false)
+    public DarkErrorDialog(string title, string message, Window? owner = null)
     {
         InitializeComponent();
 
         TitleText.Text = title;
         MessageText.Text = message;
-        CopyButton.Visibility = showCopyButton ? Visibility.Visible : Visibility.Collapsed;
 
         if (owner != null)
         {
@@ -30,12 +29,12 @@ public partial class DarkErrorDialog : Window
     /// <param name="owner">Ventana padre opcional.</param>
     public static void Show(string title, string message, Window? owner = null)
     {
-        var dialog = new DarkErrorDialog(title, message, owner, showCopyButton: false);
+        var dialog = new DarkErrorDialog(title, message, owner);
         dialog.ShowDialog();
     }
 
     /// <summary>
-    /// Muestra un diálogo de error para una excepción (con botón copiar).
+    /// Muestra un diálogo de error para una excepción.
     /// </summary>
     /// <param name="title">Título del diálogo.</param>
     /// <param name="ex">Excepción a mostrar.</param>
@@ -47,7 +46,7 @@ public partial class DarkErrorDialog : Window
         {
             message += "\n\nDetalles internos:\n" + ex.InnerException.Message;
         }
-        var dialog = new DarkErrorDialog(title, message, owner, showCopyButton: true);
+        var dialog = new DarkErrorDialog(title, message, owner);
         dialog.ShowDialog();
     }
 
@@ -71,33 +70,17 @@ public partial class DarkErrorDialog : Window
         Close();
     }
 
-    private void OkButton_Click(object sender, RoutedEventArgs e)
-    {
-        Close();
-    }
-
     private void CopyButton_Click(object sender, RoutedEventArgs e)
     {
         try
         {
             Clipboard.SetText(MessageText.Text);
-            CopyButton.Content = "Copiado!";
-
-            // Restaurar el texto después de 2 segundos
-            var timer = new System.Windows.Threading.DispatcherTimer
-            {
-                Interval = TimeSpan.FromSeconds(2)
-            };
-            timer.Tick += (s, args) =>
-            {
-                CopyButton.Content = "Copiar";
-                timer.Stop();
-            };
-            timer.Start();
         }
         catch
         {
             // Ignorar errores del portapapeles
         }
+
+        Close();
     }
 }

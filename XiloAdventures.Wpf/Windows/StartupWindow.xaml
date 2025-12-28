@@ -22,7 +22,6 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
@@ -76,25 +75,8 @@
                            VerticalAlignment="Center"/>
             </Border>
 
-            <!-- Refrescar lista -->
-            <Border Grid.Column="3"
-                    Background="#444444"
-                    CornerRadius="4"
-                    Padding="8,4"
-                    Margin="0,0,4,10"
-                    Cursor="Hand"
-                    VerticalAlignment="Center"
-                    ToolTip="Refrescar lista"
-                    MouseLeftButtonUp="RefreshList_Click">
-                <TextBlock Text="&#xE72C;"
-                           FontFamily="Segoe MDL2 Assets"
-                           FontSize="16"
-                           Foreground="#4DA6FF"
-                           VerticalAlignment="Center"/>
-            </Border>
-
             <!-- Generador de mundos -->
-            <Border Grid.Column="4"
+            <Border Grid.Column="3"
                     Background="#444444"
                     CornerRadius="4"
                     Padding="8,4"
@@ -103,15 +85,14 @@
                     VerticalAlignment="Center"
                     ToolTip="Generador de mundos con IA"
                     MouseLeftButtonUp="WorldGenerator_Click">
-                <TextBlock Text="&#xE943;"
-                           FontFamily="Segoe MDL2 Assets"
+                <TextBlock Text="✨"
                            FontSize="16"
                            Foreground="#BB88FF"
                            VerticalAlignment="Center"/>
             </Border>
 
             <!-- Donaciones -->
-            <Border Grid.Column="6"
+            <Border Grid.Column="5"
                     Background="#3a5a3a"
                     CornerRadius="4"
                     Padding="10,6"

@@ -1,11 +1,27 @@
+using System;
+using System.IO;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using XiloAdventures.Engine;
+using XiloAdventures.Engine.Models;
+using XiloAdventures.Wpf.Common.Windows;
 
 namespace XiloAdventures.Wpf.Windows;
 
 public partial class PromptGeneratorWindow : Window
 {
     private bool _isUpdatingFromRoomCount = false;
+
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: true) }
+    };
 
     private const string PromptTemplate = @"Necesito que generes un JSON para un motor de aventuras de texto/gráficas. El JSON debe representar un mundo completo de una aventura con temática: **{THEME}**.
 
@@ -121,8 +137,8 @@ public partial class PromptGeneratorWindow : Window
       ""BuyPriceMultiplier"": 0.5,
       ""SellPriceMultiplier"": 1.0,
       ""Money"": 0,
-      ""PatrolRoute"": [],
-      ""IsPatrolling"": false,
+      ""PatrolRoute"": [""room_1"", ""room_2"", ""room_3""],
+      ""IsPatrolling"": true,
       ""PatrolMovementMode"": ""Turns"",
       ""PatrolSpeed"": 1,
       ""PatrolTimeInterval"": 3.0,
@@ -654,7 +670,7 @@ Genera un mundo con temática ""{THEME}"" que contenga:
    - Equipamiento: EquippedRightHandId (arma/escudo), EquippedLeftHandId (arma 1 mano/escudo), EquippedTorsoId (armadura)
    - Si tiene diálogo: crea un Script para el NPC con nodos Conversation_* (ver punto 8)
    - **Stats de combate**: Strength, Dexterity, Intelligence, MaxHealth, CurrentHealth (dentro de Stats). Money va fuera de Stats.
-   - **Patrulla por turnos**: PatrolRoute con lista de IDs de salas conectadas. PatrolMovementMode=""Turns"", PatrolSpeed=1 (cada turno), 2 (lento), 3 (muy lento). IsPatrolling=true para empezar patrullando.
+   - **Patrulla por turnos**: PatrolRoute es un array SIMPLE de strings con IDs de salas, ej: [""sala_1"", ""sala_2"", ""sala_3""]. NO usar objetos. PatrolMovementMode=""Turns"", PatrolSpeed=1 (cada turno), 2 (lento), 3 (muy lento). IsPatrolling=true para empezar patrullando.
    - **Patrulla por tiempo**: PatrolMovementMode=""Time"", PatrolTimeInterval=3.0 (segundos entre movimientos)
    - **Seguimiento por turnos**: FollowMovementMode=""Turns"", FollowSpeed=1/2/3. Actívalo con `Action_FollowPlayer`.
    - **Seguimiento por tiempo**: FollowMovementMode=""Time"", FollowTimeInterval=3.0 (segundos)
@@ -762,10 +778,15 @@ Genera un mundo con temática ""{THEME}"" que contenga:
   5. Action_ShowMessage con diálogo
 - **Inventory** de los NPCs es solo para objetos que el NPC TIENE permanentemente (ej: un tendero con su mercancía)
 
-### Género gramatical (Gender)
-- **Gender** indica el género gramatical en español para artículos (el/la): `Masculine` o `Feminine`
-- Ejemplos: ""espada"" → Feminine, ""libro"" → Masculine, ""llave"" → Feminine, ""cofre"" → Masculine
-- Puertas también tienen Gender (por defecto Feminine: ""la puerta"")
+### ⚠️ VALORES EXACTOS DE ENUMERACIONES (OBLIGATORIO)
+Usa EXACTAMENTE estos valores en inglés. El parser fallará si usas otros valores:
+
+- **Gender**: `Masculine` o `Feminine` (NUNCA ""Masculino""/""Femenino"")
+  - Ejemplos: ""espada"" → Feminine, ""libro"" → Masculine, ""llave"" → Feminine
+- **DamageType**: `Physical`, `Magical` o `Piercing` (NUNCA ""Físico""/""Mágico"")
+- **ObjectType**: `Ninguno`, `Arma`, `Armadura`, `Casco`, `Escudo`, `Comida`, `Bebida`, `Llave`
+- **StartWeather**: `Despejado`, `Lluvioso`, `Nublado`, `Tormenta`
+- **AbilityType**: `Attack` o `Defense`
 
 ### Configuración de tiempo y clima (Game)
 - **StartHour**: Hora inicial del juego (0-23). Ej: 9 para las 9:00, 21 para las 21:00
@@ -1197,6 +1218,263 @@ Genera el mundo con la temática ""{THEME}"" y puzzles lógicos acordes a esa am
             timer.Stop();
         };
         timer.Start();
+    }
+
+    private async void GenerateLocalButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Mostrar popup de servicios de IA y esperar a que Docker esté listo
+        // Usamos llama3.1:70b porque es más capaz de seguir instrucciones complejas
+        var progressWindow = new DockerProgressWindow
+        {
+            Owner = this,
+            IncludeTts = false,
+            IncludeStableDiffusion = false,
+            IncludeOllama = true,
+            OllamaModel = "llama3.1:70b"
+        };
+
+        var dockerResult = await progressWindow.RunAsync();
+        if (!dockerResult.Success)
+        {
+            if (!dockerResult.Canceled)
+            {
+                DarkErrorDialog.Show("Error", "Error al iniciar los servicios de Docker.", this);
+            }
+            return; // Usuario canceló o hubo error
+        }
+
+        // Deshabilitar botón y mostrar progress bar mientras se genera
+        GenerateLocalButton.IsEnabled = false;
+        var originalContent = GenerateLocalButton.Content;
+        GenerateLocalButton.Content = "⏳ Generando mundo...";
+        GeneratingProgressBar.Visibility = Visibility.Visible;
+
+        // Iniciar cronómetro para medir el tiempo de generación
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        try
+        {
+            // Enviar prompt a llama3.1:70b
+            var jsonResponse = await GenerateWorldWithLocalLlmAsync(PromptTextBox.Text);
+
+            if (string.IsNullOrWhiteSpace(jsonResponse))
+            {
+                DarkErrorDialog.Show("Error", "No se recibió respuesta del modelo de IA.", this);
+                return;
+            }
+
+            // Extraer solo el JSON del response (puede venir con texto extra)
+            var cleanJson = ExtractJsonFromResponse(jsonResponse);
+            if (string.IsNullOrWhiteSpace(cleanJson))
+            {
+                var preview = jsonResponse.Length > 500
+                    ? jsonResponse.Substring(0, 500) + "..."
+                    : jsonResponse;
+                DarkErrorDialog.Show("Error", $"La respuesta del modelo no contiene un JSON válido.\n\nRespuesta recibida:\n{preview}", this);
+                return;
+            }
+
+            // Deserializar el JSON a WorldModel
+            WorldModel? world;
+            try
+            {
+                world = JsonSerializer.Deserialize<WorldModel>(cleanJson, _jsonOptions);
+                if (world == null)
+                {
+                    DarkErrorDialog.Show("Error", "Error al deserializar el mundo generado.", this);
+                    return;
+                }
+            }
+            catch (JsonException ex)
+            {
+                DarkErrorDialog.Show("Error", $"JSON inválido:\n{ex.Message}", this);
+                return;
+            }
+
+            // Determinar nombre de archivo basado en la temática
+            var worldsFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "worlds");
+            if (!Directory.Exists(worldsFolder))
+            {
+                Directory.CreateDirectory(worldsFolder);
+            }
+
+            // Usar la temática como nombre base
+            var baseFileName = ThemeTextBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(baseFileName))
+            {
+                baseFileName = "nuevo_mundo";
+            }
+
+            // Limpiar caracteres inválidos y espacios
+            foreach (var c in Path.GetInvalidFileNameChars())
+            {
+                baseFileName = baseFileName.Replace(c.ToString(), "");
+            }
+            baseFileName = baseFileName.Replace(" ", "_").ToLowerInvariant();
+
+            if (string.IsNullOrWhiteSpace(baseFileName))
+            {
+                baseFileName = "nuevo_mundo";
+            }
+
+            // Auto-incrementar si ya existe
+            var fileName = baseFileName;
+            var filePath = Path.Combine(worldsFolder, $"{fileName}.xaw");
+            var counter = 2;
+
+            while (File.Exists(filePath))
+            {
+                fileName = $"{baseFileName}_{counter}";
+                filePath = Path.Combine(worldsFolder, $"{fileName}.xaw");
+                counter++;
+            }
+
+            // Guardar el archivo usando el mismo formato que el editor (base64+zip)
+            await Task.Run(() => WorldLoader.SaveWorldModel(world, filePath));
+
+            // Detener cronómetro y formatear tiempo
+            stopwatch.Stop();
+            var elapsed = stopwatch.Elapsed;
+            string timeText;
+            if (elapsed.TotalHours >= 1)
+            {
+                timeText = $"{(int)elapsed.TotalHours}h {elapsed.Minutes}m {elapsed.Seconds}s";
+            }
+            else if (elapsed.TotalMinutes >= 1)
+            {
+                timeText = $"{elapsed.Minutes}m {elapsed.Seconds}s";
+            }
+            else
+            {
+                timeText = $"{elapsed.Seconds}s";
+            }
+
+            // Ocultar barra de progreso antes de mostrar la alerta
+            GeneratingProgressBar.Visibility = Visibility.Collapsed;
+
+            AlertWindow.Show("Mundo generado", $"Mundo guardado como:\n{fileName}.xaw\n\nTiempo de generación: {timeText}", this);
+
+            // Cerrar la ventana
+            DialogResult = true;
+            Close();
+        }
+        catch (HttpRequestException ex)
+        {
+            if (IsLoaded)
+                DarkErrorDialog.Show("Error", $"Error de conexión con el servicio de IA:\n{ex.Message}", this);
+        }
+        catch (TaskCanceledException)
+        {
+            // No mostrar alerta si se canceló porque el usuario cerró la ventana
+            if (IsLoaded)
+                DarkErrorDialog.Show("Cancelado", "La generación fue cancelada o excedió el tiempo límite.", this);
+        }
+        catch (Exception ex)
+        {
+            if (IsLoaded)
+                DarkErrorDialog.Show("Error", $"Error al generar el mundo:\n{ex.Message}", this);
+        }
+        finally
+        {
+            if (IsLoaded)
+            {
+                GenerateLocalButton.Content = originalContent;
+                GenerateLocalButton.IsEnabled = true;
+                GeneratingProgressBar.Visibility = Visibility.Collapsed;
+            }
+        }
+    }
+
+    private static readonly HttpClient _ollamaClient = new()
+    {
+        BaseAddress = new Uri("http://localhost:11434/"),
+        Timeout = TimeSpan.FromMinutes(10) // Dar tiempo suficiente para generar
+    };
+
+    private async Task<string?> GenerateWorldWithLocalLlmAsync(string prompt)
+    {
+        var requestBody = new
+        {
+            model = "llama3.1:70b",
+            prompt = prompt,
+            stream = false,
+            options = new
+            {
+                num_ctx = 32768 // Aumentar contexto para el prompt largo (~17K tokens)
+            }
+        };
+
+        var json = JsonSerializer.Serialize(requestBody);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var response = await _ollamaClient.PostAsync("api/generate", content);
+        response.EnsureSuccessStatusCode();
+
+        var responseJson = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(responseJson);
+
+        if (doc.RootElement.TryGetProperty("response", out var respElement))
+        {
+            return respElement.GetString();
+        }
+
+        return null;
+    }
+
+    private string? ExtractJsonFromResponse(string response)
+    {
+        if (string.IsNullOrWhiteSpace(response))
+            return null;
+
+        var text = response;
+
+        // Intentar extraer JSON de bloques de código markdown (```json o ```)
+        var codeBlockPatterns = new[]
+        {
+            @"```json\s*([\s\S]*?)\s*```",
+            @"```\s*([\s\S]*?)\s*```"
+        };
+
+        foreach (var pattern in codeBlockPatterns)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(text, pattern);
+            if (match.Success && match.Groups.Count > 1)
+            {
+                var blockContent = match.Groups[1].Value.Trim();
+                if (blockContent.StartsWith("{") && blockContent.EndsWith("}"))
+                {
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(blockContent);
+                        return blockContent;
+                    }
+                    catch { /* Continuar con otros métodos */ }
+                }
+            }
+        }
+
+        // Buscar el inicio del JSON (primera llave)
+        var startIndex = text.IndexOf('{');
+        if (startIndex < 0)
+            return null;
+
+        // Buscar el final del JSON (última llave)
+        var endIndex = text.LastIndexOf('}');
+        if (endIndex < 0 || endIndex <= startIndex)
+            return null;
+
+        var jsonCandidate = text.Substring(startIndex, endIndex - startIndex + 1);
+
+        // Validar que es JSON válido
+        try
+        {
+            using var doc = JsonDocument.Parse(jsonCandidate);
+            return jsonCandidate;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private void DoorsSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
