@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <!-- ApplicationIcon se configura dinámicamente al exportar - usa appicon.ico del Common por defecto -->
+    <ApplicationIcon Condition="Exists('custom_icon.ico')">custom_icon.ico</ApplicationIcon>
+    <ApplicationIcon Condition="!Exists('custom_icon.ico')">$(MSBuildThisFileDirectory)..\XiloAdventures.Wpf.Common\appicon.ico</ApplicationIcon>
+
+    <!-- Configuración para publicación standalone -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\XiloAdventures.Engine\XiloAdventures.Engine.csproj" />
+    <ProjectReference Include="..\XiloAdventures.Wpf.Common\XiloAdventures.Wpf.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- El mundo se incluye como recurso embebido -->
+    <EmbeddedResource Include="world.xaw" Condition="Exists('world.xaw')">
+      <LogicalName>XiloAdventures.Wpf.Player.world.xaw</LogicalName>
+    </EmbeddedResource>
+
+    <!-- Icono personalizado como recurso embebido (si existe) -->
+    <EmbeddedResource Include="custom_icon.ico" Condition="Exists('custom_icon.ico')">
+      <LogicalName>XiloAdventures.Wpf.Player.custom_icon.ico</LogicalName>
+    </EmbeddedResource>
+
+    <!-- Recursos de sonido e imágenes -->
+    <Content Include="..\XiloAdventures.Wpf\sound\**\*.*" Link="sound\%(RecursiveDir)%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\XiloAdventures.Wpf\images\**\*.*" Link="images\%(RecursiveDir)%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+
+    <Resource Include="..\XiloAdventures.Wpf.Common\Assets\logo.png" Link="logo.png" />
+    <Resource Include="..\XiloAdventures.Wpf.Common\appicon.ico" Link="appicon.ico" />
+    <!-- Include shared styles directly so single-file EXE can resolve them -->
+    <Resource Include="..\XiloAdventures.Wpf.Common\Styles\CommonStyles.xaml" Link="Styles\CommonStyles.xaml" />
+    <Resource Include="..\XiloAdventures.Wpf.Common\Assets\default_room.png" Link="Assets\default_room.png" />
+  </ItemGroup>
+
+</Project>

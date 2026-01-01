@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Package Name="Xilo Adventures"
+           Manufacturer="Xilonoide"
+           Version="1.0.0.0"
+           UpgradeCode="A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
+           Scope="perMachine"
+           Language="3082"
+           Codepage="1252">
+
+    <SummaryInformation Description="Instalador de Xilo Adventures - Aventuras de texto con IA" />
+
+    <MajorUpgrade DowngradeErrorMessage="Ya existe una versión más reciente de Xilo Adventures instalada." />
+
+    <Media Id="1" Cabinet="XiloAdventures.cab" EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="AppIcon" SourceFile="..\XiloAdventures.Wpf.Common\appicon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/xilonoide/xiloadventures/wiki" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/xilonoide/xiloadventures" />
+
+    <!-- Imágenes personalizadas del instalador (descomenta si tienes las imágenes)
+         Banner: 493x58 píxeles, Diálogo: 493x312 píxeles
+    <WixVariable Id="WixUIBannerBmp" Value="..\XiloAdventures.Wpf.Common\installer_banner.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="..\XiloAdventures.Wpf.Common\installer_dialog.bmp" />
+    -->
+
+    <!-- Propiedades para las preguntas de desinstalación -->
+    <Property Id="DELETESAVEDGAMES" Value="0" />
+    <Property Id="DELETEDOCKERDATA" Value="0" />
+
+    <!-- Propiedades para el checkbox del diálogo de salida -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Abrir wiki y página de descarga de Docker Desktop" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <Property Id="WixShellExecTarget" Value="https://github.com/xilonoide/xiloadventures/wiki" />
+
+    <!-- URL de descarga de Docker -->
+    <Property Id="DOCKERDOWNLOADURL" Value="https://docs.docker.com/desktop/setup/install/windows-install/" />
+
+    <!-- Custom action para abrir la wiki -->
+    <CustomAction Id="LaunchWiki"
+                  BinaryRef="Wix4UtilCA_X64"
+                  DllEntry="WixShellExec"
+                  Impersonate="yes" />
+
+    <!-- Custom action para abrir la página de Docker -->
+    <CustomAction Id="SetDockerTarget"
+                  Property="WixShellExecTarget"
+                  Value="[DOCKERDOWNLOADURL]" />
+    <CustomAction Id="LaunchDocker"
+                  BinaryRef="Wix4UtilCA_X64"
+                  DllEntry="WixShellExec"
+                  Impersonate="yes" />
+
+    <!-- WixUI para la interfaz de instalación con selección de carpeta -->
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+
+    <!-- Personalización del texto del diálogo de salida -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="¡Gracias aventurero! La instalación se ha completado correctamente. Visita nuestra wiki para aprender más sobre el juego. Si quieres usar las funciones de IA, necesitarás Docker Desktop." />
+
+    <!-- Licencia -->
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+
+    <!-- Estructura de directorios -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="XiloAdventures">
+        <Directory Id="WorldsFolder" Name="worlds" />
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder" />
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="Xilo Adventures" />
+    </StandardDirectory>
+
+    <!-- Componente del ejecutable principal -->
+    <ComponentGroup Id="MainApplication" Directory="INSTALLFOLDER">
+      <Component Id="MainExeComponent" Guid="B1B2C3D4-E5F6-7890-ABCD-EF1234567891">
+        <File Id="MainExe"
+              Name="XiloAdventures.exe"
+              Source="..\XiloAdventures.Wpf\bin\publish\XiloAdventures.Wpf.exe"
+              KeyPath="yes" />
+      </Component>
+      <!-- ZIP con código fuente para exportar mundos a exe -->
+      <Component Id="SourceCodeZipComponent" Guid="A1A2A3A4-B5B6-C7C8-D9D0-E1E2E3E4E800">
+        <File Id="SourceCodeZip"
+              Name="SourceToExportEXE.zip"
+              Source="SourceToExportEXE.zip" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- Carpeta de mundos de ejemplo -->
+    <ComponentGroup Id="WorldsGroup" Directory="WorldsFolder">
+      <Component Id="WorldsComponent" Guid="E1E2C3D4-E5F6-7890-ABCD-EF1234567894">
+        <File Id="AlienWorld"
+              Source="..\XiloAdventures.Wpf\bin\publish\worlds\alien.xaw"
+              KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- Acceso directo en el escritorio (feature opcional) -->
+    <ComponentGroup Id="DesktopShortcutGroup" Directory="DesktopFolder">
+      <Component Id="DesktopShortcutComponent" Guid="C1C2C3D4-E5F6-7890-ABCD-EF1234567892">
+        <Shortcut Id="DesktopShortcut"
+                  Name="Xilo Adventures"
+                  Description="Aventuras de texto con IA"
+                  Target="[INSTALLFOLDER]XiloAdventures.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon" />
+        <!-- Eliminar el acceso directo con varios patrones posibles -->
+        <RemoveFile Id="RemoveDesktopShortcut1" On="uninstall" Name="Xilo Adventures.lnk" />
+        <RemoveFile Id="RemoveDesktopShortcut2" On="uninstall" Name="Xilo Adventures" />
+        <!-- También intentar eliminar por wildcard -->
+        <RemoveFile Id="RemoveDesktopShortcut3" On="uninstall" Name="Xilo*.lnk" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\Xilonoide\XiloAdventures"
+                       Name="DesktopShortcut"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+        <!-- Limpiar la entrada del registro -->
+        <RemoveRegistryKey Id="RemoveDesktopRegistryKey"
+                           Action="removeOnUninstall"
+                           Root="HKCU"
+                           Key="Software\Xilonoide\XiloAdventures" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- Acceso directo en el menú inicio -->
+    <ComponentGroup Id="StartMenuShortcutGroup" Directory="ApplicationProgramsFolder">
+      <Component Id="StartMenuShortcutComponent" Guid="D1D2C3D4-E5F6-7890-ABCD-EF1234567893">
+        <Shortcut Id="StartMenuShortcut"
+                  Name="Xilo Adventures"
+                  Description="Aventuras de texto con IA"
+                  Target="[INSTALLFOLDER]XiloAdventures.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon" />
+        <Shortcut Id="UninstallShortcut"
+                  Name="Desinstalar Xilo Adventures"
+                  Target="[SystemFolder]msiexec.exe"
+                  Arguments="/x [ProductCode]" />
+        <RemoveFolder Id="RemoveStartMenuFolder" On="uninstall" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\Xilonoide\XiloAdventures"
+                       Name="StartMenuShortcut"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- Custom Actions para la desinstalación -->
+    <!-- Binary con ruta explícita al DLL de Custom Actions -->
+    <Binary Id="CustomActionsCA" SourceFile="..\XiloAdventures.Wpf.Installer.CustomActions\bin\Release\net472\XiloAdventures.Wpf.Installer.CustomActions.CA.dll" />
+
+    <!-- Acción inmediata para mostrar diálogo de opciones -->
+    <CustomAction Id="ShowUninstallDialog"
+                  BinaryRef="CustomActionsCA"
+                  DllEntry="ShowUninstallOptions"
+                  Execute="immediate"
+                  Return="ignore" />
+
+    <!-- Acción diferida para eliminar acceso directo del escritorio (respaldo) -->
+    <CustomAction Id="DeleteDesktopShortcut"
+                  BinaryRef="CustomActionsCA"
+                  DllEntry="DeleteDesktopShortcut"
+                  Execute="deferred"
+                  Impersonate="yes"
+                  Return="ignore" />
+
+    <!-- Acciones diferidas para eliminar datos (se ejecutan con permisos elevados) -->
+    <CustomAction Id="DeleteSavedGames"
+                  BinaryRef="CustomActionsCA"
+                  DllEntry="DeleteSavedGames"
+                  Execute="deferred"
+                  Impersonate="yes"
+                  Return="ignore" />
+
+    <CustomAction Id="DeleteDockerData"
+                  BinaryRef="CustomActionsCA"
+                  DllEntry="DeleteDockerData"
+                  Execute="deferred"
+                  Impersonate="yes"
+                  Return="ignore" />
+
+    <!-- Pasar propiedades a las acciones diferidas (formato: KEY=VALUE) -->
+    <CustomAction Id="SetDeleteSavedGamesData"
+                  Property="DeleteSavedGames"
+                  Value="DELETESAVEDGAMES=[DELETESAVEDGAMES]" />
+
+    <CustomAction Id="SetDeleteDockerDataData"
+                  Property="DeleteDockerData"
+                  Value="DELETEDOCKERDATA=[DELETEDOCKERDATA]" />
+
+    <!-- Secuencia de ejecución -->
+    <InstallExecuteSequence>
+      <!-- Mostrar diálogo de opciones antes de desinstalar -->
+      <Custom Action="ShowUninstallDialog" Before="InstallValidate" Condition="Installed AND REMOVE" />
+      <!-- Pasar propiedades a las acciones diferidas -->
+      <Custom Action="SetDeleteSavedGamesData" After="ShowUninstallDialog" Condition="Installed AND REMOVE" />
+      <Custom Action="SetDeleteDockerDataData" After="SetDeleteSavedGamesData" Condition="Installed AND REMOVE" />
+      <!-- Eliminar acceso directo del escritorio (antes de RemoveFiles para asegurar eliminación) -->
+      <Custom Action="DeleteDesktopShortcut" Before="RemoveFiles" Condition="Installed AND REMOVE" />
+      <!-- Ejecutar eliminación después de que se eliminen los archivos del programa -->
+      <Custom Action="DeleteSavedGames" After="RemoveFiles" Condition="Installed AND REMOVE" />
+      <Custom Action="DeleteDockerData" After="DeleteSavedGames" Condition="Installed AND REMOVE" />
+    </InstallExecuteSequence>
+
+    <!-- Acciones del diálogo de salida -->
+    <UI>
+      <!-- El checkbox del diálogo de salida abrirá la wiki -->
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchWiki" Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" Order="1" />
+      <!-- Después de la wiki, abrir la página de Docker -->
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="SetDockerTarget" Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" Order="2" />
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchDocker" Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" Order="3" />
+    </UI>
+
+    <!-- Features -->
+    <Feature Id="MainFeature" Title="Xilo Adventures" Level="1" ConfigurableDirectory="INSTALLFOLDER">
+      <ComponentGroupRef Id="MainApplication" />
+      <ComponentGroupRef Id="WorldsGroup" />
+      <ComponentGroupRef Id="StartMenuShortcutGroup" />
+    </Feature>
+
+    <Feature Id="DesktopShortcutFeature" Title="Acceso directo en el escritorio" Level="1">
+      <ComponentGroupRef Id="DesktopShortcutGroup" />
+    </Feature>
+
+  </Package>
+</Wix>

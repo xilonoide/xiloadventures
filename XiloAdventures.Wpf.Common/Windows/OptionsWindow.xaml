@@ -1,0 +1,196 @@
+<Window x:Class="XiloAdventures.Wpf.Common.Windows.OptionsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Opciones"
+        Icon="/appicon.ico"
+        SizeToContent="Height"
+        Width="600"
+        WindowStartupLocation="CenterOwner"
+        Background="#222222"
+        Foreground="White">
+    <Grid Margin="10">
+
+
+        <StackPanel Grid.Row="0">
+            <GroupBox Header="Sonido" Margin="0,0,0,20" Padding="10">
+                <StackPanel>
+                    <CheckBox x:Name="SoundCheckBox"
+                              Content="Sonido activado"
+                              Margin="0,0,0,10"
+                              Foreground="White"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4" VerticalAlignment="Center">
+                        <TextBlock Text="Música:" Width="180" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <Slider x:Name="MusicVolumeSlider"
+                                Minimum="0" Maximum="10"
+                                Width="180"
+                                TickFrequency="1"
+                                IsSnapToTickEnabled="True"
+                                ValueChanged="MusicVolumeSlider_ValueChanged"/>
+                        <TextBlock x:Name="MusicVolumeLabel"
+                                   VerticalAlignment="Center"
+                                   Margin="8,0,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4" VerticalAlignment="Center">
+                        <TextBlock Text="Efectos:" Width="180" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <Slider x:Name="EffectsVolumeSlider"
+                                Minimum="0" Maximum="10"
+                                Width="180"
+                                TickFrequency="1"
+                                IsSnapToTickEnabled="True"
+                                ValueChanged="EffectsVolumeSlider_ValueChanged"/>
+                        <TextBlock x:Name="EffectsVolumeLabel"
+                                   VerticalAlignment="Center"
+                                   Margin="8,0,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4" VerticalAlignment="Center">
+                        <TextBlock Text="Voz:" Width="180" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <Slider x:Name="VoiceVolumeSlider"
+                                Minimum="0" Maximum="10"
+                                Width="180"
+                                TickFrequency="1"
+                                IsSnapToTickEnabled="True"
+                                ValueChanged="VoiceVolumeSlider_ValueChanged"/>
+                        <TextBlock x:Name="VoiceVolumeLabel"
+                                   VerticalAlignment="Center"
+                                   Margin="8,0,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Master:" Width="180" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <Slider x:Name="MasterVolumeSlider"
+                                Minimum="1" Maximum="10"
+                                Width="180"
+                                TickFrequency="1"
+                                IsSnapToTickEnabled="True"
+                                ValueChanged="MasterVolumeSlider_ValueChanged"/>
+                        <TextBlock x:Name="MasterVolumeLabel"
+                                   VerticalAlignment="Center"
+                                   Margin="8,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+
+
+            <GroupBox Header="Fuente" Margin="0,0,0,20" Padding="10">
+                <GroupBox.Resources>
+                    <Style TargetType="ComboBox">
+                        <Setter Property="Background" Value="#333333"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="BorderBrush" Value="#555555"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ComboBox">
+                                    <Grid>
+                                        <ToggleButton x:Name="ToggleButton"
+                                                      Background="{TemplateBinding Background}"
+                                                      BorderBrush="{TemplateBinding BorderBrush}"
+                                                      BorderThickness="1"
+                                                      Focusable="false"
+                                                      IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                                      ClickMode="Press">
+                                            <ToggleButton.Template>
+                                                <ControlTemplate TargetType="ToggleButton">
+                                                    <Border Background="{TemplateBinding Background}"
+                                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="2">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition/>
+                                                                <ColumnDefinition Width="20"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <Border Grid.Column="1" Background="#444444" CornerRadius="0,2,2,0">
+                                                                <Path x:Name="Arrow" Fill="White" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                      Data="M 0 0 L 4 4 L 8 0 Z"/>
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </ToggleButton.Template>
+                                        </ToggleButton>
+                                        <ContentPresenter x:Name="ContentSite"
+                                                          IsHitTestVisible="False"
+                                                          Content="{TemplateBinding SelectionBoxItem}"
+                                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                          Margin="6,3,23,3"
+                                                          VerticalAlignment="Center"
+                                                          HorizontalAlignment="Left"/>
+                                        <Popup x:Name="Popup"
+                                               Placement="Bottom"
+                                               IsOpen="{TemplateBinding IsDropDownOpen}"
+                                               AllowsTransparency="True"
+                                               Focusable="False"
+                                               PopupAnimation="Slide">
+                                            <Grid x:Name="DropDown"
+                                                  SnapsToDevicePixels="True"
+                                                  MinWidth="{TemplateBinding ActualWidth}"
+                                                  MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                                <Border x:Name="DropDownBorder"
+                                                        Background="#333333"
+                                                        BorderBrush="#555555"
+                                                        BorderThickness="1"/>
+                                                <ScrollViewer Margin="2" SnapsToDevicePixels="True">
+                                                    <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                                </ScrollViewer>
+                                            </Grid>
+                                        </Popup>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Background" Value="#333333"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="Padding" Value="6,3"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#555555"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#666666"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </GroupBox.Resources>
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,10">
+                        <TextBlock Text="Familia:" Width="180" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <ComboBox x:Name="FontFamilyComboBox"
+                                  Width="180"
+                                  MaxDropDownHeight="300"
+                                  SelectionChanged="FontFamilyComboBox_SelectionChanged"/>
+                        <Button Content="Original"
+                                Margin="8,0,0,0"
+                                Padding="8,2"
+                                Click="ResetFontButton_Click"
+                                Background="#444444"
+                                Foreground="White"
+                                BorderBrush="#555555"
+                                ToolTip="Restaurar fuente original del juego"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Tamaño:" Width="180" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <Slider x:Name="FontSizeSlider"
+                                Minimum="8" Maximum="26"
+                                Width="180"
+                                TickFrequency="1"
+                                IsSnapToTickEnabled="True"
+                                ValueChanged="FontSizeSlider_ValueChanged"/>
+                        <TextBlock x:Name="FontSizeLabel"
+                                   VerticalAlignment="Center"
+                                   Margin="8,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+        </StackPanel>
+
+
+    </Grid>
+</Window>

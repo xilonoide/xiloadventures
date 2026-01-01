@@ -1,0 +1,156 @@
+<Window x:Class="XiloAdventures.Wpf.Common.Windows.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Acerca de XiloAdventures"
+        Width="450" Height="420"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="#2A2A2A"
+        Foreground="White"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Icon="/appicon.ico">
+
+    <Border BorderBrush="#555555" BorderThickness="1" CornerRadius="8">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header con logo y nombre -->
+            <Border Grid.Row="0"
+                    Background="#363636"
+                    CornerRadius="8,8,0,0"
+                    Padding="20,16">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Image Source="/XiloAdventures.Wpf.Common;component/Assets/logo.png"
+                           Width="64" Height="64"
+                           Margin="0,0,16,0"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="XiloAdventures"
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   Foreground="White"/>
+                        <TextBlock x:Name="VersionText"
+                                   FontSize="13"
+                                   Foreground="#AAAAAA"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Content -->
+            <StackPanel Grid.Row="1" Margin="24,20">
+                <TextBlock Text="Editor de aventuras conversacionales, con parser nativo español vitaminado con IA local (opcional y gratis)"
+                           FontSize="13"
+                           Foreground="#CCCCCC"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"/>
+
+                <Border Background="#404040"
+                        CornerRadius="4"
+                        Padding="12"
+                        Margin="0,16,0,0">
+                    <StackPanel>
+                        <TextBlock FontSize="12" Foreground="#BBBBBB" TextAlignment="Center">
+                            <Run FontWeight="SemiBold" Foreground="#FFD700">Desarrollado por:</Run>
+                            <LineBreak/>
+                            <Run>Xilonoide - XMAS</Run>
+                        </TextBlock>
+
+                        <TextBlock FontSize="12"
+                                   Foreground="#BBBBBB"
+                                   TextAlignment="Center"
+                                   Margin="0,12,0,0">
+                            <Run FontWeight="SemiBold" Foreground="#FFD700">Tecnologias:</Run>
+                            <LineBreak/>
+                            <Run>.NET 8 | WPF | C#</Run>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- GitHub Link -->
+                <Border Background="#2d333b"
+                        CornerRadius="4"
+                        Padding="8,6"
+                        Margin="0,16,0,0"
+                        Cursor="Hand"
+                        MouseLeftButtonUp="GitHubLink_Click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock Text="2026 -"
+                                   FontSize="11"
+                                   Foreground="#888888"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,6,0"/>
+                        <TextBlock Text="&#xE774;"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="14"
+                                   Foreground="#58a6ff"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,4,0"/>
+                        <TextBlock Text="Código fuente (MIT) y Wiki en GitHub"
+                                   FontSize="11"
+                                   Foreground="#58a6ff"
+                                   VerticalAlignment="Center"
+                                   TextDecorations="Underline"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Donaciones -->
+                <Border Background="#3a5a3a"
+                        CornerRadius="4"
+                        Padding="10,8"
+                        Margin="0,12,0,0"
+                        Cursor="Hand"
+                        MouseLeftButtonUp="DonateLink_Click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock Text="&#x2764;"
+                                   FontSize="14"
+                                   Foreground="#FF6B6B"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,8,0"/>
+                        <TextBlock FontSize="12"
+                                   Foreground="#90EE90"
+                                   VerticalAlignment="Center">
+                            <Run FontWeight="SemiBold">¡Se aceptan donaciones!</Run>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- Close Button -->
+            <Border Grid.Row="2" Padding="0,0,0,16">
+                <Button x:Name="CloseButton"
+                        Content="Cerrar"
+                        Width="100"
+                        Height="32"
+                        HorizontalAlignment="Center"
+                        Background="#444444"
+                        Foreground="White"
+                        Click="CloseButton_Click">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="#555555"
+                                    BorderThickness="1"
+                                    CornerRadius="4">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Border" Property="Background" Value="#555555"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

@@ -1,0 +1,180 @@
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Navigation;
+using System.Diagnostics;
+using XiloAdventures.Wpf.Common.Windows;
+
+namespace XiloAdventures.Wpf.Windows;
+
+public partial class TestModeOptionsWindow : Window
+{
+    public TestModeOptionsWindow()
+    {
+        InitializeComponent();
+        Loaded += OnLoaded;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        // Inicializar labels
+        MusicVolumeLabel.Text = MusicVolumeSlider.Value.ToString("0");
+        EffectsVolumeLabel.Text = EffectsVolumeSlider.Value.ToString("0");
+        VoiceVolumeLabel.Text = VoiceVolumeSlider.Value.ToString("0");
+        MasterVolumeLabel.Text = MasterVolumeSlider.Value.ToString("0");
+
+        // Habilitar/deshabilitar sliders según el estado del sonido
+        UpdateSlidersEnabled();
+    }
+
+    public bool SoundEnabled
+    {
+        get => SoundCheckBox.IsChecked == true;
+        set => SoundCheckBox.IsChecked = value;
+    }
+
+    public double MusicVolume
+    {
+        get => MusicVolumeSlider.Value;
+        set => MusicVolumeSlider.Value = value;
+    }
+
+    public double EffectsVolume
+    {
+        get => EffectsVolumeSlider.Value;
+        set => EffectsVolumeSlider.Value = value;
+    }
+
+    public double VoiceVolume
+    {
+        get => VoiceVolumeSlider.Value;
+        set => VoiceVolumeSlider.Value = value;
+    }
+
+    public double MasterVolume
+    {
+        get => MasterVolumeSlider.Value;
+        set => MasterVolumeSlider.Value = value;
+    }
+
+    public bool AiEnabled
+    {
+        get => AiCheckBox.IsChecked == true;
+        set => AiCheckBox.IsChecked = value;
+    }
+
+    private void SoundCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        UpdateSlidersEnabled();
+    }
+
+    private void UpdateSlidersEnabled()
+    {
+        var enabled = SoundCheckBox.IsChecked == true;
+        MusicVolumeSlider.IsEnabled = enabled;
+        EffectsVolumeSlider.IsEnabled = enabled;
+        VoiceVolumeSlider.IsEnabled = enabled;
+        MasterVolumeSlider.IsEnabled = enabled;
+    }
+
+    private void MusicVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (MusicVolumeLabel != null)
+        {
+            MusicVolumeLabel.Text = e.NewValue.ToString("0");
+        }
+    }
+
+    private void EffectsVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (EffectsVolumeLabel != null)
+        {
+            EffectsVolumeLabel.Text = e.NewValue.ToString("0");
+        }
+    }
+
+    private void VoiceVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (VoiceVolumeLabel != null)
+        {
+            VoiceVolumeLabel.Text = e.NewValue.ToString("0");
+        }
+    }
+
+    private void MasterVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (MasterVolumeLabel != null)
+        {
+            MasterVolumeLabel.Text = e.NewValue.ToString("0");
+        }
+    }
+
+    private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+    {
+        DialogResult = true;
+    }
+
+    private void AiInfoIcon_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true; // Evitar que la ventana inicie el arrastre
+
+        var message = @"Si activas la IA, el modo pruebas intentará entender mejor comandos complejos o mal escritos. Además, si subes el volumen de voz en las opciones, oirás las descripciones de las salas.
+
+Para usarla debes tener Docker Desktop instalado y en ejecución.
+
+📋 REQUISITOS DEL SISTEMA
+
+Mínimo:
+• RAM: 8 GB
+• GPU NVIDIA: No obligatoria (funciona con CPU)
+• Espacio en disco: ~15 GB
+
+Recomendado:
+• RAM: 16 GB
+• GPU NVIDIA RTX con 6+ GB VRAM
+• Espacio en disco: ~20 GB
+
+Componentes de IA:
+• Comprensión de comandos (llama3): ~5 GB RAM
+• Voz (Coqui TTS): ~2 GB RAM
+• Generación de imágenes (Stable Diffusion): ~4 GB RAM
+
+⚡ Con GPU NVIDIA todo funciona más rápido, pero no es obligatorio.";
+
+        var link = new System.Windows.Controls.TextBlock
+        {
+            Margin = new Thickness(0, 12, 0, 0)
+        };
+        var hyperlink = new System.Windows.Documents.Hyperlink
+        {
+            NavigateUri = new System.Uri("https://docs.docker.com/desktop/setup/install/windows-install/")
+        };
+        hyperlink.Inlines.Add("Instala Docker Desktop");
+        hyperlink.RequestNavigate += AiHelpLink_RequestNavigate;
+        link.Inlines.Add(hyperlink);
+
+        var dlg = new AlertWindow(message, "Ayuda sobre la IA")
+        {
+            Owner = this
+        };
+        dlg.SetCustomContent(link);
+        dlg.HideOkButton();
+        dlg.ShowDialog();
+    }
+
+    private void AiHelpLink_RequestNavigate(object sender, RequestNavigateEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = e.Uri.AbsoluteUri,
+                UseShellExecute = true
+            });
+            e.Handled = true;
+        }
+        catch
+        {
+            // Ignoramos errores al abrir el navegador
+        }
+    }
+}

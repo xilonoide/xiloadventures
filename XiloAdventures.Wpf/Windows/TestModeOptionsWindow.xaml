@@ -1,0 +1,126 @@
+<Window x:Class="XiloAdventures.Wpf.Windows.TestModeOptionsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Opciones del modo pruebas"
+        SizeToContent="Height"
+        Width="450"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="#222222"
+        Foreground="White"
+        WindowStyle="ToolWindow"
+        Closing="Window_Closing">
+    <Border BorderBrush="#555555" BorderThickness="1" CornerRadius="6" Background="#222222">
+        <StackPanel Margin="20">
+            <!-- Grupo de Sonido -->
+            <GroupBox Header="Sonido" Margin="0,0,0,15" Padding="10" Foreground="White">
+                <GroupBox.HeaderTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" FontWeight="Bold" Foreground="#7CB3F0"/>
+                    </DataTemplate>
+                </GroupBox.HeaderTemplate>
+                <StackPanel>
+                    <CheckBox x:Name="SoundCheckBox"
+                              Content="Sonido activado"
+                              Margin="0,0,0,12"
+                              Foreground="White"
+                              Checked="SoundCheckBox_Changed"
+                              Unchecked="SoundCheckBox_Changed"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6" VerticalAlignment="Center">
+                        <TextBlock Text="Música:" Width="80" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <Slider x:Name="MusicVolumeSlider"
+                                Minimum="0" Maximum="10"
+                                Width="200"
+                                TickFrequency="1"
+                                IsSnapToTickEnabled="True"
+                                ValueChanged="MusicVolumeSlider_ValueChanged"/>
+                        <TextBlock x:Name="MusicVolumeLabel"
+                                   VerticalAlignment="Center"
+                                   Width="25"
+                                   TextAlignment="Right"
+                                   Margin="8,0,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6" VerticalAlignment="Center">
+                        <TextBlock Text="Efectos:" Width="80" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <Slider x:Name="EffectsVolumeSlider"
+                                Minimum="0" Maximum="10"
+                                Width="200"
+                                TickFrequency="1"
+                                IsSnapToTickEnabled="True"
+                                ValueChanged="EffectsVolumeSlider_ValueChanged"/>
+                        <TextBlock x:Name="EffectsVolumeLabel"
+                                   VerticalAlignment="Center"
+                                   Width="25"
+                                   TextAlignment="Right"
+                                   Margin="8,0,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6" VerticalAlignment="Center">
+                        <TextBlock Text="Voz:" Width="80" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <Slider x:Name="VoiceVolumeSlider"
+                                Minimum="0" Maximum="10"
+                                Width="200"
+                                TickFrequency="1"
+                                IsSnapToTickEnabled="True"
+                                ValueChanged="VoiceVolumeSlider_ValueChanged"/>
+                        <TextBlock x:Name="VoiceVolumeLabel"
+                                   VerticalAlignment="Center"
+                                   Width="25"
+                                   TextAlignment="Right"
+                                   Margin="8,0,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Master:" Width="80" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <Slider x:Name="MasterVolumeSlider"
+                                Minimum="1" Maximum="10"
+                                Width="200"
+                                TickFrequency="1"
+                                IsSnapToTickEnabled="True"
+                                ValueChanged="MasterVolumeSlider_ValueChanged"/>
+                        <TextBlock x:Name="MasterVolumeLabel"
+                                   VerticalAlignment="Center"
+                                   Width="25"
+                                   TextAlignment="Right"
+                                   Margin="8,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Grupo de IA -->
+            <GroupBox Header="Inteligencia Artificial" Margin="0,0,0,15" Padding="10" Foreground="White">
+                <GroupBox.HeaderTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" FontWeight="Bold" Foreground="#8CD47E"/>
+                    </DataTemplate>
+                </GroupBox.HeaderTemplate>
+                <StackPanel Orientation="Horizontal">
+                    <CheckBox x:Name="AiCheckBox"
+                              Content="Usar IA"
+                              FontSize="14"
+                              VerticalContentAlignment="Center"
+                              Foreground="White"/>
+                    <TextBlock Text="?"
+                               Margin="6,0,0,0"
+                               Foreground="Yellow"
+                               FontWeight="Bold"
+                               Cursor="Hand"
+                               VerticalAlignment="Center"
+                               MouseLeftButtonDown="AiInfoIcon_MouseLeftButtonDown">
+                        <TextBlock.ToolTip>
+                            <TextBlock Text="Activa la IA para que el juego entienda mejor comandos complejos. Haz clic para más detalles." />
+                        </TextBlock.ToolTip>
+                    </TextBlock>
+                </StackPanel>
+            </GroupBox>
+
+            <TextBlock Text="Esta configuración se guarda con el mundo y se usará cada vez que pulses el botón de pruebas."
+                       FontSize="11"
+                       Foreground="#888888"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"/>
+        </StackPanel>
+    </Border>
+</Window>

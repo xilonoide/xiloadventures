@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ApplicationIcon>..\XiloAdventures.Wpf.Common\appicon.ico</ApplicationIcon>
+      <!-- Settings to produce a standalone exe with embedded icon -->
+      <PublishSingleFile>true</PublishSingleFile>
+      <SelfContained>true</SelfContained>
+      <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+      <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+      <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\XiloAdventures.Engine\XiloAdventures.Engine.csproj" />
+    <ProjectReference Include="..\XiloAdventures.Wpf.Common\XiloAdventures.Wpf.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="sound\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="images\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Resource Include="..\XiloAdventures.Wpf.Common\appicon.ico" Link="appicon.ico" />
+    <!-- Include shared styles directly so single-file EXE can resolve them -->
+    <Resource Include="..\XiloAdventures.Wpf.Common\Styles\CommonStyles.xaml" Link="Styles\CommonStyles.xaml" />
+    <!-- Mundo de ejemplo -->
+    <Content Include="alien.xaw">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>worlds\alien.xaw</Link>
+    </Content>
+  </ItemGroup>
+</Project>

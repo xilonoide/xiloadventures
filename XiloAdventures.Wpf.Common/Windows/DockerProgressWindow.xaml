@@ -1,0 +1,80 @@
+<Window x:Class="XiloAdventures.Wpf.Common.Windows.DockerProgressWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Preparando servicios de IA"
+        Icon="/appicon.ico"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Width="420"
+        SizeToContent="Height"
+        ShowInTaskbar="False"
+        Background="#1E1E1E"
+        Foreground="#F5F5F5">
+    <Border Margin="16"
+            CornerRadius="8"
+            Background="#2A2A2A"
+            BorderBrush="#444444"
+            BorderThickness="1">
+        <StackPanel Margin="4">
+            <TextBlock x:Name="MessageText"
+                       Text="Docker esta haciendo sus cosas..."
+                       Margin="4,0,4,8"
+                       TextWrapping="Wrap"/>
+
+            <!-- ProgressBar indeterminado (para operaciones sin progreso conocido) -->
+            <ProgressBar x:Name="IndeterminateProgressBar"
+                         IsIndeterminate="True"
+                         Height="18"
+                         Margin="4,0,4,8"/>
+
+            <!-- ProgressBar determinado (para descarga de modelos) -->
+            <Grid x:Name="DownloadProgressPanel" Visibility="Collapsed" Margin="4,0,4,8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <ProgressBar x:Name="DownloadProgressBar"
+                             Grid.Row="0"
+                             Height="18"
+                             Minimum="0"
+                             Maximum="100"
+                             Value="0"/>
+                <Grid Grid.Row="1" Margin="0,4,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="DownloadPercentText"
+                               Grid.Column="0"
+                               Text="0%"
+                               FontSize="12"
+                               Opacity="0.9"/>
+                    <TextBlock x:Name="DownloadSizeText"
+                               Grid.Column="1"
+                               Text=""
+                               FontSize="12"
+                               Opacity="0.7"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="DownloadSpeedText"
+                               Grid.Column="2"
+                               Text=""
+                               FontSize="12"
+                               Opacity="0.7"/>
+                </Grid>
+            </Grid>
+
+            <TextBlock x:Name="DetailText"
+                       Margin="4,0,4,0"
+                       TextWrapping="Wrap"
+                       FontSize="13"
+                       Opacity="0.8"/>
+            <TextBlock x:Name="StepText"
+                       Margin="4,2,4,4"
+                       Text="Paso 1"
+                       FontSize="13"
+                       Opacity="0.9"
+                       Visibility="Collapsed"/>
+        </StackPanel>
+    </Border>
+</Window>

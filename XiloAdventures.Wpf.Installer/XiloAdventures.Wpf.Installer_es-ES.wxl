@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="es-ES" xmlns="http://wixtoolset.org/schemas/v4/wxl">
+  <!-- Botones comunes -->
+  <String Id="WixUIBack" Value="&amp;Atrás" />
+  <String Id="WixUINext" Value="&amp;Siguiente" />
+  <String Id="WixUICancel" Value="Cancelar" />
+  <String Id="WixUIFinish" Value="&amp;Finalizar" />
+  <String Id="WixUIInstall" Value="&amp;Instalar" />
+  <String Id="WixUIRemove" Value="&amp;Desinstalar" />
+  <String Id="WixUIRepair" Value="&amp;Reparar" />
+  <String Id="WixUIChange" Value="&amp;Cambiar" />
+  <String Id="WixUIUpdate" Value="&amp;Actualizar" />
+  <String Id="WixUIYes" Value="&amp;Sí" />
+  <String Id="WixUINo" Value="&amp;No" />
+  <String Id="WixUIOK" Value="Aceptar" />
+  <String Id="WixUIBrowse" Value="E&amp;xaminar..." />
+  <String Id="WixUIReset" Value="&amp;Restablecer" />
+
+  <!-- Diálogo de bienvenida -->
+  <String Id="WelcomeDlgTitle" Value="{\WixUI_Font_Bigger}Bienvenido al asistente de instalación de [ProductName]" />
+  <String Id="WelcomeDlgDescription" Value="El asistente de instalación instalará [ProductName] en su equipo. Haga clic en Siguiente para continuar o en Cancelar para salir del asistente." />
+
+  <!-- Diálogo de licencia -->
+  <String Id="LicenseAgreementDlgTitle" Value="{\WixUI_Font_Bigger}Acuerdo de licencia de usuario final" />
+  <String Id="LicenseAgreementDlgDescription" Value="Lea atentamente el siguiente acuerdo de licencia." />
+  <String Id="LicenseAgreementDlgLicenseAcceptedCheckBox" Value="&amp;Acepto los términos del acuerdo de licencia" />
+  <String Id="LicenseAgreementDlgPrint" Value="&amp;Imprimir" />
+
+  <!-- Diálogo de selección de carpeta -->
+  <String Id="InstallDirDlgTitle" Value="{\WixUI_Font_Bigger}Carpeta de destino" />
+  <String Id="InstallDirDlgDescription" Value="Haga clic en Siguiente para instalar en la carpeta predeterminada o en Examinar para elegir otra ubicación." />
+  <String Id="InstallDirDlgFolderLabel" Value="&amp;Carpeta:" />
+  <String Id="InstallDirDlgChange" Value="&amp;Cambiar..." />
+
+  <!-- Diálogo de examinar carpeta -->
+  <String Id="BrowseDlgTitle" Value="{\WixUI_Font_Bigger}Cambiar carpeta de destino" />
+  <String Id="BrowseDlgDescription" Value="Seleccione la carpeta de destino para la instalación." />
+  <String Id="BrowseDlgFolderLabel" Value="&amp;Nombre de la carpeta:" />
+
+  <!-- Diálogo de preparación -->
+  <String Id="VerifyReadyDlgTitle" Value="{\WixUI_Font_Bigger}Listo para instalar" />
+  <String Id="VerifyReadyDlgInstallTitle" Value="{\WixUI_Font_Bigger}Listo para instalar [ProductName]" />
+  <String Id="VerifyReadyDlgInstallDescription" Value="Haga clic en Instalar para comenzar la instalación. Haga clic en Atrás para revisar o cambiar las opciones de instalación." />
+  <String Id="VerifyReadyDlgRepairTitle" Value="{\WixUI_Font_Bigger}Listo para reparar [ProductName]" />
+  <String Id="VerifyReadyDlgRepairDescription" Value="Haga clic en Reparar para iniciar la reparación. Haga clic en Atrás para revisar o cambiar las opciones." />
+  <String Id="VerifyReadyDlgRemoveTitle" Value="{\WixUI_Font_Bigger}Listo para desinstalar [ProductName]" />
+  <String Id="VerifyReadyDlgRemoveDescription" Value="Haga clic en Desinstalar para eliminar [ProductName] de su equipo. Haga clic en Atrás para revisar o cambiar las opciones." />
+
+  <!-- Diálogo de progreso -->
+  <String Id="ProgressDlgTitle" Value="{\WixUI_Font_Bigger}Instalando [ProductName]" />
+  <String Id="ProgressDlgTitleInstalling" Value="Instalando" />
+  <String Id="ProgressDlgTitleRemoving" Value="Desinstalando" />
+  <String Id="ProgressDlgTitleRepairing" Value="Reparando" />
+  <String Id="ProgressDlgTitleUpdating" Value="Actualizando" />
+  <String Id="ProgressDlgStatusLabel" Value="Estado:" />
+  <String Id="ProgressDlgGenericActionData" Value="Acción [1]: [2]" />
+
+  <!-- Diálogo de finalización -->
+  <String Id="ExitDlgTitle" Value="{\WixUI_Font_Bigger}Instalación completada" />
+  <String Id="ExitDlgDescription" Value="El asistente ha instalado [ProductName] correctamente. Haga clic en Finalizar para salir del asistente." />
+
+  <!-- Diálogo de cancelación -->
+  <String Id="CancelDlg" Value="¿Está seguro de que desea cancelar la instalación de [ProductName]?" />
+  <String Id="CancelDlgTitle" Value="Cancelar instalación" />
+
+  <!-- Diálogo de mantenimiento -->
+  <String Id="MaintenanceTypeDlgTitle" Value="{\WixUI_Font_Bigger}Modificar, reparar o desinstalar" />
+  <String Id="MaintenanceTypeDlgDescription" Value="Seleccione la operación que desea realizar." />
+  <String Id="MaintenanceTypeDlgChangeButton" Value="&amp;Cambiar" />
+  <String Id="MaintenanceTypeDlgChangeText" Value="Permite cambiar las características del programa que están instaladas. Esta opción muestra el diálogo de selección de características personalizado." />
+  <String Id="MaintenanceTypeDlgRepairButton" Value="&amp;Reparar" />
+  <String Id="MaintenanceTypeDlgRepairText" Value="Repara errores de instalación en el programa. Esta opción corrige archivos dañados o faltantes, accesos directos y entradas del registro." />
+  <String Id="MaintenanceTypeDlgRemoveButton" Value="&amp;Desinstalar" />
+  <String Id="MaintenanceTypeDlgRemoveText" Value="Elimina [ProductName] de su equipo." />
+
+  <!-- Diálogo de bienvenida de mantenimiento -->
+  <String Id="MaintenanceWelcomeDlgTitle" Value="{\WixUI_Font_Bigger}Bienvenido al asistente de instalación de [ProductName]" />
+  <String Id="MaintenanceWelcomeDlgDescription" Value="El asistente le permitirá modificar, reparar o desinstalar [ProductName]. Haga clic en Siguiente para continuar o en Cancelar para salir." />
+
+  <!-- Diálogo de salida de desinstalación -->
+  <String Id="ExitDlgTitleRemove" Value="{\WixUI_Font_Bigger}Desinstalación completada" />
+  <String Id="ExitDlgDescriptionRemove" Value="El asistente ha desinstalado [ProductName] correctamente. Haga clic en Finalizar para salir del asistente." />
+
+  <!-- Errores y advertencias -->
+  <String Id="FilesInUse" Value="Las siguientes aplicaciones están usando archivos que necesitan ser actualizados:" />
+  <String Id="FilesInUseClose" Value="Cierre las aplicaciones y haga clic en Reintentar para continuar." />
+  <String Id="Error1" Value="Error [1]. [2]" />
+  <String Id="Error2" Value="No se pudo crear la carpeta [2]. Ya existe un archivo con este nombre." />
+  <String Id="Error3" Value="No se pudo crear la carpeta [2]." />
+  <String Id="OutOfDiskSpace" Value="No hay suficiente espacio en disco." />
+  <String Id="InvalidDirDlgTitle" Value="Carpeta no válida" />
+  <String Id="InvalidDirDlgDescription" Value="La carpeta especificada no es válida. Especifique una carpeta válida." />
+
+  <!-- Acciones de instalación -->
+  <String Id="ActionTextInstalling" Value="Instalando archivos..." />
+  <String Id="ActionTextUninstalling" Value="Desinstalando archivos..." />
+  <String Id="ActionTextRepairing" Value="Reparando archivos..." />
+</WixLocalization>

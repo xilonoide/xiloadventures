@@ -1,0 +1,87 @@
+<Window x:Class="XiloAdventures.Wpf.Common.Windows.EndingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Fin de la aventura"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown"
+        KeyDown="Window_KeyDown"
+        Closing="Window_Closing">
+
+    <Border Background="#1A1A1A"
+            CornerRadius="16"
+            Padding="48"
+            BorderBrush="#333333"
+            BorderThickness="2"
+            MinWidth="500"
+            MaxWidth="800">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="30"
+                              ShadowDepth="0"
+                              Opacity="0.8"
+                              Color="Black"/>
+        </Border.Effect>
+
+        <StackPanel HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+            <!-- Logo -->
+            <Image x:Name="LogoImage"
+                   Width="400"
+                   Stretch="Uniform"
+                   RenderOptions.BitmapScalingMode="HighQuality"
+                   Margin="0,0,0,32"/>
+
+            <!-- Texto de finalización -->
+            <TextBlock x:Name="EndingTextBlock"
+                       Text="¡Felicidades! Has completado la aventura."
+                       FontSize="18"
+                       FontWeight="Medium"
+                       Foreground="#FFD700"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       MaxWidth="600"
+                       Margin="0,0,0,24"/>
+
+            <!-- Enlace a GitHub -->
+            <Border x:Name="GitHubLinkBorder"
+                    Background="#2d333b"
+                    CornerRadius="6"
+                    Padding="16,10"
+                    Margin="0,0,0,24"
+                    Cursor="Hand"
+                    MouseLeftButtonDown="GitHubLink_Click">
+                <StackPanel HorizontalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock Text="&#xE774;"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="16"
+                                   Foreground="#58a6ff"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,8,0"/>
+                        <TextBlock Text="¿Te ha gustado? ¡Crea tu propia aventura!"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Foreground="#58a6ff"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="Descarga el editor gratuito en GitHub"
+                               FontSize="11"
+                               Foreground="#8b949e"
+                               HorizontalAlignment="Center"
+                               Margin="0,4,0,0"
+                               TextDecorations="Underline"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Instrucción -->
+            <TextBlock Text="Haz clic o pulsa una tecla para salir"
+                       FontSize="12"
+                       Foreground="#666666"
+                       HorizontalAlignment="Center"/>
+        </StackPanel>
+    </Border>
+</Window>

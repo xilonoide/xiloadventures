@@ -1,0 +1,111 @@
+{
+  "verbs": {
+    "examine": [
+      "examinar",
+      "examina",
+      "x"
+    ],
+    "go": [
+      "ir",
+      "ve",
+      "andar",
+      "caminar"
+    ],
+    "inventory": [
+      "inventario",
+      "inv",
+      "i"
+    ],
+    "take": [
+      "coger",
+      "toma",
+      "coge",
+      "tomar",
+      "agarrar",
+      "recoger"
+    ],
+    "drop": [
+      "soltar",
+      "dejar",
+      "tirar"
+    ],
+    "open": [
+      "abrir",
+      "abre"
+    ],
+    "close": [
+      "cerrar",
+      "cierra"
+    ],
+    "talk": [
+      "hablar",
+      "habla",
+      "charlar",
+      "conversar"
+    ],
+    "say": [
+      "decir",
+      "di"
+    ],
+    "option": [
+      "opcion",
+      "opción"
+    ],
+    "use": [
+      "usar",
+      "utilizar",
+      "emplear"
+    ],
+    "give": [
+      "dar",
+      "entregar"
+    ],
+    "quests": [
+      "misiones",
+      "mision",
+      "misión",
+      "quest"
+    ],
+    "save": [
+      "guardar",
+      "salvar"
+    ],
+    "load": [
+      "cargar"
+    ],
+    "help": [
+      "ayuda"
+    ],
+    "read": [
+      "leer",
+      "lee"
+    ],
+    "commands": [
+      "?",
+      "verbos",
+      "comandos"
+    ]
+  },
+  "nouns": {
+    "espada": [
+      "hoja",
+      "sable",
+      "mandoble"
+    ],
+    "enano": [
+      "enano borracho",
+      "minero",
+      "barbudo"
+    ],
+    "posada": [
+      "taberna",
+      "mesón",
+      "meson"
+    ],
+    "oro": [
+      "moneda",
+      "monedas",
+      "dinero"
+    ]
+  }
+}

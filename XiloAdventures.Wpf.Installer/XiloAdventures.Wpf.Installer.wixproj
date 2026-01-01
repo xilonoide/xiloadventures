@@ -1,0 +1,52 @@
+<Project Sdk="WixToolset.Sdk/4.0.5">
+  <PropertyGroup>
+    <OutputType>Package</OutputType>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <OutputName>XiloAdventures.Setup</OutputName>
+    <DefaultLanguage>es-ES</DefaultLanguage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="4.0.5" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="4.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Referencia al proyecto de Custom Actions -->
+    <ProjectReference Include="..\XiloAdventures.Wpf.Installer.CustomActions\XiloAdventures.Wpf.Installer.CustomActions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Archivos del instalador -->
+    <Content Include="License.rtf" />
+    <Content Include="SourceToExportEXE.zip" />
+  </ItemGroup>
+
+  <!-- Target para crear el ZIP con el código fuente antes de compilar -->
+  <Target Name="CreateSourceZip" BeforeTargets="Build;Compile">
+    <PropertyGroup>
+      <SourceZipPath>$(MSBuildProjectDirectory)\SourceToExportEXE.zip</SourceZipPath>
+      <TempSourceDir>$(MSBuildProjectDirectory)\temp_source</TempSourceDir>
+    </PropertyGroup>
+
+    <!-- Eliminar ZIP anterior si existe -->
+    <Delete Files="$(SourceZipPath)" Condition="Exists('$(SourceZipPath)')" />
+
+    <!-- Eliminar carpeta temporal si existe (por si quedó de una ejecución anterior fallida) -->
+    <RemoveDir Directories="$(TempSourceDir)" Condition="Exists('$(TempSourceDir)')" />
+
+    <!-- Crear estructura de carpetas temporal -->
+    <MakeDir Directories="$(TempSourceDir)" />
+
+    <!-- Copiar proyectos necesarios (excluyendo bin, obj, etc.) -->
+    <Exec Command="robocopy &quot;$(MSBuildProjectDirectory)\..\XiloAdventures.Engine&quot; &quot;$(TempSourceDir)\XiloAdventures.Engine&quot; /E /XD bin obj .vs /XF *.user" IgnoreExitCode="true" />
+    <Exec Command="robocopy &quot;$(MSBuildProjectDirectory)\..\XiloAdventures.Wpf.Common&quot; &quot;$(TempSourceDir)\XiloAdventures.Wpf.Common&quot; /E /XD bin obj .vs /XF *.user" IgnoreExitCode="true" />
+    <Exec Command="robocopy &quot;$(MSBuildProjectDirectory)\..\XiloAdventures.Wpf.Player&quot; &quot;$(TempSourceDir)\XiloAdventures.Wpf.Player&quot; /E /XD bin obj .vs /XF *.user" IgnoreExitCode="true" />
+
+    <!-- Crear el ZIP usando PowerShell con try-finally para limpiar siempre -->
+    <Exec Command="powershell -NoProfile -Command &quot;try { Compress-Archive -Path '$(TempSourceDir)\*' -DestinationPath '$(SourceZipPath)' -Force } finally { if (Test-Path '$(TempSourceDir)') { Remove-Item -Recurse -Force '$(TempSourceDir)' } }&quot;" />
+
+    <Message Text="Created SourceToExportEXE.zip with Engine, Common and Player projects" Importance="high" />
+  </Target>
+
+</Project>

@@ -1,0 +1,385 @@
+<Window x:Class="XiloAdventures.Wpf.Common.Windows.CombatWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:XiloAdventures.Wpf.Common.Controls"
+        Title="Combate"
+        Icon="/appicon.ico"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Width="900"
+        Height="600"
+        Background="#1E1E1E"
+        Foreground="#F5F5F5">
+    <Window.Resources>
+        <!-- Estilo para barras de salud -->
+        <Style x:Key="HealthBarStyle" TargetType="ProgressBar">
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Background" Value="#333333"/>
+            <Setter Property="Foreground" Value="#4CAF50"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#555555"/>
+        </Style>
+
+        <!-- Estilo para barras de mana -->
+        <Style x:Key="ManaBarStyle" TargetType="ProgressBar">
+            <Setter Property="Height" Value="16"/>
+            <Setter Property="Background" Value="#333333"/>
+            <Setter Property="Foreground" Value="#2196F3"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#555555"/>
+        </Style>
+
+        <!-- Estilo para botones de acción -->
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="MinWidth" Value="100"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="Background" Value="#3A3A3A"/>
+            <Setter Property="Foreground" Value="#F5F5F5"/>
+            <Setter Property="BorderBrush" Value="#555555"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                Padding="12,6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#4A4A4A"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#5A5A5A"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#2A2A2A"/>
+                                <Setter Property="Foreground" Value="#666666"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border Margin="8" CornerRadius="8" Background="#2A2A2A" BorderBrush="#444444" BorderThickness="1">
+        <Grid Margin="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="250"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- CONTENIDO PRINCIPAL (izquierda) -->
+            <Grid Grid.Column="0" Margin="0,0,16,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- HEADER: Título del combate -->
+                <TextBlock Grid.Row="0"
+                           Text="COMBATE"
+                           FontSize="24"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           Foreground="#FFD700"
+                           Margin="0,0,0,16"/>
+
+                <!-- SECCIÓN COMBATIENTES -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Panel del Jugador (izquierda) -->
+                    <Border Grid.Column="0" Background="#333333" CornerRadius="8" Padding="12" Margin="0,0,8,0">
+                        <StackPanel>
+                            <TextBlock x:Name="PlayerNameText"
+                                       Text="Jugador"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       Foreground="#90EE90"/>
+                            <TextBlock x:Name="PlayerEquipText"
+                                       Text="Sin equipo"
+                                       FontSize="12"
+                                       Foreground="#AAAAAA"
+                                       Margin="0,4,0,8"/>
+                            <TextBlock Text="Salud:" FontSize="12" Foreground="#AAAAAA"/>
+                            <Grid Margin="0,0,0,8">
+                                <ProgressBar x:Name="PlayerHealthBar"
+                                             Style="{StaticResource HealthBarStyle}"
+                                             Maximum="100"
+                                             Value="100"/>
+                                <TextBlock x:Name="PlayerHealthText"
+                                           Text="100/100"
+                                           FontSize="11"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+                            <!-- Sección de Mana (solo visible si MagicEnabled) -->
+                            <StackPanel x:Name="ManaSection">
+                                <TextBlock Text="Maná:" FontSize="12" Foreground="#AAAAAA"/>
+                                <Grid>
+                                    <ProgressBar x:Name="PlayerManaBar"
+                                                 Style="{StaticResource ManaBarStyle}"
+                                                 Maximum="100"
+                                                 Value="100"/>
+                                    <TextBlock x:Name="PlayerManaText"
+                                               Text="100/100"
+                                               FontSize="10"
+                                               Foreground="White"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+                            <!-- Estados de combate -->
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock x:Name="PlayerAttackText"
+                                           Text="ATQ: 0"
+                                           FontSize="11"
+                                           Foreground="#FF6B6B"
+                                           FontWeight="SemiBold"
+                                           Margin="0,0,12,0"/>
+                                <TextBlock x:Name="PlayerDefenseText"
+                                           Text="DEF: 0"
+                                           FontSize="11"
+                                           Foreground="#64B5F6"
+                                           FontWeight="SemiBold"
+                                           Margin="0,0,12,0"/>
+                                <TextBlock x:Name="PlayerMagicText"
+                                           Text="MAG: 0"
+                                           FontSize="11"
+                                           Foreground="#BA68C8"
+                                           FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- VS -->
+                    <TextBlock Grid.Column="1"
+                               Text="VS"
+                               FontSize="28"
+                               FontWeight="Bold"
+                               Foreground="#FFD700"
+                               VerticalAlignment="Center"
+                               Margin="16,0"/>
+
+                    <!-- Panel del NPC (derecha) -->
+                    <Border Grid.Column="2" Background="#333333" CornerRadius="8" Padding="12" Margin="8,0,0,0">
+                        <StackPanel>
+                            <TextBlock x:Name="NpcNameText"
+                                       Text="Enemigo"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       Foreground="#FF6B6B"
+                                       Margin="0,0,0,8"/>
+                            <TextBlock Text="Salud:" FontSize="12" Foreground="#AAAAAA"/>
+                            <Grid>
+                                <ProgressBar x:Name="NpcHealthBar"
+                                             Style="{StaticResource HealthBarStyle}"
+                                             Maximum="100"
+                                             Value="100"/>
+                                <TextBlock x:Name="NpcHealthText"
+                                           Text="100/100"
+                                           FontSize="11"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+                            <!-- Estados de combate -->
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock x:Name="NpcAttackText"
+                                           Text="ATQ: 0"
+                                           FontSize="11"
+                                           Foreground="#FF6B6B"
+                                           FontWeight="SemiBold"
+                                           Margin="0,0,12,0"/>
+                                <TextBlock x:Name="NpcDefenseText"
+                                           Text="DEF: 0"
+                                           FontSize="11"
+                                           Foreground="#64B5F6"
+                                           FontWeight="SemiBold"
+                                           Margin="0,0,12,0"/>
+                                <TextBlock x:Name="NpcMagicText"
+                                           Text="MAG: 0"
+                                           FontSize="11"
+                                           Foreground="#BA68C8"
+                                           FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- SECCIÓN DADOS -->
+                <Grid Grid.Row="2" Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Dado del Jugador (izquierda) -->
+                    <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                        <TextBlock Text="Tu Dado"
+                                   FontSize="14"
+                                   Foreground="#AAAAAA"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,8"/>
+                        <controls:DiceControl x:Name="PlayerDice"
+                                              Width="100"
+                                              Height="100"/>
+                        <!-- Cálculo de la tirada del jugador -->
+                        <TextBlock x:Name="PlayerRollCalcText"
+                                   FontSize="12"
+                                   Foreground="#90EE90"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,16,0,0"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="140"/>
+                        <!-- Resultado de la tirada del jugador -->
+                        <TextBlock x:Name="PlayerRollResultText"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Foreground="#90EE90"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+
+                    <!-- Información de ronda -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" MinWidth="140">
+                        <TextBlock x:Name="RoundText"
+                                   Text="Ronda 1"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   Foreground="#FFD700"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="PhaseText"
+                                   Text="Iniciativa"
+                                   FontSize="12"
+                                   Foreground="#AAAAAA"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,4,0,0"/>
+                        <TextBlock x:Name="TurnText"
+                                   Text="Tu turno"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Foreground="#90EE90"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,8,0,0"/>
+                        <!-- Resultado de la acción -->
+                        <TextBlock x:Name="ActionResultText"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Foreground="#FFD700"
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="160"
+                                   Margin="0,12,0,0"/>
+                        <!-- Botón Cancelar (visible cuando hay acción pendiente) -->
+                        <Button x:Name="CancelActionButton"
+                                Content="Cancelar"
+                                Visibility="Collapsed"
+                                Margin="0,12,0,0"
+                                Padding="16,6"
+                                Background="#555555"
+                                Foreground="#F5F5F5"
+                                BorderBrush="#666666"
+                                BorderThickness="1"
+                                Cursor="Hand"
+                                Click="CancelActionButton_Click"/>
+                    </StackPanel>
+
+                    <!-- Dado del NPC (derecha) -->
+                    <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                        <TextBlock Text="Dado Enemigo"
+                                   FontSize="14"
+                                   Foreground="#AAAAAA"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,8"/>
+                        <controls:DiceControl x:Name="NpcDice"
+                                              Width="100"
+                                              Height="100"
+                                              IsRollEnabled="False"/>
+                        <!-- Cálculo de la tirada del NPC -->
+                        <TextBlock x:Name="NpcRollCalcText"
+                                   FontSize="12"
+                                   Foreground="#FF6B6B"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,8,0,0"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="140"/>
+                        <!-- Resultado de la tirada del NPC -->
+                        <TextBlock x:Name="NpcRollResultText"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Foreground="#FF6B6B"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- BOTONES DE ACCIÓN -->
+                <WrapPanel Grid.Row="3"
+                           HorizontalAlignment="Center"
+                           Margin="0,16,0,0">
+                    <Button x:Name="AttackButton"
+                            Content="Atacar"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Click="AttackButton_Click"/>
+                    <Button x:Name="DefendButton"
+                            Content="Defender"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Click="DefendButton_Click"/>
+                    <Button x:Name="FleeButton"
+                            Content="Huir"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Click="FleeButton_Click"/>
+                    <Button x:Name="UseItemButton"
+                            Content="Usar Objeto"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Click="UseItemButton_Click"/>
+                    <Button x:Name="UseAbilityButton"
+                            Content="Habilidad"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Click="UseAbilityButton_Click"/>
+                </WrapPanel>
+            </Grid>
+
+            <!-- REGISTRO DE COMBATE (derecha, todo el alto) -->
+            <Border Grid.Column="1" Background="#252525" CornerRadius="4" Padding="8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0"
+                               Text="Registro"
+                               FontSize="14"
+                               FontWeight="Bold"
+                               Foreground="#AAAAAA"
+                               Margin="0,0,0,8"/>
+                    <ScrollViewer Grid.Row="1"
+                                  x:Name="CombatLogScrollViewer"
+                                  VerticalScrollBarVisibility="Auto">
+                        <TextBlock x:Name="CombatLogText"
+                                   TextWrapping="Wrap"
+                                   FontFamily="Consolas"
+                                   FontSize="11"
+                                   Foreground="#CCCCCC"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

@@ -1,0 +1,425 @@
+<Window x:Class="XiloAdventures.Wpf.Windows.PromptGeneratorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Generador de Mundos con IA"
+        Width="710" Height="Auto"
+        MinWidth="500"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        Background="#2A2A2A"
+        Foreground="White"
+        Icon="/appicon.ico">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="Generador de Mundos con IA"
+                       FontSize="20"
+                       FontWeight="Bold"
+                       Foreground="White"/>
+            <TextBlock Text="Usa este prompt con ChatGPT, Claude u otra IA para generar mundos completos"
+                       FontSize="12"
+                       Foreground="#AAAAAA"
+                       Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Configuration -->
+        <Border Grid.Row="1"
+                Background="#363636"
+                CornerRadius="6"
+                Padding="12"
+                Margin="0,0,0,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Systems checkboxes -->
+                <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,0,0,12">
+                    <CheckBox x:Name="CraftingCheckBox"
+                              Content="🔨 Fabricación"
+                              Foreground="#DDDDDD"
+                              VerticalAlignment="Center"
+                              IsChecked="True"
+                              Margin="0,0,20,0"
+                              Checked="SystemCheckBox_Changed"
+                              Unchecked="SystemCheckBox_Changed"/>
+                    <CheckBox x:Name="CombatCheckBox"
+                              Content="⚔️ Combate"
+                              Foreground="#DDDDDD"
+                              VerticalAlignment="Center"
+                              IsChecked="True"
+                              Margin="0,0,20,0"
+                              Checked="CombatCheckBox_Changed"
+                              Unchecked="CombatCheckBox_Changed"/>
+                    <CheckBox x:Name="MagicCheckBox"
+                              Content="✨ Magia"
+                              Foreground="#DDDDDD"
+                              VerticalAlignment="Center"
+                              IsChecked="True"
+                              Margin="0,0,20,0"
+                              Checked="SystemCheckBox_Changed"
+                              Unchecked="SystemCheckBox_Changed"/>
+                    <CheckBox x:Name="BasicNeedsCheckBox"
+                              Content="🍽️ Necesidades básicas"
+                              Foreground="#DDDDDD"
+                              VerticalAlignment="Center"
+                              IsChecked="True"
+                              Checked="BasicNeedsCheckBox_Changed"
+                              Unchecked="BasicNeedsCheckBox_Changed"/>
+                </StackPanel>
+
+                <!-- Theme -->
+                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,16,8">
+                    <TextBlock Text="Temática de la aventura"
+                               FontSize="12"
+                               Foreground="#DDDDDD"
+                               Margin="0,0,0,4"/>
+                    <TextBox x:Name="ThemeTextBox"
+                             Text="mansión embrujada"
+                             Background="#1E1E1E"
+                             Foreground="#D4D4D4"
+                             BorderBrush="#555555"
+                             Padding="8,6"
+                             FontSize="13"
+                             TextChanged="ThemeTextBox_TextChanged"/>
+                    <TextBlock Text="💡 Ejemplos: templo antiguo, nave espacial abandonada, castillo medieval, laboratorio secreto, isla desierta..."
+                               FontSize="11"
+                               Foreground="#888888"
+                               TextWrapping="Wrap"
+                               Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <!-- Room count -->
+                <StackPanel Grid.Row="1" Grid.Column="1" Width="120">
+                    <TextBlock Text="Nº de salas (aprox.)"
+                               FontSize="12"
+                               Foreground="#DDDDDD"
+                               Margin="0,0,0,4"/>
+                    <TextBox x:Name="RoomCountTextBox"
+                             Text="6"
+                             Background="#1E1E1E"
+                             Foreground="#D4D4D4"
+                             BorderBrush="#555555"
+                             Padding="8,6"
+                             FontSize="13"
+                             HorizontalContentAlignment="Center"
+                             PreviewTextInput="RoomCountTextBox_PreviewTextInput"
+                             TextChanged="RoomCountTextBox_TextChanged"/>
+                </StackPanel>
+
+                <!-- General sliders section -->
+                <Grid Grid.Row="2" Grid.ColumnSpan="2" Margin="0,12,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Doors slider -->
+                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                        <TextBlock Text="Puertas" FontSize="11" Foreground="#BBBBBB" Margin="0,0,0,2"/>
+                        <Slider x:Name="DoorsSlider"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="2"
+                                IsSnapToTickEnabled="True"
+                                TickFrequency="1"
+                                ValueChanged="DoorsSlider_ValueChanged"/>
+                    </StackPanel>
+
+                    <!-- NPCs slider -->
+                    <StackPanel Grid.Column="1" Margin="8,0,8,0">
+                        <TextBlock Text="NPCs" FontSize="11" Foreground="#BBBBBB" Margin="0,0,0,2"/>
+                        <Slider x:Name="NpcsSlider"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="2"
+                                IsSnapToTickEnabled="True"
+                                TickFrequency="1"
+                                ValueChanged="NpcsSlider_ValueChanged"/>
+                    </StackPanel>
+
+                    <!-- Quests slider -->
+                    <StackPanel Grid.Column="2" Margin="8,0,8,0">
+                        <TextBlock Text="Misiones" FontSize="11" Foreground="#BBBBBB" Margin="0,0,0,2"/>
+                        <Slider x:Name="QuestsSlider"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="1"
+                                IsSnapToTickEnabled="True"
+                                TickFrequency="1"
+                                ValueChanged="QuestsSlider_ValueChanged"/>
+                    </StackPanel>
+
+                    <!-- Contenedores slider -->
+                    <StackPanel Grid.Column="3" Margin="8,0,0,0">
+                        <TextBlock Text="Contenedores" FontSize="11" Foreground="#BBBBBB" Margin="0,0,0,2"/>
+                        <Slider x:Name="ContainersSlider"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="1"
+                                IsSnapToTickEnabled="True"
+                                TickFrequency="1"
+                                ValueChanged="ContainersSlider_ValueChanged"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Object types sliders section -->
+                <TextBlock Grid.Row="3" Grid.ColumnSpan="2"
+                           Text="Tipos de objetos:"
+                           FontSize="11"
+                           Foreground="#AAAAAA"
+                           FontWeight="SemiBold"
+                           Margin="0,8,0,12"/>
+
+                <Grid Grid.Row="4" Grid.ColumnSpan="2" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Primera fila: Armas, Armaduras, Cascos, Llaves -->
+
+                    <!-- Armas slider -->
+                    <StackPanel x:Name="WeaponsPanel" Grid.Row="0" Grid.Column="0" Margin="0,0,8,8">
+                        <TextBlock x:Name="WeaponsLabel" Text="⚔️ Armas" FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2"/>
+                        <Slider x:Name="WeaponsSlider"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="1"
+                                IsSnapToTickEnabled="True"
+                                TickFrequency="1"
+                                ValueChanged="ObjectTypeSlider_ValueChanged"/>
+                    </StackPanel>
+
+                    <!-- Armaduras slider -->
+                    <StackPanel x:Name="ArmorsPanel" Grid.Row="0" Grid.Column="1" Margin="8,0,8,8">
+                        <TextBlock x:Name="ArmorsLabel" Text="🛡️ Armaduras" FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2"/>
+                        <Slider x:Name="ArmorsSlider"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="0"
+                                IsSnapToTickEnabled="True"
+                                TickFrequency="1"
+                                ValueChanged="ObjectTypeSlider_ValueChanged"/>
+                    </StackPanel>
+
+                    <!-- Cascos slider -->
+                    <StackPanel x:Name="HelmetsPanel" Grid.Row="0" Grid.Column="2" Margin="8,0,8,8">
+                        <TextBlock x:Name="HelmetsLabel" Text="🪖 Cascos" FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2"/>
+                        <Slider x:Name="HelmetsSlider"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="0"
+                                IsSnapToTickEnabled="True"
+                                TickFrequency="1"
+                                ValueChanged="ObjectTypeSlider_ValueChanged"/>
+                    </StackPanel>
+
+                    <!-- Llaves slider -->
+                    <StackPanel Grid.Row="0" Grid.Column="3" Margin="8,0,0,8">
+                        <TextBlock Text="🔑 Llaves" FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2"/>
+                        <Slider x:Name="KeysSlider"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="1"
+                                IsSnapToTickEnabled="True"
+                                TickFrequency="1"
+                                ValueChanged="ObjectTypeSlider_ValueChanged"/>
+                    </StackPanel>
+
+                    <!-- Segunda fila: Comida, Bebidas, Textos, Otros -->
+
+                    <!-- Comida slider -->
+                    <StackPanel x:Name="FoodPanel" Grid.Row="1" Grid.Column="0" Margin="0,0,8,0">
+                        <TextBlock x:Name="FoodLabel" Text="🍎 Comida" FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2"/>
+                        <Slider x:Name="FoodSlider"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="1"
+                                IsSnapToTickEnabled="True"
+                                TickFrequency="1"
+                                ValueChanged="ObjectTypeSlider_ValueChanged"/>
+                    </StackPanel>
+
+                    <!-- Bebida slider -->
+                    <StackPanel x:Name="DrinksPanel" Grid.Row="1" Grid.Column="1" Margin="8,0,8,0">
+                        <TextBlock x:Name="DrinksLabel" Text="🍺 Bebidas" FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2"/>
+                        <Slider x:Name="DrinksSlider"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="1"
+                                IsSnapToTickEnabled="True"
+                                TickFrequency="1"
+                                ValueChanged="ObjectTypeSlider_ValueChanged"/>
+                    </StackPanel>
+
+                    <!-- Textos slider -->
+                    <StackPanel Grid.Row="1" Grid.Column="2" Margin="8,0,8,0">
+                        <TextBlock Text="📜 Textos" FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2"/>
+                        <Slider x:Name="TextsSlider"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="1"
+                                IsSnapToTickEnabled="True"
+                                TickFrequency="1"
+                                ValueChanged="ObjectTypeSlider_ValueChanged"/>
+                    </StackPanel>
+
+                    <!-- Otros slider -->
+                    <StackPanel Grid.Row="1" Grid.Column="3" Margin="8,0,0,0">
+                        <TextBlock Text="📦 Otros" FontSize="10" Foreground="#BBBBBB" Margin="0,0,0,2"/>
+                        <Slider x:Name="OtherObjectsSlider"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="2"
+                                IsSnapToTickEnabled="True"
+                                TickFrequency="1"
+                                ValueChanged="ObjectTypeSlider_ValueChanged"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- Instructions -->
+        <Border Grid.Row="2"
+                Background="#2E3D2E"
+                CornerRadius="6"
+                Padding="12"
+                Margin="0,0,0,12">
+            <StackPanel HorizontalAlignment="Center">
+                <TextBlock FontSize="12" Foreground="#BBBBBB" TextWrapping="Wrap" TextAlignment="Center">
+                    <Run FontWeight="SemiBold" Foreground="#90EE90">1.</Run> Copia el prompt →
+                    <Run FontWeight="SemiBold" Foreground="#90EE90">2.</Run> Pégalo en ChatGPT/Claude →
+                    <Run FontWeight="SemiBold" Foreground="#90EE90">3.</Run> Descarga el archivo .xaw →
+                    <Run FontWeight="SemiBold" Foreground="#90EE90">4.</Run> Ábrelo en el editor
+                </TextBlock>
+                <TextBlock FontSize="11" Foreground="#AAAAAA" TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,0">
+                    💡 Para mundos grandes, la IA puede generar varias zonas en archivos .json separados.
+                    <LineBreak/>
+                    Usa el botón "Unir zonas .json" en la pantalla de inicio o en el editor para combinarlas.
+                </TextBlock>
+            </StackPanel>
+        </Border>
+
+        <!-- Prompt TextBox (oculto pero funcional para copiar) -->
+        <TextBox x:Name="PromptTextBox"
+                 Grid.Row="3"
+                 Visibility="Collapsed"
+                 IsReadOnly="True"
+                 TextWrapping="Wrap"
+                 AcceptsReturn="True"
+                 VerticalScrollBarVisibility="Auto"
+                 HorizontalScrollBarVisibility="Disabled"
+                 Background="#1E1E1E"
+                 Foreground="#D4D4D4"
+                 BorderBrush="#555555"
+                 BorderThickness="1"
+                 Padding="12"
+                 FontFamily="Consolas"
+                 FontSize="11"/>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="4"
+                    Margin="0,16,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="CopyButton"
+                        Grid.Column="0"
+                        Content="📋 Copiar al portapapeles"
+                        Height="36"
+                        Background="#4CAF50"
+                        Foreground="White"
+                        FontWeight="SemiBold"
+                        Click="CopyButton_Click">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="#5CBF60"
+                                    BorderThickness="1"
+                                    CornerRadius="4">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Border" Property="Background" Value="#5CBF60"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <Button x:Name="GenerateLocalButton"
+                        Grid.Column="2"
+                        Content="🤖 Generar con IA local"
+                        Height="36"
+                        Background="#2196F3"
+                        Foreground="White"
+                        FontWeight="SemiBold"
+                        Click="GenerateLocalButton_Click">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="#42A5F5"
+                                    BorderThickness="1"
+                                    CornerRadius="4">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Border" Property="Background" Value="#42A5F5"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Border" Property="Background" Value="#555555"/>
+                                    <Setter Property="Foreground" Value="#888888"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </Grid>
+
+            <!-- Progress bar para generación -->
+            <ProgressBar x:Name="GeneratingProgressBar"
+                         Height="8"
+                         Margin="0,12,0,0"
+                         IsIndeterminate="True"
+                         Visibility="Collapsed"
+                         Foreground="#2196F3"
+                         Background="#333333"/>
+        </StackPanel>
+    </Grid>
+</Window>
