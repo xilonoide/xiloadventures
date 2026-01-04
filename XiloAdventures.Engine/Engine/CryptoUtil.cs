@@ -53,7 +53,7 @@ public static class CryptoUtil
 
         using var fs = new FileStream(path, FileMode.Create, FileAccess.Write);
         using var crypto = new CryptoStream(fs, aes.CreateEncryptor(), CryptoStreamMode.Write);
-        using var sw = new StreamWriter(crypto, Encoding.UTF8);
+        using var sw = new StreamWriter(crypto, new UTF8Encoding(false));
         sw.Write(plainText);
     }
 
@@ -72,7 +72,21 @@ public static class CryptoUtil
             using var ms = new MemoryStream(bytes);
             using var crypto = new CryptoStream(ms, aes.CreateDecryptor(), CryptoStreamMode.Read);
             using var sr = new StreamReader(crypto, Encoding.UTF8);
-            return sr.ReadToEnd();
+            var content = sr.ReadToEnd();
+
+            // Eliminar BOM si existe (compatibilidad con archivos antiguos)
+            // Caso 1: BOM como caracter Unicode U+FEFF
+            if (content.Length > 0 && content[0] == '\uFEFF')
+            {
+                content = content.Substring(1);
+            }
+            // Caso 2: BOM como bytes interpretados incorrectamente (EF BB BF -> chars 239, 187, 191)
+            else if (content.Length >= 3 && content[0] == (char)0xEF && content[1] == (char)0xBB && content[2] == (char)0xBF)
+            {
+                content = content.Substring(3);
+            }
+
+            return content;
         }
         catch
         {

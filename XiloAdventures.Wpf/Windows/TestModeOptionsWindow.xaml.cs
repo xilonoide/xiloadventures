@@ -1,7 +1,8 @@
+using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Navigation;
-using System.Diagnostics;
 using XiloAdventures.Wpf.Common.Windows;
 
 namespace XiloAdventures.Wpf.Windows;
@@ -62,6 +63,17 @@ public partial class TestModeOptionsWindow : Window
         set => AiCheckBox.IsChecked = value;
     }
 
+    public bool UseLinuxMode
+    {
+        get => LinuxRadio.IsChecked == true;
+        set
+        {
+            LinuxRadio.IsChecked = value;
+            WindowsRadio.IsChecked = !value;
+            UpdateSoundControlsForPlatform();
+        }
+    }
+
     private void SoundCheckBox_Changed(object sender, RoutedEventArgs e)
     {
         UpdateSlidersEnabled();
@@ -69,11 +81,76 @@ public partial class TestModeOptionsWindow : Window
 
     private void UpdateSlidersEnabled()
     {
-        var enabled = SoundCheckBox.IsChecked == true;
+        var enabled = SoundCheckBox.IsChecked == true && SoundCheckBox.IsEnabled;
         MusicVolumeSlider.IsEnabled = enabled;
         EffectsVolumeSlider.IsEnabled = enabled;
         VoiceVolumeSlider.IsEnabled = enabled;
         MasterVolumeSlider.IsEnabled = enabled;
+    }
+
+    private void UpdateSoundControlsForPlatform()
+    {
+        var isLinux = LinuxRadio.IsChecked == true;
+
+        // En Linux (Docker) no hay sonido disponible
+        SoundCheckBox.IsEnabled = !isLinux;
+        SoundDisabledNote.Visibility = isLinux ? Visibility.Visible : Visibility.Collapsed;
+        if (isLinux)
+        {
+            SoundCheckBox.IsChecked = false;
+        }
+        UpdateSlidersEnabled();
+    }
+
+    private async void PlatformRadio_Checked(object sender, RoutedEventArgs e)
+    {
+        // Evitar ejecución durante la inicialización del XAML
+        if (!IsLoaded) return;
+
+        UpdateSoundControlsForPlatform();
+
+        // Verificar Docker cuando se selecciona Linux
+        if (LinuxRadio.IsChecked == true)
+        {
+            var dockerAvailable = await IsDockerAvailableAsync();
+            if (!dockerAvailable)
+            {
+                // Volver a Windows
+                WindowsRadio.IsChecked = true;
+                UpdateSoundControlsForPlatform();
+
+                new AlertWindow(
+                    "Docker Desktop es necesario para el modo pruebas Linux.\n\n" +
+                    "Por favor, instala Docker Desktop y asegúrate de que esté en ejecución.",
+                    "Docker no disponible") { Owner = this }.ShowDialog();
+            }
+        }
+    }
+
+    private async Task<bool> IsDockerAvailableAsync()
+    {
+        try
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "docker",
+                Arguments = "--version",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(startInfo);
+            if (process == null) return false;
+
+            await process.WaitForExitAsync();
+            return process.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private void MusicVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -117,26 +194,25 @@ public partial class TestModeOptionsWindow : Window
     {
         e.Handled = true; // Evitar que la ventana inicie el arrastre
 
-        var message = @"Si activas la IA, el modo pruebas intentará entender mejor comandos complejos o mal escritos. Además, si subes el volumen de voz en las opciones, oirás las descripciones de las salas.
+        var message = @"Si activas la IA, el juego intentará entender mejor comandos complejos o mal escritos. Además, si subes el volumen de voz en las opciones, oirás las descripciones de las salas.
 
-Para usarla debes tener Docker Desktop instalado y en ejecución.
+Para usarla debes tener Docker Desktop instalado. La primera vez que se use se descargarán algunos componentes y puede tardar unos minutos. Después funcionará muy rápido.
 
 📋 REQUISITOS DEL SISTEMA
 
 Mínimo:
 • RAM: 8 GB
 • GPU NVIDIA: No obligatoria (funciona con CPU)
-• Espacio en disco: ~15 GB
+• Espacio en disco: ~10 GB
 
 Recomendado:
 • RAM: 16 GB
 • GPU NVIDIA RTX con 6+ GB VRAM
-• Espacio en disco: ~20 GB
+• Espacio en disco: ~15 GB
 
 Componentes de IA:
 • Comprensión de comandos (llama3): ~5 GB RAM
 • Voz (Coqui TTS): ~2 GB RAM
-• Generación de imágenes (Stable Diffusion): ~4 GB RAM
 
 ⚡ Con GPU NVIDIA todo funciona más rápido, pero no es obligatorio.";
 
@@ -150,6 +226,7 @@ Componentes de IA:
         };
         hyperlink.Inlines.Add("Instala Docker Desktop");
         hyperlink.RequestNavigate += AiHelpLink_RequestNavigate;
+        link.Inlines.Add(new System.Windows.Documents.Run(""));
         link.Inlines.Add(hyperlink);
 
         var dlg = new AlertWindow(message, "Ayuda sobre la IA")

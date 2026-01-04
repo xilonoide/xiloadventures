@@ -11,6 +11,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.Win32;
+using XiloAdventures.Engine;
 using XiloAdventures.Engine.Models;
 using XiloAdventures.Engine.Models.Enums;
 using XiloAdventures.Wpf.Common.Windows;
@@ -1032,7 +1033,8 @@ public partial class PropertyEditor : UserControl
         if (name == PN.Dialogue) return 5;
         if (name == PN.ImageId) return 10;
         if (name == PN.ImageBase64) return 11;
-        if (name == PN.MusicId) return 12;
+        if (name == PN.AsciiImage) return 12;
+        if (name == PN.MusicId) return 13;
         if (name == PN.WorldMusicId) return 13;
 
         // QuestDefinition: orden específico (Id, Nombre, Misión principal, Descripción, Objetivos)
@@ -2432,6 +2434,120 @@ public partial class PropertyEditor : UserControl
                 editor = panel;
             }
 
+            // AsciiImage de Room: checkbox que genera ASCII desde ImageBase64
+            else if (prop.Name == PN.AsciiImage && prop.PropertyType == typeof(string) && obj is Room roomCheck)
+            {
+                bool hasAsciiImage = !string.IsNullOrEmpty(roomCheck.AsciiImage);
+                bool hasPngImage = !string.IsNullOrEmpty(roomCheck.ImageBase64);
+
+                var panel = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Margin = new Thickness(0, 6, 0, 0),
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+
+                var chk = new CheckBox
+                {
+                    IsChecked = hasAsciiImage,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    IsEnabled = hasPngImage || hasAsciiImage  // Solo habilitado si hay imagen PNG o ya tiene ASCII
+                };
+
+                var lbl = new TextBlock
+                {
+                    Text = !hasPngImage && !hasAsciiImage
+                        ? "(requiere imagen PNG)"
+                        : hasAsciiImage ? "(generada)" : "(pendiente)",
+                    Foreground = hasAsciiImage
+                        ? new SolidColorBrush(Color.FromRgb(0x88, 0xFF, 0x88))
+                        : new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88)),
+                    Margin = new Thickness(8, 0, 0, 0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    FontStyle = FontStyles.Italic
+                };
+
+                // Función para crear tooltip con estilo terminal
+                ToolTip CreateAsciiTooltip(string asciiArt)
+                {
+                    var tooltipText = new TextBlock
+                    {
+                        Text = asciiArt,
+                        FontFamily = new FontFamily("Consolas"),
+                        FontSize = 6,
+                        Foreground = new SolidColorBrush(Color.FromRgb(0x00, 0xFF, 0x00)),
+                        Background = Brushes.Black
+                    };
+
+                    return new ToolTip
+                    {
+                        Content = tooltipText,
+                        Background = Brushes.Black,
+                        BorderBrush = new SolidColorBrush(Color.FromRgb(0x00, 0x88, 0x00)),
+                        BorderThickness = new Thickness(1),
+                        Padding = new Thickness(4),
+                        MaxWidth = 1200
+                    };
+                }
+
+                // Establecer tooltip inicial si hay imagen ASCII
+                if (hasAsciiImage)
+                {
+                    var tooltip = CreateAsciiTooltip(roomCheck.AsciiImage!);
+                    chk.ToolTip = tooltip;
+                    lbl.ToolTip = tooltip;
+                }
+
+                chk.Checked += (_, _) =>
+                {
+                    try
+                    {
+                        if (_currentObject is Room targetRoom && !string.IsNullOrEmpty(targetRoom.ImageBase64))
+                        {
+                            // Generar ASCII desde la imagen PNG
+                            var asciiArt = AsciiConverter.ConvertFromBase64(targetRoom.ImageBase64, 160);
+                            targetRoom.AsciiImage = asciiArt;
+                            lbl.Text = "(generada)";
+                            lbl.Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0xFF, 0x88));
+
+                            // Actualizar tooltip
+                            var tooltip = CreateAsciiTooltip(asciiArt);
+                            chk.ToolTip = tooltip;
+                            lbl.ToolTip = tooltip;
+
+                            PropertyEdited?.Invoke(targetRoom, PN.AsciiImage);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        DarkErrorDialog.Show("Error al generar ASCII",
+                            $"No se pudo convertir la imagen a ASCII:\n{ex.Message}",
+                            Window.GetWindow(this));
+                        chk.IsChecked = false;
+                    }
+                };
+
+                chk.Unchecked += (_, _) =>
+                {
+                    if (_currentObject is Room targetRoom)
+                    {
+                        targetRoom.AsciiImage = null;
+                        lbl.Text = !string.IsNullOrEmpty(targetRoom.ImageBase64) ? "(pendiente)" : "(requiere imagen PNG)";
+                        lbl.Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88));
+
+                        // Quitar tooltip
+                        chk.ToolTip = null;
+                        lbl.ToolTip = null;
+
+                        PropertyEdited?.Invoke(targetRoom, PN.AsciiImage);
+                    }
+                };
+
+                panel.Children.Add(chk);
+                panel.Children.Add(lbl);
+                editor = panel;
+            }
+
 
             // MusicId de Room: ComboBox con las músicas disponibles
             else if (prop.Name == PN.MusicId && prop.PropertyType == typeof(string))
@@ -2944,6 +3060,7 @@ public partial class PropertyEditor : UserControl
         ["EncryptionKey"] = "Clave de cifrado de las partidas",
         ["ImageBase64"] = "Imagen (Base64)",
         ["ImageId"] = "Imagen (id)",
+        ["AsciiImage"] = "Imagen ASCII (Linux)",
         ["RoomId"] = "Sala",
         ["RoomIdA"] = "Sala A",
         ["RoomIdB"] = "Sala B",
@@ -3031,8 +3148,9 @@ public partial class PropertyEditor : UserControl
         ["Room.Zone"] = "Zona",
         ["Room.Description"] = "Descripción",
         ["Room.ImageBase64"] = "Imagen (Base64)",
-        ["Room.MusicId"] = "Música",
         ["Room.ImageId"] = "Imagen (id)",
+        ["Room.AsciiImage"] = "Imagen ASCII (Linux)",
+        ["Room.MusicId"] = "Música",
         ["Room.RequiredQuests"] = "Requisitos de misión",
 
         // Objeto

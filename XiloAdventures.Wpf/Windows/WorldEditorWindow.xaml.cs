@@ -2171,6 +2171,13 @@ public partial class WorldEditorWindow : Window
         if (_isPlayRunning)
             return;
 
+        // Si está activado el modo Linux, lanzar el proyecto de consola
+        if (_world.Game.TestModeUseLinux)
+        {
+            await LaunchLinuxTestModeAsync();
+            return;
+        }
+
         ShowPlayLoading("Guardando mundo...");
         await Dispatcher.Yield();
 
@@ -3539,7 +3546,8 @@ public partial class WorldEditorWindow : Window
             EffectsVolume = _world.Game.TestModeEffectsVolume,
             VoiceVolume = _world.Game.TestModeVoiceVolume,
             MasterVolume = _world.Game.TestModeMasterVolume,
-            AiEnabled = _world.Game.TestModeAiEnabled
+            AiEnabled = _world.Game.TestModeAiEnabled,
+            UseLinuxMode = _world.Game.TestModeUseLinux
         };
 
         optionsWindow.ShowDialog();
@@ -3551,6 +3559,7 @@ public partial class WorldEditorWindow : Window
         _world.Game.TestModeVoiceVolume = optionsWindow.VoiceVolume;
         _world.Game.TestModeMasterVolume = optionsWindow.MasterVolume;
         _world.Game.TestModeAiEnabled = optionsWindow.AiEnabled;
+        _world.Game.TestModeUseLinux = optionsWindow.UseLinuxMode;
         SetDirty(true);
     }
 
@@ -6189,36 +6198,62 @@ Escribe SOLO la descripción en español, 2-3 frases, sin incluir el nombre de l
             return;
         }
 
-        // Preguntar si quiere usar un icono personalizado
-        string? customIconPath = null;
-        var iconConfirmDlg = new ConfirmWindow(
-            "¿Deseas usar un icono personalizado para el ejecutable?\n\nArchivo .ico de resolución recomendada 256x256.\n\nSi eliges 'No', se usará el icono predeterminado de XiloAdventures.",
-            "Icono personalizado")
+        // Preguntar plataforma de exportación
+        var platformDlg = new ConfirmWindow(
+            "¿Para qué plataforma quieres exportar?\n\n• Windows: Ejecutable .exe con interfaz gráfica\n• Linux: Ejecutable para terminal (modo texto)",
+            "Seleccionar plataforma",
+            confirmText: "Windows",
+            cancelText: "Linux")
         {
             Owner = this
         };
 
-        if (iconConfirmDlg.ShowDialog() == true)
+        var platformResult = platformDlg.ShowDialog();
+        if (platformResult == null)
+            return; // Usuario cerró el diálogo
+
+        bool exportForWindows = platformResult == true;
+
+        // Para Windows, preguntar si quiere usar un icono personalizado
+        string? customIconPath = null;
+        if (exportForWindows)
         {
-            var iconDialog = new Microsoft.Win32.OpenFileDialog
+            var iconConfirmDlg = new ConfirmWindow(
+                "¿Deseas usar un icono personalizado para el ejecutable?\n\nArchivo .ico de resolución recomendada 256x256.\n\nSi eliges 'No', se usará el icono predeterminado de XiloAdventures.",
+                "Icono personalizado")
             {
-                Filter = "Iconos (*.ico)|*.ico",
-                Title = "Selecciona el icono para tu aventura"
+                Owner = this
             };
 
-            if (iconDialog.ShowDialog() == true)
+            if (iconConfirmDlg.ShowDialog() == true)
             {
-                customIconPath = iconDialog.FileName;
+                var iconDialog = new Microsoft.Win32.OpenFileDialog
+                {
+                    Filter = "Iconos (*.ico)|*.ico",
+                    Title = "Selecciona el icono para tu aventura"
+                };
+
+                if (iconDialog.ShowDialog() == true)
+                {
+                    customIconPath = iconDialog.FileName;
+                }
             }
         }
 
         // Seleccionar ubicación de salida
-        var saveDialog = new Microsoft.Win32.SaveFileDialog
+        var saveDialog = new Microsoft.Win32.SaveFileDialog();
+        if (exportForWindows)
         {
-            Filter = "Ejecutable (*.exe)|*.exe",
-            DefaultExt = ".exe",
-            FileName = $"{_world.Game.Title}.exe"
-        };
+            saveDialog.Filter = "Ejecutable (*.exe)|*.exe";
+            saveDialog.DefaultExt = ".exe";
+            saveDialog.FileName = $"{_world.Game.Title}.exe";
+        }
+        else
+        {
+            saveDialog.Filter = "Ejecutable Linux (*.*)|*.*";
+            saveDialog.DefaultExt = "";
+            saveDialog.FileName = _world.Game.Title?.Replace(" ", "_") ?? "adventure";
+        }
 
         if (saveDialog.ShowDialog() != true)
             return;
@@ -6226,16 +6261,27 @@ Escribe SOLO la descripción en español, 2-3 frases, sin incluir el nombre de l
         var outputPath = saveDialog.FileName;
 
         // Mostrar indicador de progreso
-        ShowPlayLoading("Exportando ejecutable...");
+        ShowPlayLoading("Exportando...");
 
         try
         {
-            await System.Threading.Tasks.Task.Run(() => ExportStandaloneExecutable(_currentPath, outputPath, customIconPath));
+            if (exportForWindows)
+            {
+                await System.Threading.Tasks.Task.Run(() => ExportStandaloneExecutable(_currentPath, outputPath, customIconPath));
+            }
+            else
+            {
+                await System.Threading.Tasks.Task.Run(() => ExportLinuxExecutable(_currentPath, outputPath));
+            }
 
             HidePlayLoading();
 
+            var platformInfo = exportForWindows
+                ? "El jugador no necesitará .NET instalado para ejecutarlo."
+                : "El jugador deberá dar permisos de ejecución con: chmod +x " + System.IO.Path.GetFileName(outputPath);
+
             new AlertWindow(
-                $"Ejecutable creado exitosamente en:\n{outputPath}\n\nEl jugador no necesitará .NET instalado para ejecutarlo.",
+                $"Ejecutable creado exitosamente en:\n{outputPath}\n\n{platformInfo}",
                 "Exportación completada")
             {
                 Owner = this
@@ -6420,6 +6466,559 @@ Escribe SOLO la descripción en español, 2-3 frases, sin incluir el nombre de l
             }
 
             // Limpiar la carpeta extraída del ZIP
+            if (extractedSourceDir != null && System.IO.Directory.Exists(extractedSourceDir))
+            {
+                try { System.IO.Directory.Delete(extractedSourceDir, true); } catch { }
+            }
+        }
+    }
+
+    private async Task LaunchLinuxTestModeAsync()
+    {
+        try
+        {
+            // Guardar primero
+            if (!await PerformSaveAsync())
+            {
+                return;
+            }
+
+            if (string.IsNullOrEmpty(_currentPath))
+            {
+                new AlertWindow("Debes guardar el mundo antes de probarlo.", "Error") { Owner = this }.ShowDialog();
+                return;
+            }
+
+            // Buscar el proyecto Linux
+            var baseDir = AppContext.BaseDirectory;
+            string? linuxProjectPath = null;
+
+            var currentDir = new System.IO.DirectoryInfo(baseDir);
+            while (currentDir != null && !System.IO.File.Exists(System.IO.Path.Combine(currentDir.FullName, "XiloAdventures.sln")))
+            {
+                currentDir = currentDir.Parent;
+            }
+
+            if (currentDir != null)
+            {
+                linuxProjectPath = System.IO.Path.Combine(currentDir.FullName, "XiloAdventures.Linux.Player");
+            }
+
+            if (string.IsNullOrEmpty(linuxProjectPath) || !System.IO.Directory.Exists(linuxProjectPath))
+            {
+                new AlertWindow(
+                    "No se encontró el proyecto Linux.\n\n" +
+                    "El modo pruebas en consola solo está disponible en modo desarrollo.",
+                    "Error") { Owner = this }.ShowDialog();
+                return;
+            }
+
+            var linuxCsproj = System.IO.Path.Combine(linuxProjectPath, "XiloAdventures.Linux.Player.csproj");
+            if (!System.IO.File.Exists(linuxCsproj))
+            {
+                new AlertWindow(
+                    "No se encontró el proyecto XiloAdventures.Linux.Player.csproj",
+                    "Error") { Owner = this }.ShowDialog();
+                return;
+            }
+
+            // Docker es obligatorio para modo pruebas Linux
+            if (!await IsDockerAvailableAsync())
+            {
+                new AlertWindow(
+                    "Docker Desktop es necesario para el modo pruebas Linux.\n\n" +
+                    "Por favor, instala Docker Desktop y asegúrate de que esté en ejecución.",
+                    "Docker no disponible") { Owner = this }.ShowDialog();
+                return;
+            }
+
+            await LaunchWithDockerAsync(linuxCsproj, linuxProjectPath);
+        }
+        catch (Exception ex)
+        {
+            new AlertWindow($"Error al lanzar el modo pruebas Linux:\n\n{ex.Message}", "Error") { Owner = this }.ShowDialog();
+        }
+    }
+
+    private async Task<bool> IsDockerAvailableAsync()
+    {
+        try
+        {
+            // Verificar si Docker está instalado
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "docker",
+                Arguments = "--version",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = System.Diagnostics.Process.Start(startInfo);
+            if (process == null) return false;
+
+            await process.WaitForExitAsync();
+            if (process.ExitCode != 0) return false;
+
+            // Verificar si Docker está corriendo
+            startInfo.Arguments = "info";
+            using var infoProcess = System.Diagnostics.Process.Start(startInfo);
+            if (infoProcess == null) return false;
+
+            await infoProcess.WaitForExitAsync();
+
+            if (infoProcess.ExitCode != 0)
+            {
+                // Docker no está corriendo, intentar iniciarlo
+                return await TryStartDockerAsync();
+            }
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private async Task<bool> TryStartDockerAsync()
+    {
+        try
+        {
+            // Intentar iniciar Docker Desktop
+            var dockerDesktopPaths = new[]
+            {
+                System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Docker", "Docker", "Docker Desktop.exe"),
+                System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Docker", "Docker", "Docker Desktop.exe"),
+                System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Docker", "Docker Desktop.exe")
+            };
+
+            string? dockerPath = null;
+            foreach (var path in dockerDesktopPaths)
+            {
+                if (System.IO.File.Exists(path))
+                {
+                    dockerPath = path;
+                    break;
+                }
+            }
+
+            if (dockerPath == null)
+                return false;
+
+            // Iniciar Docker Desktop
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = dockerPath,
+                UseShellExecute = true
+            });
+
+            // Esperar hasta 60 segundos a que Docker esté listo
+            for (int i = 0; i < 30; i++)
+            {
+                await Task.Delay(2000);
+
+                var startInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "docker",
+                    Arguments = "info",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
+
+                using var process = System.Diagnostics.Process.Start(startInfo);
+                if (process != null)
+                {
+                    await process.WaitForExitAsync();
+                    if (process.ExitCode == 0)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private async Task LaunchWithDockerAsync(string linuxCsproj, string linuxProjectPath)
+    {
+        // Obtener la ruta del proyecto raíz (donde está XiloAdventures.sln)
+        var solutionDir = new System.IO.DirectoryInfo(linuxProjectPath).Parent?.FullName;
+        if (solutionDir == null)
+        {
+            throw new InvalidOperationException("No se pudo determinar el directorio de la solución.");
+        }
+
+        // Copiar el mundo al proyecto Linux.Player para que lo encuentre
+        var worldDestPath = System.IO.Path.Combine(linuxProjectPath, "world.xaw");
+        System.IO.File.Copy(_currentPath!, worldDestPath, overwrite: true);
+
+        // Convertir rutas a formato Docker (forward slashes)
+        var dockerSolutionDir = solutionDir.Replace('\\', '/');
+
+        var tempId = Guid.NewGuid().ToString("N");
+        var batchPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"xilo_test_docker_{tempId}.bat");
+        var dockerfilePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"xilo_dockerfile_{tempId}");
+
+        // Crear el Dockerfile temporal - SIMPLIFICADO (sin Docker-in-Docker)
+        var dockerfileContent = @"FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy
+RUN apt-get update && apt-get install -y libsdl2-2.0-0 && rm -rf /var/lib/apt/lists/*
+WORKDIR /app";
+        System.IO.File.WriteAllText(dockerfilePath, dockerfileContent);
+
+        // Argumentos de la app
+        var aiEnabled = _world.Game.TestModeAiEnabled;
+        var appArgs = "--sound-off" + (aiEnabled ? " --ia-on" : "");
+
+        // Script simple - solo compila y ejecuta (los servicios de IA corren en Docker Desktop)
+        var startupScript = "dotnet build -v q && dotnet run --no-build -- " + appArgs;
+
+        // Sección de IA: iniciar contenedores de Ollama y TTS desde Windows si están habilitados
+        // Nota: No usar subrutinas batch (call :label) porque causa problemas. Todo inline.
+        var aiSetupSection = "";
+        if (aiEnabled)
+        {
+            aiSetupSection = @"
+echo   [2/3] Iniciando servicios de IA...
+
+REM Detectar si hay GPU NVIDIA disponible para acelerar IA
+set GPU_FLAG=
+nvidia-smi >nul 2>&1
+if not errorlevel 1 (
+    set GPU_FLAG=--gpus all
+    echo         GPU NVIDIA detectada - usando aceleracion por hardware.
+)
+
+REM === OLLAMA ===
+REM Verificar si Ollama ya responde (puede estar corriendo y listo)
+curl -s http://localhost:11434/api/tags >nul 2>&1
+if not errorlevel 1 (
+    echo         Ollama listo.
+    goto OLLAMA_DONE
+)
+
+REM Ollama no responde, verificar si contenedor esta corriendo
+docker ps --filter name=xilo-ollama --format ""{{.ID}}"" 2>&1 | findstr . >nul 2>&1
+if not errorlevel 1 (
+    <nul set /p=""         Esperando Ollama ""
+    goto OLLAMA_WAIT_LOOP
+)
+
+REM Contenedor no esta corriendo, verificar si existe
+set OLLAMA_EXISTS=0
+docker ps -a --filter name=xilo-ollama --format ""{{.ID}}"" 2>&1 | findstr . >nul 2>&1
+if not errorlevel 1 set OLLAMA_EXISTS=1
+
+if ""!OLLAMA_EXISTS!""==""1"" (
+    <nul set /p=""         Iniciando Ollama ""
+    docker start xilo-ollama >nul 2>&1
+    goto OLLAMA_WAIT_LOOP
+)
+
+REM Contenedor no existe, hay que crearlo (descarga imagen ~1GB)
+echo         Descargando imagen Ollama ^(~1 GB^)...
+echo.
+docker pull ollama/ollama:latest
+echo.
+<nul set /p=""         Creando contenedor Ollama ""
+docker run -d --name xilo-ollama !GPU_FLAG! -p 11434:11434 -v xilo-ollama:/root/.ollama ollama/ollama:latest >nul 2>&1
+
+:OLLAMA_WAIT_LOOP
+set OLLAMA_WAIT=0
+:OLLAMA_CHECK
+curl -s http://localhost:11434/api/tags >nul 2>&1
+if not errorlevel 1 (
+    echo  [OK]
+    goto OLLAMA_DONE
+)
+set /a OLLAMA_WAIT+=1
+<nul set /p="".""
+timeout /t 1 /nobreak >nul
+if !OLLAMA_WAIT! LSS 60 goto OLLAMA_CHECK
+echo  [Timeout - Ollama no responde]
+:OLLAMA_DONE
+
+REM TTS no se usa en modo Linux (Docker no puede reproducir audio)
+
+echo   [3/3] Verificando modelo de IA...
+REM Verificar si el modelo ya existe
+docker exec xilo-ollama ollama list 2>nul | findstr /i ""llama3"" >nul 2>&1
+if errorlevel 1 (
+    echo         Descargando modelo llama3.2:3b...
+    echo.
+    docker exec xilo-ollama ollama pull llama3.2:3b
+    if errorlevel 1 (
+        echo.
+        echo   [!] Advertencia: No se pudo descargar el modelo.
+        echo       La IA podria no funcionar correctamente.
+        echo.
+    ) else (
+        echo.
+        echo         [OK] Modelo descargado correctamente.
+    )
+) else (
+    echo         Modelo llama3 ya descargado.
+)
+
+";
+        }
+
+        var stepCount = aiEnabled ? "1/3" : "1/2";
+        var stepCount2 = aiEnabled ? "" : "echo   [2/2] Iniciando Ubuntu 22.04...\necho.";
+
+        var logPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "xilo_test_mode.log");
+        var batchContent = $@"@echo off
+setlocal enabledelayedexpansion
+
+REM Crear archivo de log para diagnostico
+echo [%date% %time%] Iniciando modo pruebas Linux > ""{logPath}""
+echo Directorio actual: %CD% >> ""{logPath}""
+
+echo.
+echo   ================================================================
+echo            XILO ADVENTURES - Modo Pruebas Linux
+echo   ================================================================
+echo.
+
+REM Verificar Docker
+echo Verificando Docker... >> ""{logPath}""
+docker --version >> ""{logPath}"" 2>&1
+if errorlevel 1 (
+    echo   [ERROR] Docker no esta disponible o no esta corriendo.
+    echo   [ERROR] Docker no disponible >> ""{logPath}""
+    echo   Por favor, asegurate de que Docker Desktop este instalado y corriendo.
+    echo.
+    echo   Log guardado en: {logPath}
+    pause
+    exit /b 1
+)
+echo Docker OK >> ""{logPath}""
+
+REM Verificar si la imagen existe, si no, crearla
+echo Verificando imagen xilo-linux-player... >> ""{logPath}""
+docker image inspect xilo-linux-player:latest >nul 2>&1
+if errorlevel 1 (
+    echo   [{stepCount}] Creando imagen Docker con Ubuntu 22.04...
+    echo         Esto puede tardar unos minutos la primera vez.
+    echo.
+    echo Creando imagen... >> ""{logPath}""
+    docker build -q -t xilo-linux-player:latest -f ""{dockerfilePath}"" . >> ""{logPath}"" 2>&1
+    if errorlevel 1 (
+        echo   [X] Error al crear la imagen Docker.
+        echo   [X] Error creando imagen >> ""{logPath}""
+        echo.
+        echo   Log guardado en: {logPath}
+        pause
+        del ""{dockerfilePath}"" 2>nul
+        del ""%~f0""
+        exit /b 1
+    )
+    echo   [OK] Imagen creada correctamente.
+    echo Imagen creada OK >> ""{logPath}""
+    echo.
+) else (
+    echo Imagen ya existe >> ""{logPath}""
+)
+{aiSetupSection}
+{stepCount2}
+
+REM Parar contenedor si esta corriendo (por si se cerro mal la ultima vez)
+docker stop xilo-linux-test >nul 2>&1
+
+REM Verificar si el contenedor ya existe
+docker inspect xilo-linux-test >nul 2>&1
+if errorlevel 1 (
+    REM Contenedor no existe, crearlo en modo detached
+    docker run -d --name xilo-linux-test ^
+        --add-host=host.docker.internal:host-gateway ^
+        -v ""{dockerSolutionDir}:/app"" ^
+        -w /app/XiloAdventures.Linux.Player ^
+        xilo-linux-player:latest ^
+        tail -f /dev/null >nul 2>&1
+    if errorlevel 1 (
+        echo   [X] Error al crear el contenedor Docker.
+        echo.
+        pause
+        del ""{dockerfilePath}"" 2>nul
+        del ""%~f0""
+        exit /b 1
+    )
+    echo         Contenedor creado.
+) else (
+    echo         Reutilizando contenedor existente.
+)
+
+REM Iniciar contenedor si esta parado
+docker start xilo-linux-test >nul 2>&1
+
+REM Ejecutar el juego dentro del contenedor
+docker exec -it xilo-linux-test bash -c ""{startupScript}""
+
+REM Parar contenedor al terminar
+echo.
+echo   Deteniendo contenedor...
+docker stop xilo-linux-test >nul 2>&1
+
+echo.
+echo Fin de sesion >> ""{logPath}""
+echo   Log guardado en: {logPath}
+echo   Presiona una tecla para cerrar...
+pause >nul
+
+del ""{dockerfilePath}"" 2>nul
+del ""%~f0""
+";
+        System.IO.File.WriteAllText(batchPath, batchContent);
+
+        // Intentar usar Windows Terminal si está disponible (mejor soporte de resize y terminal)
+        // Si no, usar CMD como fallback
+        var wtPath = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            @"Microsoft\WindowsApps\wt.exe");
+
+        System.Diagnostics.ProcessStartInfo startInfo;
+        if (System.IO.File.Exists(wtPath))
+        {
+            // Windows Terminal disponible - mejor soporte de terminal
+            startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = wtPath,
+                Arguments = $"--title \"Xilo Adventures - Modo Pruebas Linux\" cmd /c \"\"{batchPath}\"\"",
+                UseShellExecute = false
+            };
+        }
+        else
+        {
+            // Fallback a CMD
+            startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = batchPath,
+                UseShellExecute = true
+            };
+        }
+        System.Diagnostics.Process.Start(startInfo);
+
+        await Task.CompletedTask; // Método es async pero no necesita await aquí
+    }
+
+    private void ExportLinuxExecutable(string worldPath, string outputPath)
+    {
+        // Buscar el proyecto Linux
+        var baseDir = AppContext.BaseDirectory;
+        string? linuxProjectPath = null;
+        string? extractedSourceDir = null;
+
+        // 1. Primero buscar en modo desarrollo
+        var currentDir = new System.IO.DirectoryInfo(baseDir);
+        while (currentDir != null && !System.IO.File.Exists(System.IO.Path.Combine(currentDir.FullName, "XiloAdventures.sln")))
+        {
+            currentDir = currentDir.Parent;
+        }
+
+        if (currentDir != null)
+        {
+            linuxProjectPath = System.IO.Path.Combine(currentDir.FullName, "XiloAdventures.Linux.Player");
+        }
+        else
+        {
+            // 2. Buscar SourceToExportLinux.zip
+            var sourceZipPath = System.IO.Path.Combine(baseDir, "SourceToExportLinux.zip");
+            if (System.IO.File.Exists(sourceZipPath))
+            {
+                extractedSourceDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"XiloAdventures_Source_{Guid.NewGuid():N}");
+                System.IO.Compression.ZipFile.ExtractToDirectory(sourceZipPath, extractedSourceDir);
+                linuxProjectPath = System.IO.Path.Combine(extractedSourceDir, "XiloAdventures.Linux.Player");
+            }
+        }
+
+        if (string.IsNullOrEmpty(linuxProjectPath) || !System.IO.Directory.Exists(linuxProjectPath))
+        {
+            throw new InvalidOperationException(
+                "No se encontró el código fuente del Player para Linux.\n\n" +
+                "Asegúrate de tener instalado el .NET 8 SDK y que el archivo SourceToExportLinux.zip esté disponible.");
+        }
+
+        var linuxCsproj = System.IO.Path.Combine(linuxProjectPath, "XiloAdventures.Linux.Player.csproj");
+        if (!System.IO.File.Exists(linuxCsproj))
+        {
+            throw new InvalidOperationException(
+                $"No se encontró el proyecto Linux en:\n{linuxProjectPath}");
+        }
+
+        // Copiar el mundo al proyecto Linux
+        var worldDestPath = System.IO.Path.Combine(linuxProjectPath, "world.xaw");
+        System.IO.File.Copy(worldPath, worldDestPath, true);
+
+        try
+        {
+            // Compilar para Linux
+            var publishDir = System.IO.Path.Combine(linuxProjectPath, "bin", "publish-linux");
+            if (System.IO.Directory.Exists(publishDir))
+            {
+                System.IO.Directory.Delete(publishDir, true);
+            }
+
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = $"publish \"{linuxCsproj}\" -c Release -r linux-x64 --self-contained true -o \"{publishDir}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = System.Diagnostics.Process.Start(startInfo);
+            if (process == null)
+            {
+                throw new InvalidOperationException("No se pudo iniciar el proceso de compilación.");
+            }
+
+            process.WaitForExit();
+
+            if (process.ExitCode != 0)
+            {
+                var error = process.StandardError.ReadToEnd();
+                throw new InvalidOperationException(
+                    $"Error al compilar el ejecutable Linux (código {process.ExitCode}):\n\n{error}");
+            }
+
+            // El ejecutable en Linux no tiene extensión
+            var compiledExePath = System.IO.Path.Combine(publishDir, "XiloAdventures.Linux.Player");
+            if (!System.IO.File.Exists(compiledExePath))
+            {
+                throw new InvalidOperationException(
+                    $"No se encontró el ejecutable compilado en:\n{compiledExePath}");
+            }
+
+            try
+            {
+                System.IO.File.Copy(compiledExePath, outputPath, true);
+            }
+            catch (System.IO.IOException)
+            {
+                throw new InvalidOperationException(
+                    "No se puede guardar el archivo porque está en uso.\n\n" +
+                    "Cierra el ejecutable antes de volver a exportar.");
+            }
+        }
+        finally
+        {
+            // Limpiar
+            if (extractedSourceDir == null)
+            {
+                if (System.IO.File.Exists(worldDestPath))
+                {
+                    try { System.IO.File.Delete(worldDestPath); } catch { }
+                }
+            }
+
             if (extractedSourceDir != null && System.IO.Directory.Exists(extractedSourceDir))
             {
                 try { System.IO.Directory.Delete(extractedSourceDir, true); } catch { }

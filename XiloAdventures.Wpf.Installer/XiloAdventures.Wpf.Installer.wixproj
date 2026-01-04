@@ -20,9 +20,10 @@
     <!-- Archivos del instalador -->
     <Content Include="License.rtf" />
     <Content Include="SourceToExportEXE.zip" />
+    <Content Include="SourceToExportLinux.zip" />
   </ItemGroup>
 
-  <!-- Target para crear el ZIP con el código fuente antes de compilar -->
+  <!-- Target para crear el ZIP con el código fuente para Windows antes de compilar -->
   <Target Name="CreateSourceZip" BeforeTargets="Build;Compile">
     <PropertyGroup>
       <SourceZipPath>$(MSBuildProjectDirectory)\SourceToExportEXE.zip</SourceZipPath>
@@ -47,6 +48,32 @@
     <Exec Command="powershell -NoProfile -Command &quot;try { Compress-Archive -Path '$(TempSourceDir)\*' -DestinationPath '$(SourceZipPath)' -Force } finally { if (Test-Path '$(TempSourceDir)') { Remove-Item -Recurse -Force '$(TempSourceDir)' } }&quot;" />
 
     <Message Text="Created SourceToExportEXE.zip with Engine, Common and Player projects" Importance="high" />
+  </Target>
+
+  <!-- Target para crear el ZIP con el código fuente para Linux antes de compilar -->
+  <Target Name="CreateLinuxSourceZip" BeforeTargets="Build;Compile" AfterTargets="CreateSourceZip">
+    <PropertyGroup>
+      <LinuxSourceZipPath>$(MSBuildProjectDirectory)\SourceToExportLinux.zip</LinuxSourceZipPath>
+      <TempLinuxSourceDir>$(MSBuildProjectDirectory)\temp_source_linux</TempLinuxSourceDir>
+    </PropertyGroup>
+
+    <!-- Eliminar ZIP anterior si existe -->
+    <Delete Files="$(LinuxSourceZipPath)" Condition="Exists('$(LinuxSourceZipPath)')" />
+
+    <!-- Eliminar carpeta temporal si existe -->
+    <RemoveDir Directories="$(TempLinuxSourceDir)" Condition="Exists('$(TempLinuxSourceDir)')" />
+
+    <!-- Crear estructura de carpetas temporal -->
+    <MakeDir Directories="$(TempLinuxSourceDir)" />
+
+    <!-- Copiar proyectos necesarios para Linux (Engine y Linux.Player) -->
+    <Exec Command="robocopy &quot;$(MSBuildProjectDirectory)\..\XiloAdventures.Engine&quot; &quot;$(TempLinuxSourceDir)\XiloAdventures.Engine&quot; /E /XD bin obj .vs /XF *.user" IgnoreExitCode="true" />
+    <Exec Command="robocopy &quot;$(MSBuildProjectDirectory)\..\XiloAdventures.Linux.Player&quot; &quot;$(TempLinuxSourceDir)\XiloAdventures.Linux.Player&quot; /E /XD bin obj .vs /XF *.user" IgnoreExitCode="true" />
+
+    <!-- Crear el ZIP usando PowerShell con try-finally para limpiar siempre -->
+    <Exec Command="powershell -NoProfile -Command &quot;try { Compress-Archive -Path '$(TempLinuxSourceDir)\*' -DestinationPath '$(LinuxSourceZipPath)' -Force } finally { if (Test-Path '$(TempLinuxSourceDir)') { Remove-Item -Recurse -Force '$(TempLinuxSourceDir)' } }&quot;" />
+
+    <Message Text="Created SourceToExportLinux.zip with Engine and Linux.Player projects" Importance="high" />
   </Target>
 
 </Project>

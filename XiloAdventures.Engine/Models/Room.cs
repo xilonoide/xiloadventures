@@ -43,6 +43,15 @@ public class Room
     public string? ImageBase64 { get; set; }
 
     /// <summary>
+    /// Representación ASCII de la imagen para el player de Linux.
+    /// Se genera a partir de ImageBase64 usando AsciiConverter.
+    /// [RESERVED FOR FUTURE USE - DO NOT DELETE]
+    /// This property is currently unused but preserved for future ASCII image support.
+    /// </summary>
+    [Browsable(false)]
+    public string? AsciiImage { get; set; }
+
+    /// <summary>
     /// ID de la música de fondo de la sala.
     /// </summary>
     public string? MusicId { get; set; }

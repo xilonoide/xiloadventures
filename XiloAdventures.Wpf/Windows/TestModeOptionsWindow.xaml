@@ -22,10 +22,17 @@
                 <StackPanel>
                     <CheckBox x:Name="SoundCheckBox"
                               Content="Sonido activado"
-                              Margin="0,0,0,12"
+                              Margin="0,0,0,4"
                               Foreground="White"
                               Checked="SoundCheckBox_Changed"
                               Unchecked="SoundCheckBox_Changed"/>
+                    <TextBlock x:Name="SoundDisabledNote"
+                               Text="En el ejecutable exportado sí sonará. Esto es una limitación de Docker."
+                               FontSize="11"
+                               Foreground="#888888"
+                               Margin="20,0,0,8"
+                               TextWrapping="Wrap"
+                               Visibility="Collapsed"/>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6" VerticalAlignment="Center">
                         <TextBlock Text="Música:" Width="80" VerticalAlignment="Center" Margin="0,0,8,0"/>
@@ -86,6 +93,32 @@
                                    TextAlignment="Right"
                                    Margin="8,0,0,0"/>
                     </StackPanel>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Grupo de Plataforma -->
+            <GroupBox Header="Plataforma de prueba" Margin="0,0,0,15" Padding="10" Foreground="White">
+                <GroupBox.HeaderTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" FontWeight="Bold" Foreground="#FFB86C"/>
+                    </DataTemplate>
+                </GroupBox.HeaderTemplate>
+                <StackPanel>
+                    <RadioButton x:Name="WindowsRadio"
+                                 Content="Windows (WPF)"
+                                 IsChecked="True"
+                                 Foreground="White"
+                                 Margin="0,0,0,6"
+                                 Checked="PlatformRadio_Checked"/>
+                    <RadioButton x:Name="LinuxRadio"
+                                 Content="Linux (Consola)"
+                                 Foreground="White"
+                                 Checked="PlatformRadio_Checked"/>
+                    <TextBlock Text="Se ejecutará en Ubuntu 22.04 dentro de Docker. Requiere Docker Desktop."
+                               FontSize="11"
+                               Foreground="#888888"
+                               Margin="20,4,0,0"
+                               TextWrapping="Wrap"/>
                 </StackPanel>
             </GroupBox>
 

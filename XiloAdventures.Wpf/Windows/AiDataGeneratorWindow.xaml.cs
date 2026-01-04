@@ -17,6 +17,19 @@ using XiloAdventures.Wpf.Common.Windows;
 
 namespace XiloAdventures.Wpf.Windows;
 
+/// <summary>
+/// Modo de plataforma para generación de imágenes.
+/// [RESERVED FOR FUTURE USE - DO NOT DELETE]
+/// Currently only Windows mode is used. Linux ASCII mode is disabled but preserved.
+/// </summary>
+public enum ImagePlatformMode
+{
+    /// <summary>Imágenes gráficas para Windows (PNG/JPG).</summary>
+    Windows,
+    /// <summary>Arte ASCII para Linux (terminal). [RESERVED - Currently disabled]</summary>
+    Linux
+}
+
 public partial class AiDataGeneratorWindow : Window
 {
     private readonly WorldModel _world;
@@ -224,6 +237,7 @@ public partial class AiDataGeneratorWindow : Window
             .ToList();
 
         List<Room> roomsToGenerate;
+        ImagePlatformMode platformMode = ImagePlatformMode.Windows;
 
         if (roomsWithImages.Count > 0)
         {
@@ -248,6 +262,32 @@ public partial class AiDataGeneratorWindow : Window
         {
             roomsToGenerate = roomsWithoutImages;
         }
+
+        // [RESERVED FOR FUTURE USE - DO NOT DELETE]
+        // Platform selection dialog for Windows/Linux ASCII mode.
+        // Currently disabled - always uses Windows mode.
+        // To re-enable: uncomment the block below and the ASCII conversion blocks.
+        /*
+        if (roomsToGenerate.Count > 0)
+        {
+            var platformChoice = DarkChoiceDialog.Show(
+                "Plataforma: ",
+                "tipo de imagen",
+                "¿Para qué plataforma son las imágenes?\n\n" +
+                "• Windows: Imágenes gráficas PNG\n" +
+                "• Linux: Arte ASCII para terminal",
+                "Windows (Gráficos)",
+                "Linux (ASCII)",
+                this);
+
+            if (platformChoice == ChoiceResult.Cancel)
+                return;
+
+            platformMode = platformChoice == ChoiceResult.Option1
+                ? ImagePlatformMode.Windows
+                : ImagePlatformMode.Linux;
+        }
+        */
 
         // Nothing to do?
         int totalArticles = objectsToFix.Count + doorsToFix.Count;
@@ -380,13 +420,29 @@ public partial class AiDataGeneratorWindow : Window
                     {
                         ct.ThrowIfCancellationRequested();
                         var room = roomsToGenerate[i];
-                        progress($"[3/3] Generando imagen: {room.Name}...", currentStep);
+                        var modeLabel = platformMode == ImagePlatformMode.Linux ? "ASCII" : "imagen";
+                        progress($"[3/3] Generando {modeLabel}: {room.Name}...", currentStep);
 
                         try
                         {
-                            var imageBase64 = await GenerateRoomImageAsync(room, ct);
+                            var imageBase64 = await GenerateRoomImageAsync(room, platformMode, ct);
                             if (!string.IsNullOrEmpty(imageBase64))
                             {
+                                // [RESERVED FOR FUTURE USE - DO NOT DELETE]
+                                // ASCII conversion for Linux terminal mode.
+                                /*
+                                if (platformMode == ImagePlatformMode.Linux)
+                                {
+                                    // For Linux, convert to ASCII and store in AsciiImage
+                                    var asciiArt = AsciiConverter.ConvertFromBase64(imageBase64, 160);
+                                    room.AsciiImage = asciiArt;
+                                    room.ImageBase64 = imageBase64; // Also keep the original
+                                }
+                                else
+                                {
+                                    room.ImageBase64 = imageBase64;
+                                }
+                                */
                                 room.ImageBase64 = imageBase64;
                                 room.ImageId = null;
                                 ShowImagePreview(imageBase64, room.Name);
@@ -446,6 +502,7 @@ public partial class AiDataGeneratorWindow : Window
             .ToList();
 
         List<Room> roomsToGenerate;
+        ImagePlatformMode platformMode = ImagePlatformMode.Windows;
 
         // If some rooms already have images, ask user what to do
         if (roomsWithImages.Count > 0)
@@ -480,6 +537,28 @@ public partial class AiDataGeneratorWindow : Window
             roomsToGenerate = _world.Rooms.ToList();
         }
 
+        // [RESERVED FOR FUTURE USE - DO NOT DELETE]
+        // Platform selection dialog for Windows/Linux ASCII mode.
+        // Currently disabled - always uses Windows mode.
+        /*
+        var platformChoice = DarkChoiceDialog.Show(
+            "Plataforma: ",
+            "tipo de imagen",
+            "¿Para qué plataforma son las imágenes?\n\n" +
+            "• Windows: Imágenes gráficas PNG\n" +
+            "• Linux: Arte ASCII para terminal",
+            "Windows (Gráficos)",
+            "Linux (ASCII)",
+            this);
+
+        if (platformChoice == ChoiceResult.Cancel)
+            return;
+
+        platformMode = platformChoice == ChoiceResult.Option1
+            ? ImagePlatformMode.Windows
+            : ImagePlatformMode.Linux;
+        */
+
         // Confirm
         var confirmMessage = roomsToGenerate.Count == _world.Rooms.Count && roomsWithImages.Count > 0
             ? $"Se generarán imágenes para TODAS las {roomsToGenerate.Count} sala(s), sobrescribiendo las existentes.\n\n"
@@ -496,8 +575,9 @@ public partial class AiDataGeneratorWindow : Window
         if (!await EnsureDockerReadyAsync(includeOllama: true, includeStableDiffusion: true))
             return;
 
+        var modeLabel = platformMode == ImagePlatformMode.Linux ? "ASCII" : "imágenes";
         await RunProcessAsync(
-            $"Generando imágenes ({roomsToGenerate.Count} salas)",
+            $"Generando {modeLabel} ({roomsToGenerate.Count} salas)",
             roomsToGenerate.Count,
             async (progress, ct) =>
             {
@@ -505,13 +585,30 @@ public partial class AiDataGeneratorWindow : Window
                 {
                     ct.ThrowIfCancellationRequested();
                     var room = roomsToGenerate[i];
-                    progress($"Generando: {room.Name}...", i);
+                    var itemLabel = platformMode == ImagePlatformMode.Linux ? "ASCII" : "imagen";
+                    progress($"Generando {itemLabel}: {room.Name}...", i);
 
                     try
                     {
-                        var imageBase64 = await GenerateRoomImageAsync(room, ct);
+                        var imageBase64 = await GenerateRoomImageAsync(room, platformMode, ct);
+
                         if (!string.IsNullOrEmpty(imageBase64))
                         {
+                            // [RESERVED FOR FUTURE USE - DO NOT DELETE]
+                            // ASCII conversion for Linux terminal mode.
+                            /*
+                            if (platformMode == ImagePlatformMode.Linux)
+                            {
+                                // For Linux, convert to ASCII and store in AsciiImage
+                                var asciiArt = AsciiConverter.ConvertFromBase64(imageBase64, 160);
+                                room.AsciiImage = asciiArt;
+                                room.ImageBase64 = imageBase64; // Also keep the original
+                            }
+                            else
+                            {
+                                room.ImageBase64 = imageBase64;
+                            }
+                            */
                             room.ImageBase64 = imageBase64;
                             room.ImageId = null; // Mark as AI-generated
                             ShowImagePreview(imageBase64, room.Name);
@@ -920,28 +1017,58 @@ public partial class AiDataGeneratorWindow : Window
         });
     }
 
-    private async Task<string?> GenerateRoomImageAsync(Room room, CancellationToken ct)
+    private async Task<string?> GenerateRoomImageAsync(Room room, ImagePlatformMode platformMode, CancellationToken ct)
     {
-        // Use Ollama to create a condensed prompt (CLIP only handles 77 tokens)
-        var prompt = await GenerateImagePromptAsync(room, ct);
-        if (string.IsNullOrEmpty(prompt))
+        string prompt;
+        string negativePrompt;
+        int steps;
+        double guidanceScale;
+
+        // [RESERVED FOR FUTURE USE - DO NOT DELETE]
+        // Linux ASCII mode prompt generation - currently disabled.
+        /*
+        if (platformMode == ImagePlatformMode.Linux)
         {
-            // Fallback to basic prompt if Ollama fails
-            prompt = $"16-bit, {_world.Game.Theme ?? "fantasy"}, {room.Name}, atmospheric, detailed";
+            // Linux ASCII mode: Generate high-contrast images optimized for ASCII conversion
+            // CLIP has 77 token limit, so keep prompt concise with key terms first
+            var roomContext = await GenerateAsciiPromptAsync(room, ct);
+            var baseContext = !string.IsNullOrEmpty(roomContext)
+                ? roomContext
+                : $"{room.Name}";
+
+            // Optimized for 77 tokens: cinematic high-contrast for ASCII conversion
+            prompt = $"panoramic {baseContext}, high contrast silhouette, monochrome green phosphor on black, CRT glow, large solid shapes, clear edges, minimal detail, cinematic lighting";
+
+            negativePrompt = "text, letters, symbols, words, fine detail, noise, blur, colors";
+
+            steps = 35;          // DPM++ 2M Karras, 30-40 steps
+            guidanceScale = 7.0; // CFG 6-8
+        }
+        else
+        */
+        {
+            // Windows mode: Standard 16-bit style image
+            var generatedPrompt = await GenerateImagePromptAsync(room, ct);
+            prompt = !string.IsNullOrEmpty(generatedPrompt)
+                ? generatedPrompt
+                : $"16-bit, {_world.Game.Theme ?? "fantasy"}, {room.Name}, atmospheric, detailed";
+
+            negativePrompt = "text, watermark, signature, blurry, low quality, deformed";
+            steps = 10;          // DPM++ with Karras works well at 10 steps
+            guidanceScale = 7.0;
         }
 
         // Optimized for RTX 3080 Ti - using DPM++ 2M Karras scheduler for faster convergence
-        // DPM++ converges in fewer steps than Euler, 15 steps is enough for good quality
         var requestBody = new
         {
             modelInputs = new
             {
                 prompt,
-                negative_prompt = "text, watermark, signature, blurry, low quality, deformed",
+                negative_prompt = negativePrompt,
                 width = 1408,
                 height = 320,
-                num_inference_steps = 10,  // DPM++ with Karras works well at 10 steps
-                guidance_scale = 7.0       // Slightly lower for speed, still good quality
+                num_inference_steps = steps,
+                guidance_scale = guidanceScale
             },
             callInputs = new
             {
@@ -1078,6 +1205,77 @@ STRICT RULES:
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error generating prompt with Ollama: {ex.Message}");
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Uses Ollama to generate a very short scene description for ASCII art (max 20 words).
+    /// [RESERVED FOR FUTURE USE - DO NOT DELETE]
+    /// This method is currently unused but preserved for future Linux ASCII mode.
+    /// </summary>
+    private async Task<string?> GenerateAsciiPromptAsync(Room room, CancellationToken ct)
+    {
+        var contextParts = new List<string>();
+
+        if (!string.IsNullOrEmpty(_world.Game.Theme))
+            contextParts.Add($"Theme: {_world.Game.Theme}");
+
+        contextParts.Add($"Room: {room.Name}");
+
+        if (!string.IsNullOrEmpty(room.Description))
+            contextParts.Add($"Description: {room.Description}");
+
+        var context = string.Join(". ", contextParts);
+
+        var ollamaPrompt = $@"Create a very short scene description in English. Output ONLY the description, nothing else.
+
+{context}
+
+STRICT RULES:
+- Maximum 15 words
+- Describe ONLY the scene/location (not art style)
+- Translate to English if needed
+- Example: ""dark spaceship corridor with red emergency lights""
+- NO quotes, NO explanations, just the scene";
+
+        try
+        {
+            var requestBody = new
+            {
+                model = "llama3",
+                prompt = ollamaPrompt,
+                stream = false
+            };
+
+            var json = JsonSerializer.Serialize(requestBody);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _ollamaClient.PostAsync("api/generate", content, ct);
+            response.EnsureSuccessStatusCode();
+
+            var responseJson = await response.Content.ReadAsStringAsync(ct);
+            using var doc = JsonDocument.Parse(responseJson);
+
+            if (doc.RootElement.TryGetProperty("response", out var respElement))
+            {
+                var result = respElement.GetString()?.Trim();
+                if (!string.IsNullOrEmpty(result))
+                {
+                    // Clean up quotes and formatting
+                    result = result.Trim('"', '\'', '\n', '\r');
+                    result = result.Replace("\n", " ").Replace("\r", " ");
+                    while (result.Contains("  "))
+                        result = result.Replace("  ", " ");
+
+                    return result;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error generating ASCII prompt with Ollama: {ex.Message}");
         }
 
         return null;

@@ -84,11 +84,17 @@
               Source="..\XiloAdventures.Wpf\bin\publish\XiloAdventures.Wpf.exe"
               KeyPath="yes" />
       </Component>
-      <!-- ZIP con código fuente para exportar mundos a exe -->
+      <!-- ZIP con código fuente para exportar mundos a exe (Windows) -->
       <Component Id="SourceCodeZipComponent" Guid="A1A2A3A4-B5B6-C7C8-D9D0-E1E2E3E4E800">
         <File Id="SourceCodeZip"
               Name="SourceToExportEXE.zip"
               Source="SourceToExportEXE.zip" />
+      </Component>
+      <!-- ZIP con código fuente para exportar mundos a Linux -->
+      <Component Id="SourceCodeLinuxZipComponent" Guid="A1A2A3A4-B5B6-C7C8-D9D0-E1E2E3E4E801">
+        <File Id="SourceCodeLinuxZip"
+              Name="SourceToExportLinux.zip"
+              Source="SourceToExportLinux.zip" />
       </Component>
     </ComponentGroup>
 

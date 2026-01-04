@@ -544,12 +544,13 @@ public static class DockerService
 
         // Comando diferente según si hay GPU o no
         // Optimizations for RTX 3080 Ti: xformers, fp16, better memory allocation
+        // DNS settings to ensure HuggingFace connectivity
         string runCommand = hasGpu
             ? $"run -d --gpus all --name {StableDiffusionContainerName} -p 7860:8000 " +
+              $"--dns 8.8.8.8 --dns 8.8.4.4 " +
               $"-e PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512 " +
-              $"-e HF_HUB_ENABLE_HF_TRANSFER=1 " +
               $"-v {StableDiffusionContainerName}_cache:/root/.cache gadicc/diffusers-api:latest"
-            : $"run -d --name {StableDiffusionContainerName} -p 7860:8000 -v {StableDiffusionContainerName}_cache:/root/.cache gadicc/diffusers-api:latest";
+            : $"run -d --name {StableDiffusionContainerName} -p 7860:8000 --dns 8.8.8.8 --dns 8.8.4.4 -v {StableDiffusionContainerName}_cache:/root/.cache gadicc/diffusers-api:latest";
 
         await RunDockerCheckedAsync(runCommand, cancellationToken).ConfigureAwait(false);
 
@@ -564,6 +565,7 @@ public static class DockerService
         var stopwatch = Stopwatch.StartNew();
         int attempt = 0;
 
+        // Fase 1: Esperar a que el servidor HTTP esté activo
         while (attempt < maxAttempts && stopwatch.Elapsed < maxDuration)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -582,7 +584,7 @@ public static class DockerService
                 // Cualquier respuesta HTTP (incluso 405 Method Not Allowed) indica que el servidor está activo
                 var response = await client.GetAsync("/", cancellationToken).ConfigureAwait(false);
                 // Si obtenemos cualquier respuesta HTTP, el servidor está listo
-                return;
+                break;
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
@@ -600,7 +602,57 @@ public static class DockerService
             await Task.Delay(2500, cancellationToken).ConfigureAwait(false);
         }
 
-        throw new InvalidOperationException("Stable Diffusion no ha estado disponible tras 120 reintentos o 5 minutos de espera.");
+        if (attempt >= maxAttempts || stopwatch.Elapsed >= maxDuration)
+        {
+            throw new InvalidOperationException("Stable Diffusion no ha estado disponible tras 120 reintentos o 5 minutos de espera.");
+        }
+
+        // Fase 2: Precarga del modelo (warmup) - esto descarga el modelo si no está en caché
+        progress?.Report("Precargando modelo de Stable Diffusion (primera vez puede tardar varios minutos)...");
+        await WarmupStableDiffusionModelAsync(progress, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task WarmupStableDiffusionModelAsync(IProgress<string>? progress, CancellationToken cancellationToken)
+    {
+        using var client = new HttpClient
+        {
+            BaseAddress = new Uri("http://localhost:7860"),
+            Timeout = TimeSpan.FromMinutes(30) // La descarga del modelo puede tardar mucho
+        };
+
+        // Hacer una petición mínima para forzar la descarga/carga del modelo
+        var warmupRequest = new
+        {
+            modelInputs = new
+            {
+                prompt = "test",
+                width = 64,
+                height = 64,
+                num_inference_steps = 1
+            },
+            callInputs = new
+            {
+                MODEL_ID = "runwayml/stable-diffusion-v1-5",
+                PIPELINE = "StableDiffusionPipeline",
+                safety_checker = false,
+                requires_safety_checker = false
+            }
+        };
+
+        var json = System.Text.Json.JsonSerializer.Serialize(warmupRequest);
+        using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+        try
+        {
+            var response = await client.PostAsync("/", content, cancellationToken).ConfigureAwait(false);
+            // No nos importa si la imagen sale bien o mal, solo que el modelo se haya cargado
+            progress?.Report("Modelo de Stable Diffusion listo.");
+        }
+        catch (Exception ex)
+        {
+            // Si falla el warmup, continuamos - el modelo se cargará en la primera petición real
+            progress?.Report($"Advertencia: warmup falló ({ex.Message}), el modelo se cargará al generar.");
+        }
     }
 
     private static async Task<bool> IsContainerRunningAsync(string name, CancellationToken cancellationToken)

@@ -367,3 +367,7 @@ FodyWeavers.xsd
 
 # WiX Installer generated files
 XiloAdventures.Wpf.Installer/SourceToExportEXE.zip
+XiloAdventures.Wpf.Installer/SourceToExportLinux.zip
+
+# Temporary world file for Linux test mode
+XiloAdventures.Linux.Player/world.xaw

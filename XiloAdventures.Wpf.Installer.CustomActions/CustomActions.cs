@@ -68,8 +68,7 @@ public class CustomActions
                     "Esto incluye:\n" +
                     "- Contenedores de Xilo Adventures\n" +
                     "- Imágenes de Docker descargadas\n" +
-                    "- Datos WSL de Docker Desktop\n" +
-                    "- Docker Desktop (si está instalado)\n\n" +
+                    "- Volúmenes de datos de IA\n\n" +
                     "ADVERTENCIA: Si usas Docker para otros proyectos,\n" +
                     "esto podría afectar a tus otros contenedores.",
                     "Xilo Adventures - Eliminar datos de Docker",
@@ -204,17 +203,8 @@ public class CustomActions
             // 1. Detener contenedores de Xilo Adventures
             StopDockerContainers(session);
 
-            // 2. Eliminar contenedores e imágenes de Xilo
+            // 2. Eliminar contenedores, imágenes y volúmenes de Xilo
             RemoveXiloDockerResources(session);
-
-            // 3. Desinstalar Docker Desktop si existe
-            UninstallDockerDesktop(session);
-
-            // 4. Eliminar distros WSL de Docker
-            UnregisterDockerWslDistros(session);
-
-            // 5. Eliminar carpetas de Docker
-            DeleteDockerFolders(session);
 
             return ActionResult.Success;
         }
@@ -226,7 +216,7 @@ public class CustomActions
 
     private static void StopDockerContainers(Session session)
     {
-        var containers = new[] { "xilo-ollama", "xilo-tts", "xilo-stablediffusion" };
+        var containers = new[] { "xilo-ollama", "xilo-tts", "xilo-stablediffusion", "xilo-linux-test" };
 
         foreach (var container in containers)
         {
@@ -243,8 +233,8 @@ public class CustomActions
 
     private static void RemoveXiloDockerResources(Session session)
     {
-        var containers = new[] { "xilo-ollama", "xilo-tts", "xilo-stablediffusion" };
-
+        // Eliminar contenedores de Xilo
+        var containers = new[] { "xilo-ollama", "xilo-tts", "xilo-stablediffusion", "xilo-linux-test" };
         foreach (var container in containers)
         {
             try
@@ -257,8 +247,14 @@ public class CustomActions
             }
         }
 
-        // Eliminar volúmenes de Xilo por nombre
-        var volumes = new[] { "xilo-ollama", "xilo-tts", "xilo-stablediffusion" };
+        // Eliminar volúmenes de Xilo por nombre (incluido cache de Stable Diffusion)
+        var volumes = new[]
+        {
+            "xilo-ollama",
+            "xilo-tts",
+            "xilo-stablediffusion",
+            "xilo-stablediffusion_cache"
+        };
         foreach (var volume in volumes)
         {
             try
@@ -271,15 +267,47 @@ public class CustomActions
             }
         }
 
-        // Eliminar imágenes relacionadas con Xilo
+        // Eliminar cualquier volumen que contenga "xilo"
+        try
+        {
+            var output = RunProcessWithOutput("docker", "volume ls -q");
+            if (!string.IsNullOrEmpty(output))
+            {
+                foreach (var vol in output.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (vol.IndexOf("xilo", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        try { RunProcess("docker", $"volume rm -f {vol}"); } catch { }
+                    }
+                }
+            }
+        }
+        catch { }
+
+        // Eliminar imágenes relacionadas con Xilo y las usadas por la IA
         var images = new[]
         {
+            // Imágenes del modo pruebas Linux
+            "xilo-linux-player",
+            "xilo-linux-player:latest",
+            // Imágenes de Ollama
             "ollama/ollama",
             "ollama/ollama:latest",
+            // Imágenes de TTS
+            "ghcr.io/coqui-ai/tts",
             "ghcr.io/coqui-ai/tts:latest",
+            "ghcr.io/idiap/coqui-tts-cpu",
             "ghcr.io/idiap/coqui-tts-cpu:latest",
             "coqui/tts",
-            "stability-ai/stable-diffusion"
+            // Imágenes de Stable Diffusion
+            "stability-ai/stable-diffusion",
+            "gadicc/diffusers-api",
+            "gadicc/diffusers-api:latest",
+            // Imágenes base usadas por Xilo
+            "ubuntu:22.04",
+            "nvidia/cuda:12.2.0-base-ubuntu22.04",
+            // Imagen base del SDK de .NET usada para pruebas
+            "mcr.microsoft.com/dotnet/sdk:8.0-jammy"
         };
         foreach (var image in images)
         {
@@ -293,6 +321,23 @@ public class CustomActions
             }
         }
 
+        // Buscar y eliminar cualquier imagen que contenga "xilo"
+        try
+        {
+            var output = RunProcessWithOutput("docker", "images --format \"{{.Repository}}:{{.Tag}}\"");
+            if (!string.IsNullOrEmpty(output))
+            {
+                foreach (var img in output.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (img.IndexOf("xilo", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        try { RunProcess("docker", $"rmi -f {img}"); } catch { }
+                    }
+                }
+            }
+        }
+        catch { }
+
         // Limpiar volúmenes huérfanos
         try
         {
@@ -303,7 +348,7 @@ public class CustomActions
             // Ignorar errores
         }
 
-        // Limpiar imágenes huérfanas
+        // Limpiar imágenes huérfanas (dangling)
         try
         {
             RunProcess("docker", "image prune -f");
@@ -311,75 +356,6 @@ public class CustomActions
         catch
         {
             // Ignorar errores
-        }
-    }
-
-    private static void UninstallDockerDesktop(Session session)
-    {
-        var installerPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-            "Docker", "Docker", "Docker Desktop Installer.exe");
-
-        if (File.Exists(installerPath))
-        {
-            try
-            {
-                // Primero intentamos cerrar Docker Desktop
-                RunProcess("taskkill", "/IM \"Docker Desktop.exe\" /F");
-                RunProcess("taskkill", "/IM \"com.docker.backend.exe\" /F");
-
-                // Ejecutar el desinstalador
-                RunProcess(installerPath, "uninstall --quiet");
-            }
-            catch
-            {
-                // Ignorar errores
-            }
-        }
-    }
-
-    private static void UnregisterDockerWslDistros(Session session)
-    {
-        var distros = new[] { "docker-desktop", "docker-desktop-data" };
-
-        foreach (var distro in distros)
-        {
-            try
-            {
-                RunProcess("wsl.exe", $"--unregister {distro}");
-            }
-            catch
-            {
-                // Ignorar errores
-            }
-        }
-    }
-
-    private static void DeleteDockerFolders(Session session)
-    {
-        var folders = new[]
-        {
-            Environment.ExpandEnvironmentVariables(@"%LOCALAPPDATA%\Docker"),
-            Environment.ExpandEnvironmentVariables(@"%APPDATA%\Docker"),
-            Environment.ExpandEnvironmentVariables(@"%LOCALAPPDATA%\Docker Desktop"),
-            Environment.ExpandEnvironmentVariables(@"%APPDATA%\Docker Desktop"),
-            Environment.ExpandEnvironmentVariables(@"%PROGRAMDATA%\DockerDesktop"),
-            Environment.ExpandEnvironmentVariables(@"%PROGRAMDATA%\Docker"),
-        };
-
-        foreach (var folder in folders)
-        {
-            try
-            {
-                if (Directory.Exists(folder))
-                {
-                    Directory.Delete(folder, recursive: true);
-                }
-            }
-            catch
-            {
-                // Ignorar errores
-            }
         }
     }
 
@@ -409,5 +385,35 @@ public class CustomActions
         {
             // Ignorar errores
         }
+    }
+
+    private static string RunProcessWithOutput(string fileName, string arguments)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+
+            using var process = Process.Start(psi);
+            if (process != null)
+            {
+                var output = process.StandardOutput.ReadToEnd();
+                process.StandardError.ReadToEnd();
+                process.WaitForExit(30000);
+                return output;
+            }
+        }
+        catch
+        {
+            // Ignorar errores
+        }
+        return string.Empty;
     }
 }

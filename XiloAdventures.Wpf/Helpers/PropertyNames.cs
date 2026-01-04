@@ -37,6 +37,7 @@ public static class PropertyNames
     // === Multimedia ===
     public static readonly string ImageId = nameof(Room.ImageId);
     public static readonly string ImageBase64 = nameof(Room.ImageBase64);
+    public static readonly string AsciiImage = nameof(Room.AsciiImage);
     public static readonly string MusicId = nameof(Room.MusicId);
     public static readonly string WorldMusicId = nameof(GameInfo.WorldMusicId);
     public static readonly string EndingMusicId = nameof(GameInfo.EndingMusicId);

@@ -81,7 +81,7 @@ public class SoundManager : IDisposable
     /// Reproduce la música global del mundo a partir de un identificador de archivo
     /// y/o un contenido en Base64. Si ambos están vacíos se detiene la música global.
     /// </summary>
-    public void PlayWorldMusic(string? musicId, string? musicBase64)
+    public virtual void PlayWorldMusic(string? musicId, string? musicBase64)
     {
         if (!SoundEnabled)
         {
@@ -142,7 +142,7 @@ public class SoundManager : IDisposable
     /// - Si la sala tiene música propia: se reproduce la de la sala y, si hay música global, se deja en segundo plano con volumen 0.
     /// - Si la sala NO tiene música propia: se detiene la música de sala (si la hay) y se reestablece la música global (si existe).
     /// </summary>
-    public void PlayRoomMusic(string? musicId, string? musicBase64, string? worldMusicIdFallback, string? worldMusicBase64Fallback)
+    public virtual void PlayRoomMusic(string? musicId, string? musicBase64, string? worldMusicIdFallback, string? worldMusicBase64Fallback)
     {
         if (!SoundEnabled)
         {
@@ -308,7 +308,7 @@ public class SoundManager : IDisposable
         }
     }
 
-    public async Task PlayRoomDescriptionAsync(string roomId, string? text)
+    public virtual async Task PlayRoomDescriptionAsync(string roomId, string? text)
     {
         // Si el sonido está desactivado o la voz está suprimida, no hacer nada
         if (!SoundEnabled || SuppressVoicePlayback)
@@ -406,7 +406,7 @@ public class SoundManager : IDisposable
         => PlayRoomDescriptionAsync(string.Empty, text);
 
 
-    public void StopRoomMusic()
+    public virtual void StopRoomMusic()
     {
         _roomMusicLoopEnabled = false;
 
@@ -440,7 +440,7 @@ public class SoundManager : IDisposable
         }
     }
 
-    public void StopWorldMusic()
+    public virtual void StopWorldMusic()
     {
         _worldMusicLoopEnabled = false;
 
@@ -475,14 +475,14 @@ public class SoundManager : IDisposable
     }
 
 
-    public void StopMusic()
+    public virtual void StopMusic()
     {
         StopRoomMusic();
         StopWorldMusic();
         StopVoice();
     }
 
-    public void StopVoice()
+    public virtual void StopVoice()
     {
         try
         {
@@ -666,7 +666,7 @@ public class SoundManager : IDisposable
         }
     }
 
-    public void RefreshVolumes()
+    public virtual void RefreshVolumes()
     {
         if (!SoundEnabled)
         {
@@ -908,7 +908,7 @@ public class SoundManager : IDisposable
         return null;
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         StopMusic();
     }

@@ -28,12 +28,14 @@
                 <ColumnDefinition Width="8"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="0"
+            <Button x:Name="YesButton"
+                    Grid.Column="0"
                     Style="{StaticResource CommandButtonStyle}"
                     Content="Sí"
                     IsDefault="True"
                     Click="YesButton_Click"/>
-            <Button Grid.Column="2"
+            <Button x:Name="NoButton"
+                    Grid.Column="2"
                     Style="{StaticResource CommandButtonStyle}"
                     Content="No"
                     IsCancel="True"
