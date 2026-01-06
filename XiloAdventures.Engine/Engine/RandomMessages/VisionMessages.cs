@@ -21,4 +21,16 @@ public static partial class RandomMessages
         "Todo es negro como la boca de un lobo.",
         "No hay suficiente luz para ver."
     );
+
+    /// <summary>
+    /// Mensaje cuando está demasiado oscuro para interactuar con objetos.
+    /// </summary>
+    public static string TooDarkToInteract => Pick(
+        "Está demasiado oscuro para hacer eso.",
+        "No puedes hacer eso a oscuras.",
+        "Necesitas luz para poder interactuar con eso.",
+        "La oscuridad te impide hacerlo.",
+        "A ciegas no puedes hacer eso.",
+        "Sin luz es imposible."
+    );
 }

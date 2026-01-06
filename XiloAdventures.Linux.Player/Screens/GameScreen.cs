@@ -197,7 +197,9 @@ public class GameScreen
         ConsoleRenderer.DrawEmptyLine(width);
         ConsoleRenderer.DrawCenteredLine($"{Colors.Green}VICTORIA{Colors.Reset}", width);
         ConsoleRenderer.DrawEmptyLine(width);
-        ConsoleRenderer.DrawCenteredLine(message, width, Colors.Yellow);
+        ConsoleRenderer.DrawSeparator(width);
+        ConsoleRenderer.DrawEmptyLine(width);
+        ConsoleRenderer.DrawWrappedText(message, width, Colors.Yellow);
         ConsoleRenderer.DrawEmptyLine(width);
         ConsoleRenderer.DrawBottomBorder(width);
     }

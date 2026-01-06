@@ -503,6 +503,21 @@ public class GameEngine
     }
 
     /// <summary>
+    /// Busca un objeto solo en el inventario del jugador.
+    /// Útil cuando la sala está a oscuras y solo se puede interactuar con objetos llevados.
+    /// </summary>
+    private GameObject? FindObjectInInventory(string name, string? originalName = null)
+    {
+        foreach (var objId in _state.InventoryObjectIds)
+        {
+            var obj = FindObjectById(objId);
+            if (obj != null && MatchesName(obj.Name, name, originalName))
+                return obj;
+        }
+        return null;
+    }
+
+    /// <summary>
     /// Helper methods for container objects
     /// </summary>
     private bool CanOpenContainer(GameObject container, out string message)
@@ -982,6 +997,16 @@ public class GameEngine
     }
 
     /// <summary>
+    /// Verifica si la sala actual está a oscuras, impidiendo interactuar con objetos en ella.
+    /// </summary>
+    /// <returns>True si la sala está oscura y no se puede interactuar con objetos.</returns>
+    private bool IsCurrentRoomDark()
+    {
+        var room = CurrentRoom;
+        return room != null && !IsRoomLit(room);
+    }
+
+    /// <summary>
     /// Generates a text description of the current room.
     /// Includes visible objects, NPCs, and available exits.
     /// </summary>
@@ -1443,8 +1468,13 @@ public class GameEngine
         if (string.IsNullOrEmpty(arg))
             return CommandResult.Error(RandomMessages.WhatToOpen);
 
+        var isDark = IsCurrentRoomDark();
+
         // Primero intentar con objetos contenedores
-        var obj = FindObjectInRoomOrInventory(room, arg, originalArg);
+        // Si está oscuro, solo buscar en inventario
+        var obj = isDark
+            ? FindObjectInInventory(arg, originalArg)
+            : FindObjectInRoomOrInventory(room, arg, originalArg);
         if (obj != null && obj.IsContainer)
         {
             // Recordar si estaba bloqueado antes de intentar abrir (para mensaje con llave)
@@ -1506,6 +1536,10 @@ public class GameEngine
             return CommandResult.Error(message);
         }
 
+        // Si está oscuro, no se pueden manipular puertas
+        if (isDark)
+            return CommandResult.Error(RandomMessages.TooDarkToInteract);
+
         // Buscar puerta
         var (door, errorMsg) = FindDoorByArgument(room, arg);
         if (door == null)
@@ -1552,8 +1586,13 @@ public class GameEngine
         if (string.IsNullOrEmpty(arg))
             return CommandResult.Error(RandomMessages.WhatToClose);
 
+        var isDark = IsCurrentRoomDark();
+
         // Primero intentar con objetos contenedores
-        var obj = FindObjectInRoomOrInventory(room, arg, originalArg);
+        // Si está oscuro, solo buscar en inventario
+        var obj = isDark
+            ? FindObjectInInventory(arg, originalArg)
+            : FindObjectInRoomOrInventory(room, arg, originalArg);
         if (obj != null && obj.IsContainer)
         {
             if (CanCloseContainer(obj, out string message))
@@ -1568,6 +1607,10 @@ public class GameEngine
             }
             return CommandResult.Error(message);
         }
+
+        // Si está oscuro, no se pueden manipular puertas
+        if (isDark)
+            return CommandResult.Error(RandomMessages.TooDarkToInteract);
 
         // Buscar puerta
         var (door, errorMsg) = FindDoorByArgument(room, arg);
@@ -1865,11 +1908,15 @@ public class GameEngine
         if (string.IsNullOrEmpty(containerName))
             return CommandResult.Error(RandomMessages.WhereToPutIt);
 
-        // Buscar el objeto a meter (puede estar en el inventario o en la sala)
-        var objToInsert = FindObjectInRoomOrInventory(room, objectName, originalObjectName);
+        var isDark = IsCurrentRoomDark();
+
+        // Buscar el objeto a meter (si está oscuro, solo en inventario)
+        var objToInsert = isDark
+            ? FindObjectInInventory(objectName, originalObjectName)
+            : FindObjectInRoomOrInventory(room, objectName, originalObjectName);
 
         if (objToInsert == null)
-            return CommandResult.Error("No ves ese objeto por aquí.");
+            return CommandResult.Error(isDark ? RandomMessages.TooDarkToInteract : "No ves ese objeto por aquí.");
 
         // Verificar que el objeto está en inventario o en la sala (no en otro contenedor)
         var isInInventory = _state.InventoryObjectIds.Contains(objToInsert.Id);
@@ -1878,8 +1925,10 @@ public class GameEngine
         if (!isInInventory && !isInRoom)
             return CommandResult.Error("No puedes coger ese objeto.");
 
-        // Buscar el contenedor
-        var container = FindObjectInRoomOrInventory(room, containerName, originalContainerName);
+        // Buscar el contenedor (si está oscuro, solo en inventario)
+        var container = isDark
+            ? FindObjectInInventory(containerName, originalContainerName)
+            : FindObjectInRoomOrInventory(room, containerName, originalContainerName);
         if (container == null || !container.IsContainer)
             return CommandResult.Error(RandomMessages.NoSuchContainer);
 
@@ -1925,8 +1974,12 @@ public class GameEngine
         if (string.IsNullOrEmpty(containerName))
             return CommandResult.Error(RandomMessages.WhereToGetFrom);
 
-        // Buscar el contenedor
-        var container = FindObjectInRoomOrInventory(room, containerName, originalContainerName);
+        var isDark = IsCurrentRoomDark();
+
+        // Buscar el contenedor (si está oscuro, solo en inventario)
+        var container = isDark
+            ? FindObjectInInventory(containerName, originalContainerName)
+            : FindObjectInRoomOrInventory(room, containerName, originalContainerName);
         if (container == null || !container.IsContainer)
             return CommandResult.Error(RandomMessages.NoSuchContainer);
 
@@ -1959,7 +2012,12 @@ public class GameEngine
         if (string.IsNullOrEmpty(containerName))
             return CommandResult.Error(RandomMessages.WhatToLookIn);
 
-        var container = FindObjectInRoomOrInventory(room, containerName, originalContainerName);
+        var isDark = IsCurrentRoomDark();
+
+        // Si está oscuro, solo buscar en inventario
+        var container = isDark
+            ? FindObjectInInventory(containerName, originalContainerName)
+            : FindObjectInRoomOrInventory(room, containerName, originalContainerName);
         if (container == null || !container.IsContainer)
             return CommandResult.Error(RandomMessages.NoSuchContainer);
 
@@ -1998,8 +2056,12 @@ public class GameEngine
             return CommandResult.Success(""); // La descripción se muestra en el área fija superior
         }
 
-        // Buscar objeto en la sala o inventario
-        var obj = FindObjectInRoomOrInventory(room, target, originalTarget);
+        var isDark = IsCurrentRoomDark();
+
+        // Buscar objeto (si está oscuro, solo en inventario)
+        var obj = isDark
+            ? FindObjectInInventory(target, originalTarget)
+            : FindObjectInRoomOrInventory(room, target, originalTarget);
         if (obj != null)
         {
             // Disparar script Event_OnExamine
@@ -2102,6 +2164,10 @@ public class GameEngine
 
         if (string.IsNullOrEmpty(arg))
             return CommandResult.Error(RandomMessages.WhatToTake);
+
+        // No se puede coger objetos a oscuras
+        if (IsCurrentRoomDark())
+            return CommandResult.Error(RandomMessages.TooDarkToInteract);
 
         if (arg.StartsWith("todo"))
         {
@@ -2465,8 +2531,12 @@ public class GameEngine
         if (string.IsNullOrWhiteSpace(objName))
             return CommandResult.Error(RandomMessages.WhatToUse);
 
-        // Buscar el objeto en la sala o inventario
-        var obj = room != null ? FindObjectInRoomOrInventory(room, objName, originalObjName) : null;
+        var isDark = IsCurrentRoomDark();
+
+        // Buscar el objeto (si está oscuro, solo en inventario)
+        var obj = isDark
+            ? FindObjectInInventory(objName, originalObjName)
+            : (room != null ? FindObjectInRoomOrInventory(room, objName, originalObjName) : null);
         if (obj != null)
         {
             // Verificar tipos de objetos que no tiene sentido "usar"
@@ -2589,6 +2659,10 @@ public class GameEngine
         var room = CurrentRoom;
         if (room == null)
             return CommandResult.Error(RandomMessages.PlayerLost);
+
+        // Para leer se necesita luz
+        if (IsCurrentRoomDark())
+            return CommandResult.Error("Necesitas luz para poder leer.");
 
         var objName = parsed.DirectObject ?? string.Empty;
         var originalObjName = parsed.OriginalDirectObject;
@@ -4349,8 +4423,12 @@ public class GameEngine
         if (string.IsNullOrWhiteSpace(objName))
             return CommandResult.Error(RandomMessages.WhatToEat);
 
-        // Buscar el objeto
-        var obj = FindVisibleObject(room, objName, originalObjName);
+        var isDark = IsCurrentRoomDark();
+
+        // Buscar el objeto (si está oscuro, solo en inventario)
+        var obj = isDark
+            ? FindObjectInInventory(objName, originalObjName)
+            : FindVisibleObject(room, objName, originalObjName);
         if (obj == null)
             return CommandResult.Error(RandomMessages.ObjectNotFound);
 
@@ -4396,8 +4474,12 @@ public class GameEngine
         if (string.IsNullOrWhiteSpace(objName))
             return CommandResult.Error(RandomMessages.WhatToDrink);
 
-        // Buscar el objeto
-        var obj = FindVisibleObject(room, objName, originalObjName);
+        var isDark = IsCurrentRoomDark();
+
+        // Buscar el objeto (si está oscuro, solo en inventario)
+        var obj = isDark
+            ? FindObjectInInventory(objName, originalObjName)
+            : FindVisibleObject(room, objName, originalObjName);
         if (obj == null)
             return CommandResult.Error(RandomMessages.ObjectNotFound);
 
