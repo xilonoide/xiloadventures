@@ -474,9 +474,13 @@
                                 <Border Width="12" Height="12" Background="#64C864" BorderBrush="#333" BorderThickness="1"/>
                                 <TextBlock Text="Puerta abierta" Foreground="#AAA" FontSize="10" Margin="4,0,0,0" VerticalAlignment="Center"/>
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <Border Width="12" Height="12" Background="#C86464" BorderBrush="#333" BorderThickness="1"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                <Border Width="12" Height="12" Background="#C8A050" BorderBrush="#333" BorderThickness="1"/>
                                 <TextBlock Text="Puerta cerrada" Foreground="#AAA" FontSize="10" Margin="4,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="12" Height="12" Background="#C85050" BorderBrush="#333" BorderThickness="1"/>
+                                <TextBlock Text="Puerta bloqueada" Foreground="#AAA" FontSize="10" Margin="4,0,0,0" VerticalAlignment="Center"/>
                             </StackPanel>
                         </StackPanel>
                     </Grid>

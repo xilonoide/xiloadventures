@@ -369,7 +369,32 @@ public class GameEngine
             objectNameNormalized.Contains(RemoveAccents(originalName), StringComparison.OrdinalIgnoreCase))
             return true;
 
+        // Fallback: comparar solo letras ASCII (para problemas de encoding en terminales)
+        var objectAscii = ToAsciiLettersOnly(objectNameNormalized);
+        if (!string.IsNullOrEmpty(normalizedName))
+        {
+            var inputAscii = ToAsciiLettersOnly(normalizedName);
+            if (!string.IsNullOrEmpty(inputAscii) && objectAscii.Contains(inputAscii, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
         return false;
+    }
+
+    /// <summary>
+    /// Convierte un string a solo letras ASCII (a-z), eliminando todo lo demás.
+    /// Usado como fallback para problemas de encoding.
+    /// </summary>
+    private static string ToAsciiLettersOnly(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+        var sb = new System.Text.StringBuilder();
+        foreach (var c in text)
+        {
+            if (c >= 'a' && c <= 'z') sb.Append(c);
+            else if (c >= 'A' && c <= 'Z') sb.Append(char.ToLower(c));
+        }
+        return sb.ToString();
     }
 
     private Room? FindRoomById(string id)
@@ -504,6 +529,17 @@ public class GameEngine
 
         if (container.IsLocked)
         {
+            // Verificar si el jugador tiene la llave en el inventario
+            if (!string.IsNullOrWhiteSpace(container.KeyId))
+            {
+                var hasKey = _state.InventoryObjectIds.Contains(container.KeyId, StringComparer.OrdinalIgnoreCase);
+                if (hasKey)
+                {
+                    // Auto-desbloquear el contenedor
+                    container.IsLocked = false;
+                    return true;
+                }
+            }
             message = $"{Cap(container.Name)} está cerrad{(container.Gender == GrammaticalGender.Feminine ? "a" : "o")} con llave.";
             return false;
         }
@@ -1342,7 +1378,12 @@ public class GameEngine
                 if (!IsDoorVisible(door))
                     return CommandResult.Error(RandomMessages.CannotGoThatWay);
                 if (!door.IsOpen)
-                    return CommandResult.Error(RandomMessages.DoorIsLocked);
+                {
+                    // Distinguir entre puerta cerrada con llave y solo cerrada
+                    if (door.IsLocked && !string.IsNullOrEmpty(door.KeyObjectId))
+                        return CommandResult.Error(RandomMessages.DoorIsLocked);
+                    return CommandResult.Error(RandomMessages.DoorIsClosed);
+                }
             }
         }
         else if (exit.IsLocked)
@@ -1374,7 +1415,7 @@ public class GameEngine
 
         WorldLoader.RebuildRoomIndexes(_state); // por si algún script ha cambiado cosas
         OnRoomChanged();
-        return CommandResult.Success(""); // La descripción se muestra en el área fija superior
+        return CommandResult.SuccessWithClear(""); // La descripción se muestra en el área fija superior
     }
 
 
@@ -1406,6 +1447,10 @@ public class GameEngine
         var obj = FindObjectInRoomOrInventory(room, arg, originalArg);
         if (obj != null && obj.IsContainer)
         {
+            // Recordar si estaba bloqueado antes de intentar abrir (para mensaje con llave)
+            bool wasLocked = obj.IsLocked;
+            string? keyId = obj.KeyId;
+
             if (CanOpenContainer(obj, out string message))
             {
                 // Guardar si el contenido estaba oculto antes de abrir
@@ -1440,7 +1485,20 @@ public class GameEngine
                 }
 
                 // Sin script: mostrar mensaje por defecto con contenidos
-                var openMessage = $"Abres {Low(obj.Name)}.";
+                // Si se desbloqueó con llave, mencionar la llave
+                string openMessage;
+                if (wasLocked && !string.IsNullOrWhiteSpace(keyId))
+                {
+                    var keyObj = FindObjectById(keyId);
+                    openMessage = keyObj != null
+                        ? $"Abres {Low(obj.Name)} con {Low(keyObj.Name)}."
+                        : $"Abres {Low(obj.Name)}.";
+                }
+                else
+                {
+                    openMessage = $"Abres {Low(obj.Name)}.";
+                }
+
                 if (contentsMessage != null)
                     openMessage += "\n" + contentsMessage;
                 return CommandResult.Success(openMessage);
@@ -1997,6 +2055,10 @@ public class GameEngine
             MatchesName(n.Name, target, originalTarget));
         if (npc != null)
         {
+            // Si es un cadáver, mostrar mensaje aleatorio con pista de saquear
+            if (npc.IsCorpse)
+                return CommandResult.Success(RandomMessages.GetCorpseExamine(npc.Name, GrammaticalGender.Masculine, false));
+
             if (!string.IsNullOrWhiteSpace(npc.Description))
                 return CommandResult.Success(npc.Description);
             return CommandResult.Success($"No ves nada especial en {Low(npc.Name)}.");
@@ -2546,8 +2608,8 @@ public class GameEngine
         if (string.IsNullOrWhiteSpace(obj.TextContent))
             return CommandResult.Error($"{WithArticleCap(obj)} está en blanco.");
 
-        // Disparar script Event_OnExamine (leer es una forma de examinar)
-        _ = TriggerEntityScriptAsync("GameObject", obj.Id, "Event_OnExamine");
+        // Disparar script Event_OnRead
+        _ = TriggerEntityScriptAsync("GameObject", obj.Id, "Event_OnRead");
 
         // Mostrar el contenido con formato de texto leído (cursiva simulada con comillas)
         var sb = new StringBuilder();

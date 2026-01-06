@@ -39,6 +39,22 @@ public static partial class RandomMessages
     );
 
     /// <summary>
+    /// Mensaje cuando la puerta está cerrada (sin llave).
+    /// </summary>
+    public static string DoorIsClosed => Pick(
+        "La puerta está cerrada.",
+        "Esta puerta está cerrada.",
+        "La puerta no está abierta.",
+        "Hay una puerta cerrada bloqueando el paso.",
+        "Tendrás que abrir la puerta primero.",
+        "La puerta está cerrada, deberías abrirla.",
+        "No puedes pasar, la puerta está cerrada.",
+        "Primero tendrás que abrir la puerta.",
+        "La puerta está cerrada. Intenta abrirla.",
+        "Hay una puerta cerrada en ese camino."
+    );
+
+    /// <summary>
     /// Mensaje cuando la puerta está cerrada con llave.
     /// </summary>
     public static string DoorIsLocked => Pick(
@@ -47,7 +63,7 @@ public static partial class RandomMessages
         "La cerradura impide que abras la puerta.",
         "La puerta no cede, está cerrada con llave.",
         "Necesitas una llave para abrir esta puerta.",
-        "La puerta está firmemente cerrada.",
+        "La puerta está firmemente cerrada con llave.",
         "El cerrojo mantiene la puerta bloqueada.",
         "Esta puerta requiere una llave.",
         "La puerta está atrancada con llave.",

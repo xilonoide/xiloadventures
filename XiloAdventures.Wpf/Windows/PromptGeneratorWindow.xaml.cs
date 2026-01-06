@@ -89,7 +89,7 @@ public partial class PromptGeneratorWindow : Window
   ""Doors"": [{
     ""Id"": ""door_id"", ""Name"": ""Puerta"", ""Description"": """",
     ""Gender"": ""Feminine"", ""IsPlural"": false,
-    ""RoomIdA"": ""sala_1"", ""RoomIdB"": ""sala_2"",
+    ""RoomIdA"": ""sala_1"", ""RoomIdB"": ""sala_2"",  // ⚠️ AMBOS campos son OBLIGATORIOS
     ""IsOpen"": false, ""IsLocked"": true, ""KeyObjectId"": ""obj_llave"",
     ""OpenFromSide"": ""Both"", ""Visible"": true
   }],
@@ -184,7 +184,7 @@ Flow_Sequence (salidas: Then0,Then1,Then2), Flow_Branch (salidas: True,False), F
 ## REQUISITOS DEL MUNDO (temática ""{THEME}"")
 
 1. **{ROOM_COUNT} salas** conectadas - ⚠️ TODAS accesibles desde StartRoomId, sin islas aisladas. Zone agrupa salas temáticamente. IsInterior=true para interiores, IsIlluminated=false para oscuras.
-2. **{DOOR_COUNT} puertas** - Al menos una con llave. OpenFromSide: Both/FromAOnly/FromBOnly
+2. **{DOOR_COUNT} puertas** - Al menos una con llave. Cada puerta DEBE tener RoomIdA Y RoomIdB. OpenFromSide: Both/FromAOnly/FromBOnly
 3. **{CONTAINER_COUNT} contenedores** - IsOpenable=true, IsLocked=true+KeyId para cerrados, ContentsVisible=false
 4. **{TOTAL_OBJECTS} objetos**: {WEAPON_COUNT} armas, {ARMOR_COUNT} armaduras, {HELMET_COUNT} cascos, {FOOD_COUNT} comida, {DRINK_COUNT} bebidas, {KEY_COUNT} llaves, {TEXT_COUNT} textos (CanRead=true+TextContent), {OTHER_COUNT} otros
 5. **{NPC_COUNT} NPCs**: Comerciantes con IsShopkeeper+ShopInventory. PatrolRoute=[""sala1"",""sala2""], PatrolSpeed=1-3. Al menos 1 patrullando.
@@ -220,7 +220,14 @@ Archivos .json separados: zona_1 con Game+Player, zona_2+ solo entidades. Conexi
 {OUTPUT_FORMAT_INSTRUCTIONS}
 
 ## VALIDACIÓN FINAL
-- Puertas: AMBAS salidas con mismo DoorId. Llaves accesibles SIN pasar por puerta que abren.
+- **Puertas**:
+  - ⚠️ OBLIGATORIO: Cada puerta debe tener AMBOS campos RoomIdA Y RoomIdB con IDs de salas existentes
+  - ⚠️ OBLIGATORIO: Las salidas de AMBAS salas deben tener DoorId apuntando al mismo Id de puerta
+  - Ejemplo: Si door_1 conecta sala_A con sala_B, entonces:
+    - La puerta: `RoomIdA: ""sala_A"", RoomIdB: ""sala_B""`
+    - Salida en sala_A: `{ ""TargetRoomId"": ""sala_B"", ""Direction"": ""norte"", ""DoorId"": ""door_1"" }`
+    - Salida en sala_B: `{ ""TargetRoomId"": ""sala_A"", ""Direction"": ""sur"", ""DoorId"": ""door_1"" }`
+  - Llaves accesibles SIN pasar por puerta que abren
 - IDs: Todos referenciados deben existir. OwnerType+OwnerId coherentes.
 - Conversations: StartNodeId apunta a Conversation_Start. Scripts empiezan en Event.
 - Sin spoilers: Solo descripción temática breve.";

@@ -60,6 +60,28 @@ public static partial class RandomMessages
     );
 
     /// <summary>
+    /// Mensaje al examinar un cadáver (con pista sobre saquear).
+    /// </summary>
+    public static string GetCorpseExamine(string name, GrammaticalGender gender, bool isPlural)
+    {
+        var template = Pick(
+            "El cuerpo sin vida de {0} yace en el suelo. Podrías saquearlo.",
+            "{0} está muerto. Quizás deberías registrar el cadáver.",
+            "Es el cadáver de {0}. Puedes intentar saquearlo.",
+            "{0} ya no respira. Su cuerpo aún podría contener algo útil.",
+            "Observas el cuerpo inerte de {0}. Podrías usar 'saquear' para ver qué llevaba.",
+            "El cadáver de {0} reposa inmóvil. Tal vez tenga algo de valor.",
+            "{0} ha dejado de existir. Puedes saquear sus pertenencias.",
+            "Solo queda el cuerpo frío de {0}. ¿Quieres registrarlo?",
+            "Los ojos sin vida de {0} miran al vacío. Podrías revisar sus bolsillos.",
+            "{0} ya no es una amenaza. Puedes saquear lo que llevaba encima.",
+            "Es un cadáver. {0} está definitivamente muerto. Usa 'saquear' para buscar botín.",
+            "El cuerpo de {0} yace aquí. Quizás tenga algo que te sea útil."
+        );
+        return string.Format(template, name);
+    }
+
+    /// <summary>
     /// Mensaje cuando el cadáver no tiene nada.
     /// </summary>
     public static string GetCorpseEmpty(string name, GrammaticalGender gender, bool isPlural)

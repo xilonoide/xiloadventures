@@ -115,6 +115,8 @@ public partial class MapPanel : Control
     public event Action<List<string>>? RoomsDeleteRequested;
     public event Action<GameObject>? KeyIconClicked;
     public event Action<Room>? TeleportToRoomRequested;
+    public event Action<Room, int>? ExitClicked;
+    public event Action? ExitDeleted;
 
     static MapPanel()
     {

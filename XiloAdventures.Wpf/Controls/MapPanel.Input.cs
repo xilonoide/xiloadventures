@@ -95,6 +95,15 @@ public partial class MapPanel : Control
                 return;
             }
 
+            // Click derecho sobre una salida: mostrar menú contextual
+            var exitHit = HitTestExit(pos);
+            if (exitHit.HasValue)
+            {
+                ShowExitContextMenu(exitHit.Value.room, exitHit.Value.exitIndex, pos);
+                e.Handled = true;
+                return;
+            }
+
             // Click derecho en zona vacía: no hacemos nada.
             // ShowEmptyMapContextMenu(pos);
             // e.Handled = true;
@@ -343,6 +352,9 @@ public partial class MapPanel : Control
                     }
 
                     InvalidateVisual();
+
+                    // Notificar que se seleccionó una salida para mostrar propiedades
+                    ExitClicked?.Invoke(exitRoom, exitIndex);
                     return;
                 }
             }
@@ -1606,11 +1618,28 @@ public partial class MapPanel : Control
 
         exit.DoorId = door.Id;
 
-        var reverseExit = targetRoom.Exits?.FirstOrDefault(ex =>
+        // Buscar o crear la salida inversa en la sala destino
+        targetRoom.Exits ??= new List<Exit>();
+        var reverseExit = targetRoom.Exits.FirstOrDefault(ex =>
             string.Equals(ex.TargetRoomId, fromRoom.Id, StringComparison.OrdinalIgnoreCase));
+
         if (reverseExit != null)
         {
+            // La salida inversa existe, asociarle la puerta
             reverseExit.DoorId = door.Id;
+        }
+        else
+        {
+            // Crear la salida inversa automáticamente
+            var normalizedDirection = NormalizeDirectionLabel(exit.Direction);
+            var reverseDirection = GetOppositeDirection(normalizedDirection);
+            var newReverseExit = new Exit
+            {
+                Direction = reverseDirection,
+                TargetRoomId = fromRoom.Id,
+                DoorId = door.Id
+            };
+            targetRoom.Exits.Add(newReverseExit);
         }
 
         _world.Doors.Add(door);
@@ -2310,6 +2339,101 @@ public partial class MapPanel : Control
         return new Point(
             (a.X + b.X) / 2.0,
             (a.Y + b.Y) / 2.0);
+    }
+
+    private void ShowExitContextMenu(Room room, int exitIndex, Point screenPoint)
+    {
+        if (_world == null || room.Exits == null || exitIndex < 0 || exitIndex >= room.Exits.Count)
+            return;
+
+        var exit = room.Exits[exitIndex];
+
+        var menu = new ContextMenu
+        {
+            Background = new SolidColorBrush(Color.FromRgb(48, 48, 48)),
+            Foreground = Brushes.White
+        };
+
+        // Obtener nombre de la sala destino para mostrar info
+        string targetName = "desconocida";
+        if (!string.IsNullOrWhiteSpace(exit.TargetRoomId))
+        {
+            var targetRoom = _world.Rooms.FirstOrDefault(r =>
+                string.Equals(r.Id, exit.TargetRoomId, StringComparison.OrdinalIgnoreCase));
+            if (targetRoom != null)
+                targetName = targetRoom.Name ?? targetRoom.Id;
+        }
+
+        // Header informativo (no clickeable)
+        var headerItem = new MenuItem
+        {
+            Header = $"Salida: {exit.Direction} → {targetName}",
+            IsEnabled = false,
+            Background = new SolidColorBrush(Color.FromRgb(48, 48, 48)),
+            Foreground = new SolidColorBrush(Color.FromRgb(160, 160, 160)),
+            FontStyle = FontStyles.Italic
+        };
+        menu.Items.Add(headerItem);
+        menu.Items.Add(new Separator());
+
+        // Opción eliminar salida
+        var deleteItem = new MenuItem
+        {
+            Header = "Eliminar salida",
+            Background = new SolidColorBrush(Color.FromRgb(48, 48, 48)),
+            Foreground = new SolidColorBrush(Color.FromRgb(255, 100, 100))
+        };
+        var deleteIcon = new TextBlock
+        {
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
+            Text = "\uE74D", // Icono de papelera
+            FontSize = 18,
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = new SolidColorBrush(Color.FromRgb(255, 100, 100))
+        };
+        deleteItem.Icon = deleteIcon;
+        deleteItem.Click += (_, _) =>
+        {
+            if (room.Exits != null && exitIndex >= 0 && exitIndex < room.Exits.Count)
+            {
+                var exitToDelete = room.Exits[exitIndex];
+
+                // Si la salida tiene una puerta asociada, eliminarla también
+                if (!string.IsNullOrEmpty(exitToDelete.DoorId) && _world.Doors != null)
+                {
+                    var door = _world.Doors.FirstOrDefault(d =>
+                        string.Equals(d.Id, exitToDelete.DoorId, StringComparison.OrdinalIgnoreCase));
+                    if (door != null)
+                    {
+                        _world.Doors.Remove(door);
+
+                        // Eliminar también la salida opuesta que referencia esta puerta
+                        var targetRoom = _world.Rooms.FirstOrDefault(r =>
+                            string.Equals(r.Id, exitToDelete.TargetRoomId, StringComparison.OrdinalIgnoreCase));
+                        if (targetRoom?.Exits != null)
+                        {
+                            var oppositeExit = targetRoom.Exits.FirstOrDefault(e =>
+                                string.Equals(e.DoorId, exitToDelete.DoorId, StringComparison.OrdinalIgnoreCase));
+                            if (oppositeExit != null)
+                            {
+                                targetRoom.Exits.Remove(oppositeExit);
+                            }
+                        }
+                    }
+                }
+
+                room.Exits.RemoveAt(exitIndex);
+                _selectedExits.Clear();
+                MapEdited?.Invoke();
+                ExitDeleted?.Invoke();
+                InvalidateVisual();
+            }
+        };
+        menu.Items.Add(deleteItem);
+
+        menu.PlacementTarget = this;
+        menu.Placement = PlacementMode.MousePoint;
+        menu.IsOpen = true;
     }
 
     private void ShowRoomContextMenu(Room room, Point screenPoint)

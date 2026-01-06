@@ -265,6 +265,7 @@ public class ScriptEngine
             [NodeTypeId.Event_OnDrop] = async (node, ctx) => { await Task.CompletedTask; },
             [NodeTypeId.Event_OnUse] = async (node, ctx) => { await Task.CompletedTask; },
             [NodeTypeId.Event_OnExamine] = async (node, ctx) => { await Task.CompletedTask; },
+            [NodeTypeId.Event_OnRead] = async (node, ctx) => { await Task.CompletedTask; },
             [NodeTypeId.Event_OnGive] = async (node, ctx) => { await Task.CompletedTask; },
             [NodeTypeId.Event_OnContainerOpen] = async (node, ctx) => { await Task.CompletedTask; },
             [NodeTypeId.Event_OnContainerClose] = async (node, ctx) => { await Task.CompletedTask; },

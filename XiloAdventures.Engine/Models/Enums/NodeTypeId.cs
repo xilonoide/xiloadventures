@@ -44,6 +44,7 @@ public enum NodeTypeId
     Event_OnEquip,
     Event_OnUnequip,
     Event_OnExamine,
+    Event_OnRead,
     Event_OnContainerOpen,
     Event_OnContainerClose,
     Event_OnEat,

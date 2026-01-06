@@ -20,37 +20,49 @@ public class Exit
     /// Dirección de la salida (norte, sur, este, oeste, arriba, abajo, etc.).
     /// Esta es la dirección que el jugador usa para moverse.
     /// </summary>
+    [DisplayName("Dirección")]
+    [Category("General")]
     public string Direction { get; set; } = string.Empty;
 
     /// <summary>
     /// ID de la sala destino.
     /// Debe coincidir con el Id de una Room existente en el mundo.
     /// </summary>
+    [DisplayName("Sala destino")]
+    [Category("General")]
     public string TargetRoomId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Indica si la salida está bloqueada.
-    /// Si es true, el jugador no puede pasar sin la llave correspondiente.
-    /// </summary>
-    public bool IsLocked { get; set; }
-
-    /// <summary>
-    /// ID del objeto (tipo Llave) necesario para abrir esta salida.
-    /// Si es null, la salida no requiere llave (pero puede estar bloqueada).
-    /// </summary>
-    public string? KeyObjectId { get; set; }
 
     /// <summary>
     /// Si esta salida está asociada a una puerta física del mundo, su ID.
     /// Las puertas son objetos interactivos que pueden abrirse/cerrarse.
     /// Si es null, la salida funciona solo con IsLocked/KeyObjectId.
     /// </summary>
+    [DisplayName("Puerta")]
+    [Category("General")]
     public string? DoorId { get; set; }
+
+    /// <summary>
+    /// Indica si la salida está bloqueada.
+    /// Si es true, el jugador no puede pasar sin la llave correspondiente.
+    /// </summary>
+    [DisplayName("Bloqueada")]
+    [Category("Acceso")]
+    public bool IsLocked { get; set; }
+
+    /// <summary>
+    /// ID del objeto (tipo Llave) necesario para abrir esta salida.
+    /// Si es null, la salida no requiere llave (pero puede estar bloqueada).
+    /// </summary>
+    [DisplayName("Llave")]
+    [Category("Acceso")]
+    public string? KeyObjectId { get; set; }
 
     /// <summary>
     /// Lista de requisitos de misiones para usar esta salida.
     /// Permite restringir el acceso basándose en el progreso del jugador.
     /// </summary>
+    [DisplayName("Misiones requeridas")]
+    [Category("Acceso")]
     public List<QuestRequirement> RequiredQuests { get; set; } = new();
 
     /// <summary>

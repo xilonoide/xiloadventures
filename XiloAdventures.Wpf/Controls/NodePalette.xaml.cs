@@ -315,7 +315,7 @@ public partial class NodePalette : UserControl
         // Drag start
         border.MouseLeftButtonDown += (s, e) =>
         {
-            var data = new DataObject("NodeType", nodeDef.TypeId);
+            var data = new DataObject("NodeType", nodeDef.TypeId.ToString());
             DragDrop.DoDragDrop(border, data, DragDropEffects.Copy);
         };
 

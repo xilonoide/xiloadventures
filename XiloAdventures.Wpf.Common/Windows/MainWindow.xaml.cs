@@ -228,6 +228,9 @@ public partial class MainWindow : Window
         UpdateStatusPanel();
         UpdateRoomVisuals();
 
+        // Sincronizar el estado de iluminación inicial para evitar actualizaciones innecesarias del timer
+        _lastRoomLitState = _engine.IsCurrentRoomLit;
+
         // Leer descripción de la sala inicial con TTS (la voz fue suprimida durante el constructor)
         _engine.PlayCurrentRoomDescription();
 
@@ -804,6 +807,11 @@ public partial class MainWindow : Window
 
         UpdateRoomVisuals();
         TrackVisitedRoom(obj);
+
+        // Sincronizar el estado de iluminación con la nueva sala para evitar que el timer
+        // dispare una actualización extra con un mensaje de oscuridad diferente
+        _lastRoomLitState = _engine.IsCurrentRoomLit;
+
         if (_uiSettings.MapEnabled)
         {
             UpdateArrows();
@@ -1901,6 +1909,13 @@ public partial class MainWindow : Window
 
         // Ejecutar el comando de movimiento
         var result = _engine.ProcessCommand(cmd);
+
+        // Si el comando requiere limpiar la pantalla, hacerlo ahora
+        if (result.ClearScreenBefore)
+        {
+            OutputTextBox.Document.Blocks.Clear();
+        }
+
         if (!string.IsNullOrWhiteSpace(result.Message))
         {
             AppendText(result.Message);

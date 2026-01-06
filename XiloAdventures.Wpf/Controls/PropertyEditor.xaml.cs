@@ -92,6 +92,8 @@ public partial class PropertyEditor : UserControl
 
     public Func<IEnumerable<Npc>>? GetNpcs { get; set; }
 
+    public Func<IEnumerable<Door>>? GetDoors { get; set; }
+
     public Func<PlayerDefinition?>? GetPlayerDefinition { get; set; }
 
     /// <summary>
@@ -1473,9 +1475,9 @@ public partial class PropertyEditor : UserControl
 
         {
             // StartRoomId: selector de sala
-            // Selectores de sala (StartRoomId, RoomId, RoomIdA, RoomIdB)
+            // Selectores de sala (StartRoomId, RoomId, RoomIdA, RoomIdB, TargetRoomId)
             if (prop.PropertyType == typeof(string) && GetRooms != null &&
-                (prop.Name == PN.StartRoomId || prop.Name == PN.RoomId || prop.Name == PN.RoomIdA || prop.Name == PN.RoomIdB))
+                (prop.Name == PN.StartRoomId || prop.Name == PN.RoomId || prop.Name == PN.RoomIdA || prop.Name == PN.RoomIdB || prop.Name == PN.TargetRoomId))
             {
                 var rooms = GetRooms().ToList();
                 var combo = new ComboBox
@@ -2888,6 +2890,46 @@ public partial class PropertyEditor : UserControl
                                     // Refrescar el PropertyEditor para mostrar el cambio
                                     SetObject(target);
                                 }
+                            }
+                        }
+                        catch
+                        {
+                            // Ignorar errores
+                        }
+                    };
+
+                    editor = combo;
+                }
+                // Selector de puerta para Exit.DoorId
+                else if (obj is Exit && prop.Name == PN.DoorId && GetDoors != null)
+                {
+                    var doors = GetDoors().ToList();
+
+                    // Crear lista de opciones con "(ninguna)" al principio
+                    var doorOptions = new List<DoorComboItem> { new DoorComboItem { Id = "", DisplayName = "(ninguna)" } };
+                    doorOptions.AddRange(doors.Select(d => new DoorComboItem { Id = d.Id, DisplayName = d.Name ?? d.Id }));
+
+                    var combo = new ComboBox
+                    {
+                        Margin = new Thickness(0, 2, 0, 0),
+                        DisplayMemberPath = nameof(DoorComboItem.DisplayName),
+                        SelectedValuePath = nameof(DoorComboItem.Id),
+                        ItemsSource = doorOptions
+                    };
+
+                    var currentDoorId = Convert.ToString(prop.GetValue(obj)) ?? string.Empty;
+                    combo.SelectedValue = currentDoorId;
+
+                    combo.SelectionChanged += (_, _) =>
+                    {
+                        try
+                        {
+                            if (_currentObject is not { } target) return;
+                            if (combo.SelectedValue is string doorId)
+                            {
+                                // Si es cadena vacía, guardar como null
+                                prop.SetValue(target, string.IsNullOrEmpty(doorId) ? null : doorId);
+                                PropertyEdited?.Invoke(target, prop.Name);
                             }
                         }
                         catch
@@ -5538,6 +5580,15 @@ public partial class PropertyEditor : UserControl
 /// Item para el ComboBox de selección de llaves.
 /// </summary>
 internal class KeyComboItem
+{
+    public string Id { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Item para el ComboBox de selección de puertas.
+/// </summary>
+internal class DoorComboItem
 {
     public string Id { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;

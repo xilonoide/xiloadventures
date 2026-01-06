@@ -122,11 +122,12 @@ public static class DockerServiceConsole
 
     /// <summary>
     /// Solo verifica que los servicios están disponibles (modo pruebas en Docker).
+    /// En modo consola no hay audio, así que solo verificamos Ollama para IA.
     /// </summary>
     private static async Task<bool> VerifyServicesAsync(CancellationToken cancellationToken)
     {
-        // 1. Verificar Ollama
-        DrawStep(1, 2, "Verificando Ollama...");
+        // Solo verificar Ollama (TTS no tiene sentido en modo consola sin audio)
+        DrawStep(1, 1, "Verificando Ollama...");
         var ollamaReady = await WaitForServiceAsync(
             $"http://{ServiceHost}:11434/api/tags",
             "Ollama",
@@ -138,24 +139,7 @@ public static class DockerServiceConsole
             DrawError("Ollama no está disponible en el host.");
             return false;
         }
-        DrawStepComplete(1, 2, "Ollama disponible");
-
-        // 2. Verificar TTS (opcional)
-        DrawStep(2, 2, "Verificando TTS...");
-        var ttsReady = await WaitForServiceAsync(
-            $"http://{ServiceHost}:5002/api/tts?text=ok",
-            "TTS",
-            15,
-            cancellationToken);
-
-        if (ttsReady)
-        {
-            DrawStepComplete(2, 2, "TTS disponible");
-        }
-        else
-        {
-            DrawStepComplete(2, 2, "TTS no disponible (voz desactivada)");
-        }
+        DrawStepComplete(1, 1, "Ollama disponible");
 
         DrawSuccess();
         await Task.Delay(1000, cancellationToken);

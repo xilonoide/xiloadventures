@@ -553,6 +553,17 @@ public static class NodeTypeRegistry
 
         Register(new NodeTypeDefinition
         {
+            TypeId = NodeTypeId.Event_OnRead,
+            DisplayName = "Al Leer",
+            Description = "Se ejecuta cuando el jugador lee el objeto (requiere CanRead=true)",
+            Category = NodeCategory.Event,
+            Subgroup = NodeSubgroup.Objetos,
+            OwnerTypes = NodeOwnerType.GameObject,
+            OutputPorts = new[] { new NodePort { Name = "Exec", PortType = PortType.Execution, Label = "" } }
+        });
+
+        Register(new NodeTypeDefinition
+        {
             TypeId = NodeTypeId.Event_OnContainerOpen,
             DisplayName = "Al Abrir Contenedor",
             Description = "Se ejecuta cuando el jugador abre el contenedor",

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using XiloAdventures.Engine.Models;
 using XiloAdventures.Engine.Models.Enums;
@@ -163,6 +164,17 @@ public static class SaveManager
             MapEnabled = data.MapEnabled,
             UseLlmForUnknownCommands = data.UseLlmForUnknownCommands
         };
+
+        // Merge images from world file (images should not come from save files)
+        var worldRoomsById = world.Rooms.ToDictionary(r => r.Id, StringComparer.OrdinalIgnoreCase);
+        foreach (var room in state.Rooms)
+        {
+            if (worldRoomsById.TryGetValue(room.Id, out var worldRoom))
+            {
+                room.ImageBase64 = worldRoom.ImageBase64;
+                room.AsciiImage = worldRoom.AsciiImage;
+            }
+        }
 
         WorldLoader.RebuildRoomIndexes(state);
         return state;

@@ -94,6 +94,7 @@ public partial class WorldEditorWindow : Window
         PropertyEditor.GetAbilities = () => _world.Abilities;
         PropertyEditor.GetQuests = () => _world.Quests;
         PropertyEditor.GetNpcs = () => _world.Npcs;
+        PropertyEditor.GetDoors = () => _world.Doors;
         PropertyEditor.GetPlayerDefinition = () => _world.Player;
         PropertyEditor.GetGameInfo = () => _world.Game;
         PropertyEditor.GetParserDictionary = () => _world.Game.ParserDictionaryJson;
@@ -109,6 +110,8 @@ public partial class WorldEditorWindow : Window
         MapPanel.DoorClicked += MapPanel_DoorClicked;
         MapPanel.KeyIconClicked += MapPanel_KeyIconClicked;
         MapPanel.SelectionCleared += MapPanel_SelectionCleared;
+        MapPanel.ExitClicked += MapPanel_ExitClicked;
+        MapPanel.ExitDeleted += MapPanel_ExitDeleted;
 
         MapPanel.AddObjectToRoomRequested += MapPanel_AddObjectToRoomRequested;
         MapPanel.AddNpcToRoomRequested += MapPanel_AddNpcToRoomRequested;
@@ -384,6 +387,22 @@ public partial class WorldEditorWindow : Window
         PropertyEditor.SetObject(keyObj);
     }
 
+    private void MapPanel_ExitClicked(Room room, int exitIndex)
+    {
+        if (room.Exits == null || exitIndex < 0 || exitIndex >= room.Exits.Count)
+            return;
+
+        var exit = room.Exits[exitIndex];
+        PropertyScrollViewer.Visibility = Visibility.Visible;
+        PropertyEditor.SetObject(exit);
+    }
+
+    private void MapPanel_ExitDeleted()
+    {
+        PropertyEditor.SetObject(null);
+        BuildTree();
+    }
+
     private void BuildTree()
     {
         // Guardar el estado expandido de los nodos antes de reconstruir
@@ -650,13 +669,33 @@ public partial class WorldEditorWindow : Window
     {
         var roomNode = new TreeViewItem { Header = room.Name, Tag = room, Foreground = Brushes.White };
 
-        // Añadir puertas que conectan con esta sala como hijas
-        foreach (var door in _world.Doors.Where(d => d.RoomIdA == room.Id || d.RoomIdB == room.Id))
+        // Añadir salidas de la sala
+        if (room.Exits != null)
         {
-            var exit = room.Exits?.FirstOrDefault(e => e.DoorId == door.Id);
-            var dirAbbrev = exit != null ? GetDirectionAbbreviation(exit.Direction) : null;
-            var header = !string.IsNullOrEmpty(dirAbbrev) ? $"({dirAbbrev}) {door.Name}" : door.Name;
-            roomNode.Items.Add(new TreeViewItem { Header = header, Tag = door, Foreground = Brushes.White });
+            foreach (var exit in room.Exits)
+            {
+                var dirAbbrev = GetDirectionAbbreviation(exit.Direction);
+
+                // Si la salida tiene puerta, mostrar la puerta
+                if (!string.IsNullOrEmpty(exit.DoorId))
+                {
+                    var door = _world.Doors.FirstOrDefault(d =>
+                        string.Equals(d.Id, exit.DoorId, StringComparison.OrdinalIgnoreCase));
+                    if (door != null)
+                    {
+                        var header = !string.IsNullOrEmpty(dirAbbrev) ? $"({dirAbbrev}) 🚪 {door.Name}" : $"🚪 {door.Name}";
+                        roomNode.Items.Add(new TreeViewItem { Header = header, Tag = door, Foreground = Brushes.White });
+                        continue;
+                    }
+                }
+
+                // Salida sin puerta: mostrar como salida simple
+                var targetRoom = _world.Rooms.FirstOrDefault(r =>
+                    string.Equals(r.Id, exit.TargetRoomId, StringComparison.OrdinalIgnoreCase));
+                var targetName = targetRoom?.Name ?? exit.TargetRoomId ?? "?";
+                var exitHeader = $"({dirAbbrev}) → {targetName}";
+                roomNode.Items.Add(new TreeViewItem { Header = exitHeader, Tag = exit, Foreground = new SolidColorBrush(Color.FromRgb(180, 180, 180)) });
+            }
         }
 
         // Añadir subnodo Objetos para la sala
@@ -4047,7 +4086,7 @@ public partial class WorldEditorWindow : Window
         var dialog = new Window
         {
             Title = "Eliminar zona",
-            Width = 420,
+            Width = 500,
             Height = 200,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Owner = this,
