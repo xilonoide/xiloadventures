@@ -2210,7 +2210,14 @@ public partial class WorldEditorWindow : Window
         if (_isPlayRunning)
             return;
 
-        // Si está activado el modo Linux, lanzar el proyecto de consola
+        // Si está activado el modo Windows Terminal, lanzar el proyecto de consola Windows
+        if (_world.Game.TestModeUseWindowsTerminal)
+        {
+            await LaunchWindowsTerminalTestModeAsync();
+            return;
+        }
+
+        // Si está activado el modo Linux, lanzar el proyecto de consola en Docker
         if (_world.Game.TestModeUseLinux)
         {
             await LaunchLinuxTestModeAsync();
@@ -3586,7 +3593,8 @@ public partial class WorldEditorWindow : Window
             VoiceVolume = _world.Game.TestModeVoiceVolume,
             MasterVolume = _world.Game.TestModeMasterVolume,
             AiEnabled = _world.Game.TestModeAiEnabled,
-            UseLinuxMode = _world.Game.TestModeUseLinux
+            UseLinuxMode = _world.Game.TestModeUseLinux,
+            UseWindowsTerminalMode = _world.Game.TestModeUseWindowsTerminal
         };
 
         optionsWindow.ShowDialog();
@@ -3599,6 +3607,7 @@ public partial class WorldEditorWindow : Window
         _world.Game.TestModeMasterVolume = optionsWindow.MasterVolume;
         _world.Game.TestModeAiEnabled = optionsWindow.AiEnabled;
         _world.Game.TestModeUseLinux = optionsWindow.UseLinuxMode;
+        _world.Game.TestModeUseWindowsTerminal = optionsWindow.UseWindowsTerminalMode;
         SetDirty(true);
     }
 
@@ -6239,7 +6248,7 @@ Escribe SOLO la descripción en español, 2-3 frases, sin incluir el nombre de l
 
         // Preguntar plataforma de exportación
         var platformDlg = new ConfirmWindow(
-            "¿Para qué plataforma quieres exportar?\n\n• Windows: Ejecutable .exe con interfaz gráfica\n• Linux: Ejecutable para terminal (modo texto)",
+            "¿Para qué plataforma quieres exportar?\n\n• Windows: Ejecutable .exe (gráfico o terminal)\n• Linux: Ejecutable para terminal (modo texto)",
             "Seleccionar plataforma",
             confirmText: "Windows",
             cancelText: "Linux")
@@ -6252,8 +6261,28 @@ Escribe SOLO la descripción en español, 2-3 frases, sin incluir el nombre de l
             return; // Usuario cerró el diálogo
 
         bool exportForWindows = platformResult == true;
+        bool exportForTerminal = false;
 
-        // Para Windows, preguntar si quiere usar un icono personalizado
+        // Si es Windows, preguntar si es WPF (gráfico) o Terminal (consola)
+        if (exportForWindows)
+        {
+            var windowsTypeDlg = new ConfirmWindow(
+                "¿Qué tipo de ejecutable de Windows deseas?\n\n• Gráfico (WPF): Ventana con interfaz visual, imágenes y sonido\n• Terminal: Para ejecutar en CMD/PowerShell, modo texto con sonido",
+                "Tipo de ejecutable Windows",
+                confirmText: "Gráfico (WPF)",
+                cancelText: "Terminal")
+            {
+                Owner = this
+            };
+
+            var windowsTypeResult = windowsTypeDlg.ShowDialog();
+            if (windowsTypeResult == null)
+                return; // Usuario cerró el diálogo
+
+            exportForTerminal = windowsTypeResult == false;
+        }
+
+        // Para Windows (WPF o Terminal), preguntar si quiere usar un icono personalizado
         string? customIconPath = null;
         if (exportForWindows)
         {
@@ -6304,7 +6333,11 @@ Escribe SOLO la descripción en español, 2-3 frases, sin incluir el nombre de l
 
         try
         {
-            if (exportForWindows)
+            if (exportForWindows && exportForTerminal)
+            {
+                await System.Threading.Tasks.Task.Run(() => ExportTerminalExecutable(_currentPath, outputPath, customIconPath));
+            }
+            else if (exportForWindows)
             {
                 await System.Threading.Tasks.Task.Run(() => ExportStandaloneExecutable(_currentPath, outputPath, customIconPath));
             }
@@ -6315,9 +6348,13 @@ Escribe SOLO la descripción en español, 2-3 frases, sin incluir el nombre de l
 
             HidePlayLoading();
 
-            var platformInfo = exportForWindows
-                ? "El jugador no necesitará .NET instalado para ejecutarlo."
-                : "El jugador deberá dar permisos de ejecución con: chmod +x " + System.IO.Path.GetFileName(outputPath);
+            string platformInfo;
+            if (exportForWindows && exportForTerminal)
+                platformInfo = "El jugador no necesitará .NET instalado. Ejecutar en CMD o PowerShell.";
+            else if (exportForWindows)
+                platformInfo = "El jugador no necesitará .NET instalado para ejecutarlo.";
+            else
+                platformInfo = "El jugador deberá dar permisos de ejecución con: chmod +x " + System.IO.Path.GetFileName(outputPath);
 
             new AlertWindow(
                 $"Ejecutable creado exitosamente en:\n{outputPath}\n\n{platformInfo}",
@@ -6509,6 +6546,352 @@ Escribe SOLO la descripción en español, 2-3 frases, sin incluir el nombre de l
             {
                 try { System.IO.Directory.Delete(extractedSourceDir, true); } catch { }
             }
+        }
+    }
+
+    private async Task LaunchWindowsTerminalTestModeAsync()
+    {
+        try
+        {
+            // Guardar primero
+            if (!await PerformSaveAsync())
+            {
+                return;
+            }
+
+            if (string.IsNullOrEmpty(_currentPath))
+            {
+                new AlertWindow("Debes guardar el mundo antes de probarlo.", "Error") { Owner = this }.ShowDialog();
+                return;
+            }
+
+            // Buscar el proyecto Terminal
+            var baseDir = AppContext.BaseDirectory;
+            string? terminalProjectPath = null;
+
+            var currentDir = new System.IO.DirectoryInfo(baseDir);
+            while (currentDir != null && !System.IO.File.Exists(System.IO.Path.Combine(currentDir.FullName, "XiloAdventures.sln")))
+            {
+                currentDir = currentDir.Parent;
+            }
+
+            if (currentDir != null)
+            {
+                terminalProjectPath = System.IO.Path.Combine(currentDir.FullName, "XiloAdventures.Terminal.Player");
+            }
+
+            if (string.IsNullOrEmpty(terminalProjectPath) || !System.IO.Directory.Exists(terminalProjectPath))
+            {
+                new AlertWindow(
+                    "No se encontró el proyecto Terminal.\n\n" +
+                    "El modo pruebas en Terminal Windows solo está disponible en modo desarrollo.",
+                    "Error") { Owner = this }.ShowDialog();
+                return;
+            }
+
+            var terminalCsproj = System.IO.Path.Combine(terminalProjectPath, "XiloAdventures.Terminal.Player.csproj");
+            if (!System.IO.File.Exists(terminalCsproj))
+            {
+                new AlertWindow(
+                    "No se encontró el proyecto XiloAdventures.Terminal.Player.csproj",
+                    "Error") { Owner = this }.ShowDialog();
+                return;
+            }
+
+            // Copiar el mundo al proyecto Terminal para que lo encuentre
+            var worldDestPath = System.IO.Path.Combine(terminalProjectPath, "world.xaw");
+            System.IO.File.Copy(_currentPath!, worldDestPath, overwrite: true);
+
+            // Obtener opciones
+            var soundArg = _world.Game.TestModeSoundEnabled ? "" : "--sound-off";
+            var aiEnabled = _world.Game.TestModeAiEnabled;
+            var aiArg = aiEnabled ? " --ia-on" : "";
+
+            // Crear batch para lanzar en una nueva ventana de CMD
+            var tempId = Guid.NewGuid().ToString("N");
+            var batchPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"xilo_test_terminal_{tempId}.bat");
+
+            // Sección de IA: iniciar contenedores de Ollama y TTS desde Windows si están habilitados
+            var aiSetupSection = "";
+            if (aiEnabled)
+            {
+                aiSetupSection = @"
+setlocal enabledelayedexpansion
+echo.
+echo   ================================================================
+echo            Preparando servicios de IA
+echo   ================================================================
+echo.
+
+REM Detectar si hay GPU NVIDIA disponible para acelerar IA
+set GPU_FLAG=
+set HAS_GPU=0
+nvidia-smi >nul 2>&1
+if not errorlevel 1 (
+    set GPU_FLAG=--gpus all
+    set HAS_GPU=1
+    echo   GPU NVIDIA detectada - usando aceleracion por hardware.
+    echo.
+)
+
+echo   [1/3] Verificando Ollama...
+
+REM Primero verificar si Ollama nativo esta instalado y corriendo
+curl -s http://localhost:11434/api/tags >nul 2>&1
+if not errorlevel 1 (
+    echo         Ollama nativo detectado y funcionando.
+    goto OLLAMA_DONE
+)
+
+REM Ollama nativo no responde, verificar si existe en el sistema
+where ollama >nul 2>&1
+if not errorlevel 1 (
+    echo         Ollama instalado pero no corriendo.
+    echo         Por favor, inicia Ollama manualmente o usa Docker.
+    echo.
+    echo         Intentando con Docker...
+)
+
+REM Verificar si Docker esta instalado
+docker --version >nul 2>&1
+if errorlevel 1 (
+    echo.
+    echo   [!] Ni Ollama nativo ni Docker estan disponibles.
+    echo       Para usar IA necesitas:
+    echo       - Instalar Ollama: https://ollama.ai
+    echo       - O instalar Docker Desktop
+    echo.
+    echo   Continuando sin IA...
+    set AI_ARG=
+    goto AI_SETUP_END
+)
+
+REM Verificar si Docker Desktop esta corriendo
+docker info >nul 2>&1
+if errorlevel 1 (
+    echo         Docker instalado pero no esta corriendo.
+    echo         Intentando iniciar Docker Desktop...
+
+    REM Buscar e iniciar Docker Desktop
+    set DOCKER_STARTED=0
+    if exist ""%ProgramFiles%\Docker\Docker\Docker Desktop.exe"" (
+        start """" ""%ProgramFiles%\Docker\Docker\Docker Desktop.exe""
+        set DOCKER_STARTED=1
+    )
+    if ""!DOCKER_STARTED!""==""0"" if exist ""%ProgramFiles(x86)%\Docker\Docker\Docker Desktop.exe"" (
+        start """" ""%ProgramFiles(x86)%\Docker\Docker\Docker Desktop.exe""
+        set DOCKER_STARTED=1
+    )
+    if ""!DOCKER_STARTED!""==""0"" if exist ""%LocalAppData%\Docker\Docker Desktop.exe"" (
+        start """" ""%LocalAppData%\Docker\Docker Desktop.exe""
+        set DOCKER_STARTED=1
+    )
+
+    if ""!DOCKER_STARTED!""==""0"" (
+        echo.
+        echo   [!] No se pudo encontrar Docker Desktop.
+        echo       Por favor, inicia Docker Desktop manualmente.
+        echo.
+        echo   Continuando sin IA...
+        set AI_ARG=
+        goto AI_SETUP_END
+    )
+
+    echo.
+    <nul set /p=""         Esperando a Docker Desktop ""
+    set DOCKER_WAIT=0
+    :DOCKER_WAIT_LOOP
+    docker info >nul 2>&1
+    if not errorlevel 1 (
+        echo  [OK]
+        goto DOCKER_READY
+    )
+    set /a DOCKER_WAIT+=1
+    <nul set /p="".""
+    timeout /t 2 /nobreak >nul
+    if !DOCKER_WAIT! LSS 60 goto DOCKER_WAIT_LOOP
+    echo.
+    echo   [!] Timeout esperando Docker Desktop.
+    echo   Continuando sin IA...
+    set AI_ARG=
+    goto AI_SETUP_END
+)
+:DOCKER_READY
+
+REM Usar Docker para Ollama
+REM Verificar si contenedor Ollama ya responde
+curl -s http://localhost:11434/api/tags >nul 2>&1
+if not errorlevel 1 (
+    echo         Ollama listo via Docker.
+    goto OLLAMA_DONE
+)
+
+REM Contenedor no responde, verificar si esta corriendo
+docker ps --filter name=xilo-ollama --format ""{{.ID}}"" 2>&1 | findstr . >nul 2>&1
+if not errorlevel 1 (
+    <nul set /p=""         Esperando Ollama ""
+    goto OLLAMA_WAIT_LOOP
+)
+
+REM Contenedor no esta corriendo, verificar si existe
+set OLLAMA_EXISTS=0
+docker ps -a --filter name=xilo-ollama --format ""{{.ID}}"" 2>&1 | findstr . >nul 2>&1
+if not errorlevel 1 set OLLAMA_EXISTS=1
+
+if ""!OLLAMA_EXISTS!""==""1"" (
+    <nul set /p=""         Iniciando Ollama ""
+    docker start xilo-ollama >nul 2>&1
+    goto OLLAMA_WAIT_LOOP
+)
+
+REM Contenedor no existe, hay que crearlo (descarga imagen ~1GB)
+echo         Descargando imagen Ollama ^(~1 GB^)...
+echo.
+docker pull ollama/ollama:latest
+echo.
+<nul set /p=""         Creando contenedor Ollama ""
+docker run -d --name xilo-ollama !GPU_FLAG! -p 11434:11434 -v xilo-ollama:/root/.ollama ollama/ollama:latest >nul 2>&1
+
+:OLLAMA_WAIT_LOOP
+set OLLAMA_WAIT=0
+:OLLAMA_CHECK
+curl -s http://localhost:11434/api/tags >nul 2>&1
+if not errorlevel 1 (
+    echo  [OK]
+    goto OLLAMA_DONE
+)
+set /a OLLAMA_WAIT+=1
+<nul set /p="".""
+timeout /t 1 /nobreak >nul
+if !OLLAMA_WAIT! LSS 60 goto OLLAMA_CHECK
+echo  [Timeout - Ollama no responde]
+:OLLAMA_DONE
+
+REM Dar tiempo a Ollama para estar completamente listo
+timeout /t 3 /nobreak >nul
+
+echo   [2/3] Preparando modelo de IA...
+echo         Verificando llama3.2:3b ^(si no existe, se descargara^)
+echo.
+REM ollama pull es idempotente - si el modelo ya existe, termina rapido
+docker exec xilo-ollama ollama pull llama3.2:3b 2>nul
+if errorlevel 1 (
+    echo         Nota: No se pudo verificar el modelo via Docker.
+)
+echo.
+echo         Modelo listo.
+:MODEL_DONE
+
+echo   [3/3] Verificando servidor de voz (TTS)...
+
+REM Verificar si TTS ya responde
+curl -s -o nul -w """" http://localhost:5002/api/tts?text=ok >nul 2>&1
+if not errorlevel 1 (
+    echo         Servidor de voz TTS listo.
+    goto TTS_DONE
+)
+
+REM TTS no responde, verificar si contenedor esta corriendo
+docker ps --filter name=xilo-tts --format ""{{.ID}}"" 2>&1 | findstr . >nul 2>&1
+if not errorlevel 1 (
+    <nul set /p=""         Esperando TTS ""
+    goto TTS_WAIT_LOOP
+)
+
+REM Contenedor no esta corriendo, verificar si existe
+set TTS_EXISTS=0
+docker ps -a --filter name=xilo-tts --format ""{{.ID}}"" 2>&1 | findstr . >nul 2>&1
+if not errorlevel 1 set TTS_EXISTS=1
+
+if ""!TTS_EXISTS!""==""1"" (
+    <nul set /p=""         Iniciando TTS ""
+    docker start xilo-tts >nul 2>&1
+    goto TTS_WAIT_LOOP
+)
+
+REM Contenedor no existe, hay que crearlo
+REM Elegir imagen segun GPU
+if ""!HAS_GPU!""==""1"" (
+    set TTS_IMAGE=ghcr.io/coqui-ai/tts:latest
+    echo         Descargando imagen TTS con GPU...
+) else (
+    set TTS_IMAGE=ghcr.io/idiap/coqui-tts-cpu:latest
+    echo         Descargando imagen TTS CPU ^(puede tardar 10-15 min^)...
+)
+echo.
+docker pull !TTS_IMAGE!
+echo.
+<nul set /p=""         Creando contenedor TTS ""
+if ""!HAS_GPU!""==""1"" (
+    docker run -d --gpus all --name xilo-tts -p 5002:5002 --entrypoint python3 !TTS_IMAGE! TTS/server/server.py --model_name tts_models/es/css10/vits >nul 2>&1
+) else (
+    docker run -d --name xilo-tts -p 5002:5002 --entrypoint python3 !TTS_IMAGE! TTS/server/server.py --model_name tts_models/es/css10/vits >nul 2>&1
+)
+
+:TTS_WAIT_LOOP
+set TTS_WAIT=0
+:TTS_CHECK
+curl -s -o nul -w """" http://localhost:5002/api/tts?text=ok >nul 2>&1
+if not errorlevel 1 (
+    echo  [OK]
+    goto TTS_DONE
+)
+set /a TTS_WAIT+=1
+<nul set /p="".""
+timeout /t 2 /nobreak >nul
+if !TTS_WAIT! LSS 60 goto TTS_CHECK
+echo  [Timeout - TTS no responde, continuando sin voz]
+:TTS_DONE
+
+:AI_SETUP_END
+echo.
+";
+            }
+
+            var batchContent = $@"@echo off
+title XiloAdventures - Modo Pruebas Terminal
+{aiSetupSection}
+cd /d ""{terminalProjectPath}""
+dotnet run {soundArg}{aiArg}
+echo.
+echo Presiona una tecla para cerrar...
+pause > nul
+";
+
+            System.IO.File.WriteAllText(batchPath, batchContent);
+
+            // Intentar usar Windows Terminal si está disponible
+            var wtPath = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                @"Microsoft\WindowsApps\wt.exe");
+
+            System.Diagnostics.ProcessStartInfo startInfo;
+            if (System.IO.File.Exists(wtPath))
+            {
+                startInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = wtPath,
+                    Arguments = $"cmd /c \"{batchPath}\"",
+                    UseShellExecute = true
+                };
+            }
+            else
+            {
+                startInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/c \"{batchPath}\"",
+                    UseShellExecute = true
+                };
+            }
+
+            System.Diagnostics.Process.Start(startInfo);
+
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            new AlertWindow($"Error al lanzar el modo pruebas Terminal:\n\n{ex.Message}", "Error") { Owner = this }.ShowDialog();
         }
     }
 
@@ -6944,6 +7327,152 @@ del ""%~f0""
         System.Diagnostics.Process.Start(startInfo);
 
         await Task.CompletedTask; // Método es async pero no necesita await aquí
+    }
+
+    private void ExportTerminalExecutable(string worldPath, string outputPath, string? customIconPath = null)
+    {
+        // Buscar el proyecto Terminal Windows
+        var baseDir = AppContext.BaseDirectory;
+        string? terminalProjectPath = null;
+        string? extractedSourceDir = null;
+
+        // 1. Primero buscar en modo desarrollo
+        var currentDir = new System.IO.DirectoryInfo(baseDir);
+        while (currentDir != null && !System.IO.File.Exists(System.IO.Path.Combine(currentDir.FullName, "XiloAdventures.sln")))
+        {
+            currentDir = currentDir.Parent;
+        }
+
+        if (currentDir != null)
+        {
+            terminalProjectPath = System.IO.Path.Combine(currentDir.FullName, "XiloAdventures.Terminal.Player");
+        }
+        else
+        {
+            // 2. Buscar SourceToExportTerminal.zip
+            var sourceZipPath = System.IO.Path.Combine(baseDir, "SourceToExportTerminal.zip");
+            if (System.IO.File.Exists(sourceZipPath))
+            {
+                extractedSourceDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"XiloAdventures_Source_{Guid.NewGuid():N}");
+                System.IO.Compression.ZipFile.ExtractToDirectory(sourceZipPath, extractedSourceDir);
+                terminalProjectPath = System.IO.Path.Combine(extractedSourceDir, "XiloAdventures.Terminal.Player");
+            }
+        }
+
+        if (string.IsNullOrEmpty(terminalProjectPath) || !System.IO.Directory.Exists(terminalProjectPath))
+        {
+            throw new InvalidOperationException(
+                "No se encontró el código fuente del Player para Terminal Windows.\n\n" +
+                "Asegúrate de tener instalado el .NET 8 SDK y que el archivo SourceToExportTerminal.zip esté disponible.");
+        }
+
+        var terminalCsproj = System.IO.Path.Combine(terminalProjectPath, "XiloAdventures.Terminal.Player.csproj");
+        if (!System.IO.File.Exists(terminalCsproj))
+        {
+            throw new InvalidOperationException(
+                $"No se encontró el proyecto Terminal en:\n{terminalProjectPath}");
+        }
+
+        // Copiar el mundo al proyecto Terminal
+        var worldDestPath = System.IO.Path.Combine(terminalProjectPath, "world.xaw");
+        System.IO.File.Copy(worldPath, worldDestPath, true);
+
+        // Si hay icono personalizado, copiarlo y modificar el .csproj
+        string? customIconDestPath = null;
+        string? originalCsprojContent = null;
+        if (!string.IsNullOrEmpty(customIconPath) && System.IO.File.Exists(customIconPath))
+        {
+            customIconDestPath = System.IO.Path.Combine(terminalProjectPath, "custom_icon.ico");
+            System.IO.File.Copy(customIconPath, customIconDestPath, true);
+
+            // Modificar el .csproj para usar el icono personalizado
+            originalCsprojContent = System.IO.File.ReadAllText(terminalCsproj);
+            var modifiedCsproj = originalCsprojContent.Replace(
+                "<ApplicationIcon>..\\XiloAdventures.Wpf.Common\\appicon.ico</ApplicationIcon>",
+                "<ApplicationIcon>custom_icon.ico</ApplicationIcon>");
+            System.IO.File.WriteAllText(terminalCsproj, modifiedCsproj);
+        }
+
+        try
+        {
+            // Compilar para Windows
+            var publishDir = System.IO.Path.Combine(terminalProjectPath, "bin", "publish-win");
+            if (System.IO.Directory.Exists(publishDir))
+            {
+                System.IO.Directory.Delete(publishDir, true);
+            }
+
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = $"publish \"{terminalCsproj}\" -c Release -r win-x64 --self-contained true -o \"{publishDir}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = System.Diagnostics.Process.Start(startInfo);
+            if (process == null)
+            {
+                throw new InvalidOperationException("No se pudo iniciar el proceso de compilación.");
+            }
+
+            process.WaitForExit();
+
+            if (process.ExitCode != 0)
+            {
+                var error = process.StandardError.ReadToEnd();
+                throw new InvalidOperationException(
+                    $"Error al compilar el ejecutable Terminal Windows (código {process.ExitCode}):\n\n{error}");
+            }
+
+            // El ejecutable en Windows tiene extensión .exe
+            var compiledExePath = System.IO.Path.Combine(publishDir, "XiloAdventures.Terminal.Player.exe");
+            if (!System.IO.File.Exists(compiledExePath))
+            {
+                throw new InvalidOperationException(
+                    $"No se encontró el ejecutable compilado en:\n{compiledExePath}");
+            }
+
+            try
+            {
+                System.IO.File.Copy(compiledExePath, outputPath, true);
+            }
+            catch (System.IO.IOException)
+            {
+                throw new InvalidOperationException(
+                    "No se puede guardar el archivo porque está en uso.\n\n" +
+                    "Cierra el ejecutable antes de volver a exportar.");
+            }
+        }
+        finally
+        {
+            // Limpiar
+            if (extractedSourceDir == null)
+            {
+                if (System.IO.File.Exists(worldDestPath))
+                {
+                    try { System.IO.File.Delete(worldDestPath); } catch { }
+                }
+
+                // Limpiar icono personalizado y restaurar .csproj
+                if (customIconDestPath != null && System.IO.File.Exists(customIconDestPath))
+                {
+                    try { System.IO.File.Delete(customIconDestPath); } catch { }
+                }
+
+                if (originalCsprojContent != null)
+                {
+                    try { System.IO.File.WriteAllText(terminalCsproj, originalCsprojContent); } catch { }
+                }
+            }
+
+            if (extractedSourceDir != null && System.IO.Directory.Exists(extractedSourceDir))
+            {
+                try { System.IO.Directory.Delete(extractedSourceDir, true); } catch { }
+            }
+        }
     }
 
     private void ExportLinuxExecutable(string worldPath, string outputPath)

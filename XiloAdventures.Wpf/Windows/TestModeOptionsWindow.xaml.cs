@@ -68,8 +68,31 @@ public partial class TestModeOptionsWindow : Window
         get => LinuxRadio.IsChecked == true;
         set
         {
-            LinuxRadio.IsChecked = value;
-            WindowsRadio.IsChecked = !value;
+            if (value)
+            {
+                LinuxRadio.IsChecked = true;
+                WindowsRadio.IsChecked = false;
+                WindowsTerminalRadio.IsChecked = false;
+            }
+            UpdateSoundControlsForPlatform();
+        }
+    }
+
+    public bool UseWindowsTerminalMode
+    {
+        get => WindowsTerminalRadio.IsChecked == true;
+        set
+        {
+            if (value)
+            {
+                WindowsTerminalRadio.IsChecked = true;
+                WindowsRadio.IsChecked = false;
+                LinuxRadio.IsChecked = false;
+            }
+            else if (!LinuxRadio.IsChecked == true)
+            {
+                WindowsRadio.IsChecked = true;
+            }
             UpdateSoundControlsForPlatform();
         }
     }
@@ -91,10 +114,15 @@ public partial class TestModeOptionsWindow : Window
     private void UpdateSoundControlsForPlatform()
     {
         var isLinux = LinuxRadio.IsChecked == true;
+        var isWindowsTerminal = WindowsTerminalRadio.IsChecked == true;
 
         // En Linux (Docker) no hay sonido disponible
+        // En Windows Terminal sí hay sonido
         SoundCheckBox.IsEnabled = !isLinux;
         SoundDisabledNote.Visibility = isLinux ? Visibility.Visible : Visibility.Collapsed;
+        WindowsTerminalNote.Visibility = isWindowsTerminal ? Visibility.Visible : Visibility.Collapsed;
+        LinuxNote.Visibility = isLinux ? Visibility.Visible : Visibility.Collapsed;
+
         if (isLinux)
         {
             SoundCheckBox.IsChecked = false;

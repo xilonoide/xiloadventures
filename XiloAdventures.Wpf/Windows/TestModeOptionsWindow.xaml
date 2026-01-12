@@ -110,15 +110,29 @@
                                  Foreground="White"
                                  Margin="0,0,0,6"
                                  Checked="PlatformRadio_Checked"/>
+                    <RadioButton x:Name="WindowsTerminalRadio"
+                                 Content="Windows Terminal (Consola)"
+                                 Foreground="White"
+                                 Margin="0,0,0,6"
+                                 Checked="PlatformRadio_Checked"/>
+                    <TextBlock x:Name="WindowsTerminalNote"
+                               Text="Se ejecutará en la terminal de Windows (cmd/PowerShell). El sonido funcionará."
+                               FontSize="11"
+                               Foreground="#888888"
+                               Margin="20,0,0,6"
+                               TextWrapping="Wrap"
+                               Visibility="Collapsed"/>
                     <RadioButton x:Name="LinuxRadio"
-                                 Content="Linux (Consola)"
+                                 Content="Linux (Consola en Docker)"
                                  Foreground="White"
                                  Checked="PlatformRadio_Checked"/>
-                    <TextBlock Text="Se ejecutará en Ubuntu 22.04 dentro de Docker. Requiere Docker Desktop."
+                    <TextBlock x:Name="LinuxNote"
+                               Text="Se ejecutará en Ubuntu 22.04 dentro de Docker. Requiere Docker Desktop."
                                FontSize="11"
                                Foreground="#888888"
                                Margin="20,4,0,0"
-                               TextWrapping="Wrap"/>
+                               TextWrapping="Wrap"
+                               Visibility="Collapsed"/>
                 </StackPanel>
             </GroupBox>
 

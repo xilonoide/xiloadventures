@@ -110,6 +110,12 @@ public class GameInfo
     public bool TestModeUseLinux { get; set; } = false;
 
     /// <summary>
+    /// Usar versión Terminal Windows (consola) en modo pruebas.
+    /// </summary>
+    [Browsable(false)]
+    public bool TestModeUseWindowsTerminal { get; set; } = false;
+
+    /// <summary>
     /// Texto de introducción que se muestra al empezar una nueva partida (vacío = no mostrar).
     /// </summary>
     public string IntroText { get; set; } = "";

@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!-- Configuración para publicación standalone -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+
+    <!-- Modo de globalización invariante -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!-- Icono del ejecutable -->
+    <ApplicationIcon>..\XiloAdventures.Wpf.Common\appicon.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\XiloAdventures.Engine\XiloAdventures.Engine.csproj" />
+  </ItemGroup>
+
+  <!-- Recurso embebido del mundo -->
+  <ItemGroup>
+    <EmbeddedResource Include="world.xaw" Condition="Exists('world.xaw')">
+      <LogicalName>XiloAdventures.Terminal.Player.world.xaw</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Sonido: NAudio para Windows -->
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.2.1" />
+  </ItemGroup>
+
+</Project>
